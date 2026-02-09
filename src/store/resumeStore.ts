@@ -27,6 +27,7 @@ import type {
   SectionConfig,
 } from '@/types/resume';
 import type { ResumeStyling } from '@/types/styling';
+import type { CoverLetterData } from '@/types/coverLetter';
 
 // -- Helpers ------------------------------------------------------------------
 
@@ -118,6 +119,10 @@ interface ResumeActions {
   addCustomSection: (section: Omit<CustomSection, 'id'>) => void;
   updateCustomSection: (id: string, section: Partial<CustomSection>) => void;
   removeCustomSection: (id: string) => void;
+
+  // -- Cover Letter -----------------------------------------------------------
+  updateCoverLetter: (coverLetter: Partial<CoverLetterData>) => void;
+  clearCoverLetter: () => void;
 }
 
 export type ResumeStore = ResumeState & ResumeActions;
@@ -592,5 +597,19 @@ export const useResumeStore = create<ResumeStore>((set) => ({
         ...r.data,
         customSections: r.data.customSections.filter((s) => s.id !== id),
       },
+    })),
+
+  // -- Cover Letter -----------------------------------------------------------
+
+  updateCoverLetter: (coverLetter) =>
+    mutate(set, (r) => ({
+      ...r,
+      coverLetter: { ...r.coverLetter!, ...coverLetter },
+    })),
+
+  clearCoverLetter: () =>
+    mutate(set, (r) => ({
+      ...r,
+      coverLetter: undefined,
     })),
 }));

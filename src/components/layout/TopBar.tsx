@@ -22,6 +22,7 @@ import { useResumeListStore } from '@/store/resumeListStore'
 import { useUIStore } from '@/store/uiStore'
 import { usePdfExport } from '@/hooks/usePdfExport'
 import { useDocxExport } from '@/hooks/useDocxExport'
+import { useCoverLetterPdfExport, useCoverLetterDocxExport } from '@/hooks/useCoverLetterExport'
 import { useAutoSave } from '@/hooks/useAutoSave'
 import { useVersionStore } from '@/store/versionStore'
 import { ImportModal } from '@/components/import'
@@ -38,6 +39,7 @@ export default function TopBar() {
   const toggleTemplateGallery = useUIStore((s) => s.toggleTemplateGallery)
   const toggleImportModal = useUIStore((s) => s.toggleImportModal)
   const setShowImportModal = useUIStore((s) => s.setShowImportModal)
+  const activeDocType = useUIStore((s) => s.activeDocType)
 
   const [isEditingName, setIsEditingName] = useState(false)
   const [editName, setEditName] = useState('')
@@ -46,10 +48,13 @@ export default function TopBar() {
 
   const { exportPdf, isExporting } = usePdfExport()
   const { exportDocx, isExporting: isDocxExporting } = useDocxExport()
+  const { exportCoverLetterPdf, isExporting: isCLPdfExporting } = useCoverLetterPdfExport()
+  const { exportCoverLetterDocx, isExporting: isCLDocxExporting } = useCoverLetterDocxExport()
   const { lastSaved, isSaving } = useAutoSave(currentResume)
   const showImportModal = useUIStore((s) => s.showImportModal)
   const saveNewVersion = useVersionStore((s) => s.saveNewVersion)
 
+  const isCoverLetter = activeDocType === 'coverLetter'
   const resumeName = currentResume?.name ?? 'Untitled Resume'
   const templateId = currentResume?.templateId ?? ''
 
@@ -95,8 +100,13 @@ export default function TopBar() {
   const handleExportDocx = async () => {
     if (!currentResume) return
     try {
-      await exportDocx(currentResume)
-      trackEvent('resume_exported_docx')
+      if (isCoverLetter) {
+        await exportCoverLetterDocx(currentResume)
+        trackEvent('cover_letter_exported_docx')
+      } else {
+        await exportDocx(currentResume)
+        trackEvent('resume_exported_docx')
+      }
     } catch (error) {
       console.error('DOCX export failed:', error)
       alert('DOCX export failed. Please try again.')
@@ -116,6 +126,17 @@ export default function TopBar() {
 
   const handleExportPDF = async () => {
     if (!currentResume) return
+
+    if (isCoverLetter) {
+      try {
+        await exportCoverLetterPdf(currentResume)
+        trackEvent('cover_letter_exported_pdf')
+      } catch (error) {
+        console.error('Cover letter PDF export failed:', error)
+        alert('PDF export failed. Please try again.')
+      }
+      return
+    }
 
     const template = getTemplate(currentResume.templateId)
     if (!template) {
@@ -150,6 +171,9 @@ export default function TopBar() {
     if (diffMins < 60) return `Saved ${diffMins}m ago`
     return `Saved at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
   }
+
+  const pdfExporting = isCoverLetter ? isCLPdfExporting : isExporting
+  const docxExporting = isCoverLetter ? isCLDocxExporting : isDocxExporting
 
   return (
     <header className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5 shrink-0 shadow-sm no-print">
@@ -243,55 +267,59 @@ export default function TopBar() {
         <Button
           variant="ghost"
           size="sm"
-          icon={isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+          icon={pdfExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
           onClick={handleExportPDF}
-          disabled={isExporting}
-          title="Export as PDF"
+          disabled={pdfExporting}
+          title={isCoverLetter ? 'Export cover letter as PDF' : 'Export as PDF'}
         >
-          <span className="hidden sm:inline">{isExporting ? 'Exporting...' : 'PDF'}</span>
+          <span className="hidden sm:inline">{pdfExporting ? 'Exporting...' : 'PDF'}</span>
         </Button>
 
         <Button
           variant="ghost"
           size="sm"
-          icon={isDocxExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+          icon={docxExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
           onClick={handleExportDocx}
-          disabled={isDocxExporting}
-          title="Export as DOCX"
+          disabled={docxExporting}
+          title={isCoverLetter ? 'Export cover letter as DOCX' : 'Export as DOCX'}
         >
-          <span className="hidden sm:inline">{isDocxExporting ? 'Exporting...' : 'DOCX'}</span>
+          <span className="hidden sm:inline">{docxExporting ? 'Exporting...' : 'DOCX'}</span>
         </Button>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<Upload className="h-4 w-4" />}
-          onClick={toggleImportModal}
-          title="Import resume"
-        >
-          <span className="hidden sm:inline">Import</span>
-        </Button>
+        {!isCoverLetter && (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Upload className="h-4 w-4" />}
+              onClick={toggleImportModal}
+              title="Import resume"
+            >
+              <span className="hidden sm:inline">Import</span>
+            </Button>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<Bookmark className="h-4 w-4" />}
-          onClick={handleSaveVersion}
-          title="Save Version"
-        >
-          <span className="hidden sm:inline">Version</span>
-        </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Bookmark className="h-4 w-4" />}
+              onClick={handleSaveVersion}
+              title="Save Version"
+            >
+              <span className="hidden sm:inline">Version</span>
+            </Button>
 
-        <div className="h-6 w-px bg-gray-200" />
+            <div className="h-6 w-px bg-gray-200" />
 
-        <Button
-          variant="secondary"
-          size="sm"
-          icon={<LayoutGrid className="h-4 w-4" />}
-          onClick={toggleTemplateGallery}
-        >
-          <span className="hidden sm:inline">Templates</span>
-        </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<LayoutGrid className="h-4 w-4" />}
+              onClick={toggleTemplateGallery}
+            >
+              <span className="hidden sm:inline">Templates</span>
+            </Button>
+          </>
+        )}
       </div>
 
       {/* Import Modal */}

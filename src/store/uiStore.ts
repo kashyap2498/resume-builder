@@ -10,6 +10,8 @@ export type SidebarTab = 'sections' | 'styling' | 'ats' | 'versions';
 
 // -- Store Shape --------------------------------------------------------------
 
+export type ActiveDocType = 'resume' | 'coverLetter';
+
 interface UIState {
   activeSection: string | null;
   sidebarTab: SidebarTab;
@@ -20,6 +22,7 @@ interface UIState {
   onboardingStep: number;
   isMobile: boolean;
   isTablet: boolean;
+  activeDocType: ActiveDocType;
 }
 
 interface UIActions {
@@ -32,6 +35,7 @@ interface UIActions {
   setShowOnboarding: (show: boolean) => void;
   setOnboardingStep: (step: number) => void;
   setDeviceSize: (width: number) => void;
+  setActiveDocType: (type: ActiveDocType) => void;
 }
 
 export type UIStore = UIState & UIActions;
@@ -54,6 +58,7 @@ export const useUIStore = create<UIStore>((set) => ({
   onboardingStep: 0,
   isMobile: false,
   isTablet: false,
+  activeDocType: 'resume',
 
   // -- Actions ----------------------------------------------------------------
 
@@ -81,4 +86,6 @@ export const useUIStore = create<UIStore>((set) => ({
       isMobile: width <= MOBILE_MAX,
       isTablet: width > MOBILE_MAX && width <= TABLET_MAX,
     }),
+
+  setActiveDocType: (type) => set({ activeDocType: type }),
 }));

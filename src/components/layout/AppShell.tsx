@@ -7,12 +7,16 @@
 // Mobile   : tabs for sections / editor / preview
 // =============================================================================
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useUIStore } from '@/store/uiStore'
+import { useResumeStore } from '@/store/resumeStore'
+import { createDefaultCoverLetter } from '@/utils/coverLetterDefaults'
 import TopBar from './TopBar'
 import Sidebar from './Sidebar'
 import EditorPanel from './EditorPanel'
 import PreviewPanel from './PreviewPanel'
+import CoverLetterEditor from '@/components/editor/CoverLetterEditor'
+import CoverLetterPreview from './CoverLetterPreview'
 import { TemplateGallery } from '@/components/templates'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
@@ -21,9 +25,51 @@ type MobileTab = 'sections' | 'editor' | 'preview'
 export default function AppShell() {
   const isMobile = useUIStore((s) => s.isMobile)
   const isTablet = useUIStore((s) => s.isTablet)
+  const activeDocType = useUIStore((s) => s.activeDocType)
+  const setActiveDocType = useUIStore((s) => s.setActiveDocType)
+
+  const currentResume = useResumeStore((s) => s.currentResume)
+  const updateCoverLetter = useResumeStore((s) => s.updateCoverLetter)
 
   const [mobileTab, setMobileTab] = useState<MobileTab>('editor')
   const [showPreview, setShowPreview] = useState(false)
+
+  const isCoverLetter = activeDocType === 'coverLetter'
+
+  // Switch to cover letter mode, auto-create defaults if needed
+  const handleSwitchToCoverLetter = useCallback(() => {
+    if (currentResume && !currentResume.coverLetter) {
+      const defaults = createDefaultCoverLetter(currentResume.data.contact)
+      updateCoverLetter(defaults)
+    }
+    setActiveDocType('coverLetter')
+  }, [currentResume, updateCoverLetter, setActiveDocType])
+
+  // -- Toggle bar component (shared across layouts) ---------------------------
+  const DocToggleBar = (
+    <div className="flex items-center justify-center gap-1 border-b border-gray-200 bg-white py-1.5 shrink-0">
+      <button
+        onClick={() => setActiveDocType('resume')}
+        className={`rounded-lg px-4 py-1 text-sm font-medium transition-colors ${
+          !isCoverLetter
+            ? 'bg-blue-50 text-blue-700'
+            : 'text-gray-500 hover:text-gray-700'
+        }`}
+      >
+        Resume
+      </button>
+      <button
+        onClick={handleSwitchToCoverLetter}
+        className={`rounded-lg px-4 py-1 text-sm font-medium transition-colors ${
+          isCoverLetter
+            ? 'bg-blue-50 text-blue-700'
+            : 'text-gray-500 hover:text-gray-700'
+        }`}
+      >
+        Cover Letter
+      </button>
+    </div>
+  )
 
   // -- Determine layout content ------------------------------------------------
 
@@ -31,13 +77,18 @@ export default function AppShell() {
 
   if (isMobile) {
     // -- Mobile layout --------------------------------------------------------
+    const mobileTabs = isCoverLetter
+      ? (['editor', 'preview'] as const)
+      : (['sections', 'editor', 'preview'] as const)
+
     layoutContent = (
       <div className="flex h-screen flex-col bg-gray-50">
         <TopBar />
+        {DocToggleBar}
 
         {/* Tab bar */}
         <div className="flex border-b border-gray-200 bg-white shrink-0">
-          {(['sections', 'editor', 'preview'] as const).map((tab) => (
+          {mobileTabs.map((tab) => (
             <button
               key={tab}
               onClick={() => setMobileTab(tab)}
@@ -54,7 +105,7 @@ export default function AppShell() {
 
         {/* Panel */}
         <div className="flex-1 overflow-hidden">
-          {mobileTab === 'sections' && (
+          {!isCoverLetter && mobileTab === 'sections' && (
             <div className="h-full overflow-y-auto">
               <ErrorBoundary fallbackMessage="Sidebar failed to load">
                 <Sidebar />
@@ -64,14 +115,14 @@ export default function AppShell() {
           {mobileTab === 'editor' && (
             <div id="editor-content" className="h-full overflow-y-auto">
               <ErrorBoundary fallbackMessage="Editor failed to load">
-                <EditorPanel />
+                {isCoverLetter ? <CoverLetterEditor /> : <EditorPanel />}
               </ErrorBoundary>
             </div>
           )}
           {mobileTab === 'preview' && (
             <div className="h-full overflow-y-auto">
               <ErrorBoundary fallbackMessage="Preview failed to load">
-                <PreviewPanel />
+                {isCoverLetter ? <CoverLetterPreview /> : <PreviewPanel />}
               </ErrorBoundary>
             </div>
           )}
@@ -83,6 +134,7 @@ export default function AppShell() {
     layoutContent = (
       <div className="flex h-screen flex-col bg-gray-50">
         <TopBar />
+        {DocToggleBar}
 
         {/* Toggle bar */}
         <div className="flex items-center justify-center gap-1 border-b border-gray-200 bg-white py-2 shrink-0">
@@ -109,22 +161,24 @@ export default function AppShell() {
         </div>
 
         <div className="flex flex-1 overflow-hidden">
-          {/* Sidebar always visible on tablet */}
-          <aside className="w-[240px] shrink-0 border-r border-gray-200 bg-white overflow-y-auto no-print">
-            <ErrorBoundary fallbackMessage="Sidebar failed to load">
-              <Sidebar />
-            </ErrorBoundary>
-          </aside>
+          {/* Sidebar (only in resume mode) */}
+          {!isCoverLetter && (
+            <aside className="w-[240px] shrink-0 border-r border-gray-200 bg-white overflow-y-auto no-print">
+              <ErrorBoundary fallbackMessage="Sidebar failed to load">
+                <Sidebar />
+              </ErrorBoundary>
+            </aside>
+          )}
 
           {/* Editor or Preview */}
           <div id={showPreview ? undefined : 'editor-content'} className="flex-1 overflow-y-auto">
             {showPreview ? (
               <ErrorBoundary fallbackMessage="Preview failed to load">
-                <PreviewPanel />
+                {isCoverLetter ? <CoverLetterPreview /> : <PreviewPanel />}
               </ErrorBoundary>
             ) : (
               <ErrorBoundary fallbackMessage="Editor failed to load">
-                <EditorPanel />
+                {isCoverLetter ? <CoverLetterEditor /> : <EditorPanel />}
               </ErrorBoundary>
             )}
           </div>
@@ -136,26 +190,29 @@ export default function AppShell() {
     layoutContent = (
       <div className="flex h-screen flex-col bg-gray-50">
         <TopBar />
+        {DocToggleBar}
 
         <div className="flex flex-1 overflow-hidden">
-          {/* Left sidebar */}
-          <aside className="w-[300px] shrink-0 border-r border-gray-200 bg-white overflow-y-auto no-print">
-            <ErrorBoundary fallbackMessage="Sidebar failed to load">
-              <Sidebar />
-            </ErrorBoundary>
-          </aside>
+          {/* Left sidebar (only in resume mode) */}
+          {!isCoverLetter && (
+            <aside className="w-[300px] shrink-0 border-r border-gray-200 bg-white overflow-y-auto no-print">
+              <ErrorBoundary fallbackMessage="Sidebar failed to load">
+                <Sidebar />
+              </ErrorBoundary>
+            </aside>
+          )}
 
           {/* Center editor */}
           <main id="editor-content" className="min-w-0 flex-1 overflow-y-auto">
             <ErrorBoundary fallbackMessage="Editor failed to load">
-              <EditorPanel />
+              {isCoverLetter ? <CoverLetterEditor /> : <EditorPanel />}
             </ErrorBoundary>
           </main>
 
           {/* Right preview */}
           <aside className="w-[540px] shrink-0 border-l border-gray-200 bg-gray-100 overflow-y-auto">
             <ErrorBoundary fallbackMessage="Preview failed to load">
-              <PreviewPanel />
+              {isCoverLetter ? <CoverLetterPreview /> : <PreviewPanel />}
             </ErrorBoundary>
           </aside>
         </div>

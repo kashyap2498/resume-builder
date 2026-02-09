@@ -3,6 +3,7 @@
 // =============================================================================
 
 import type { ResumeStyling } from './styling';
+import type { CoverLetterData } from './coverLetter';
 
 // -- Section Types ------------------------------------------------------------
 
@@ -256,4 +257,5 @@ export interface Resume {
   sections: SectionConfig[];
   data: ResumeData;
   styling: ResumeStyling;
+  coverLetter?: CoverLetterData;
 }
