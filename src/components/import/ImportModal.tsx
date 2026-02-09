@@ -5,7 +5,7 @@
 // For PDF/DOCX, parses text and shows ImportPreview. For JSON, loads directly.
 
 import { useState, useCallback, useRef, type DragEvent } from 'react';
-import { Upload, FileText, X, AlertTriangle } from 'lucide-react';
+import { Upload, FileText, X, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { Modal, Button } from '@/components/ui';
 import { useFileImport } from '@/hooks/useFileImport';
 import { useResumeStore } from '@/store/resumeStore';
@@ -143,26 +143,46 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
     (data: Partial<ResumeData>) => {
       if (!currentResume) return;
 
-      const updatedData: ResumeData = {
-        ...currentResume.data,
-        ...data,
-        contact: {
-          ...currentResume.data.contact,
-          ...(data.contact ?? {}),
-        },
-        summary: {
-          ...currentResume.data.summary,
-          ...(data.summary ?? {}),
-        },
-      };
+      // Only merge fields that were actually provided
+      const updatedData: ResumeData = { ...currentResume.data };
 
+      if (data.contact) {
+        updatedData.contact = {
+          ...currentResume.data.contact,
+          ...data.contact,
+        };
+      }
+      if (data.summary) {
+        updatedData.summary = {
+          ...currentResume.data.summary,
+          ...data.summary,
+        };
+      }
       if (data.experience) updatedData.experience = data.experience;
       if (data.education) updatedData.education = data.education;
       if (data.skills) updatedData.skills = data.skills;
+      if (data.certifications) updatedData.certifications = data.certifications;
+
+      // Auto-enable sections that have imported data
+      const sectionDataMap: Record<string, boolean> = {
+        summary: !!data.summary?.text,
+        experience: (data.experience?.length ?? 0) > 0,
+        education: (data.education?.length ?? 0) > 0,
+        skills: (data.skills?.length ?? 0) > 0,
+        certifications: (data.certifications?.length ?? 0) > 0,
+      };
+
+      const updatedSections = currentResume.sections.map((section) => {
+        if (!section.visible && sectionDataMap[section.type]) {
+          return { ...section, visible: true };
+        }
+        return section;
+      });
 
       const updatedResume: Resume = {
         ...currentResume,
         data: updatedData,
+        sections: updatedSections,
         updatedAt: new Date().toISOString(),
       };
 
@@ -187,11 +207,17 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
     >
       {/* Preview mode */}
       {showPreview && (
-        <ImportPreview
-          parsedData={jsonData ?? result!.parsedData}
-          onApply={handleApplyData}
-          onCancel={resetAll}
-        />
+        <>
+          <div className="mb-3 flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-800">
+            <ShieldCheck className="h-4 w-4 shrink-0 text-green-600" />
+            <span>Imported data has been sanitized for security.</span>
+          </div>
+          <ImportPreview
+            parsedData={jsonData ?? result!.parsedData}
+            onApply={handleApplyData}
+            onCancel={resetAll}
+          />
+        </>
       )}
 
       {/* Upload mode */}

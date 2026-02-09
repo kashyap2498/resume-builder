@@ -20,7 +20,8 @@ export function usePdfExport(): UsePdfExportReturn {
       setIsExporting(true);
       try {
         const { pdf } = await import('@react-pdf/renderer');
-        const blob = await pdf(element).toBlob();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const blob = await pdf(element as any).toBlob();
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;

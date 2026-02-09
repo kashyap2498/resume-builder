@@ -4,6 +4,7 @@
 
 import { create } from 'zustand';
 import type { Resume } from '@/types/resume';
+import { saveHistorySnapshot } from '@/utils/db';
 
 // -- Store Shape --------------------------------------------------------------
 
@@ -29,11 +30,14 @@ export const useHistoryStore = create<HistoryState & HistoryActions>((set, get) 
   future: [],
   maxHistory: 50,
 
-  pushState: (resume) =>
+  pushState: (resume) => {
     set((state) => ({
       past: [...state.past.slice(-(state.maxHistory - 1)), resume],
       future: [],
-    })),
+    }))
+    // Also persist to IndexedDB (fire-and-forget)
+    saveHistorySnapshot(resume.id, resume).catch(() => {})
+  },
 
   undo: (currentResume) => {
     const { past } = get();

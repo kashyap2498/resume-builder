@@ -2,7 +2,7 @@
 // Resume Builder - Core Resume Type Definitions
 // =============================================================================
 
-import { ResumeStyling } from './styling';
+import type { ResumeStyling } from './styling';
 
 // -- Section Types ------------------------------------------------------------
 

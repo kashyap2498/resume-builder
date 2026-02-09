@@ -17,8 +17,11 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useResumeListStore, type ResumeListItem } from '@/store/resumeListStore'
+import { useUIStore } from '@/store/uiStore'
 import { createDefaultResume } from '@/constants/sectionDefaults'
 import { getAllTemplates } from '@/templates'
+import { saveResume as saveResumeToIDB, deleteResume as deleteResumeFromIDB } from '@/utils/db'
+import { trackEvent } from '@/utils/analytics'
 
 // -- Template Options (from registry) -----------------------------------------
 
@@ -63,7 +66,7 @@ const cardVariants = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { delay: i * 0.06, duration: 0.35, ease: 'easeOut' },
+    transition: { delay: i * 0.06, duration: 0.35, ease: 'easeOut' as const },
   }),
   exit: { opacity: 0, scale: 0.9, transition: { duration: 0.2 } },
 }
@@ -113,6 +116,9 @@ function CreateResumeDialog({ open, onClose, onCreate }: CreateResumeDialogProps
 
           {/* Dialog */}
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-resume-dialog-title"
             className="relative z-10 w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl"
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -127,7 +133,7 @@ function CreateResumeDialog({ open, onClose, onCreate }: CreateResumeDialogProps
               <X className="h-5 w-5" />
             </button>
 
-            <h2 className="text-xl font-semibold text-gray-900 mb-1">
+            <h2 id="create-resume-dialog-title" className="text-xl font-semibold text-gray-900 mb-1">
               Create New Resume
             </h2>
             <p className="text-sm text-gray-500 mb-6">
@@ -330,7 +336,16 @@ export default function HomePage() {
       const fullResume = { ...resume, id }
       localStorage.setItem(`resume-${id}`, JSON.stringify(fullResume))
 
-      // 4. Close dialog and navigate to editor
+      // 4. Also persist to IndexedDB (fire-and-forget)
+      saveResumeToIDB(fullResume).catch(() => {})
+
+      // 5. Track analytics event
+      trackEvent('resume_created', { template: templateId })
+
+      // 6. Trigger onboarding wizard
+      useUIStore.getState().setShowOnboarding(true)
+
+      // 7. Close dialog and navigate to editor
       setDialogOpen(false)
       navigate(`/editor/${id}`)
     },
@@ -362,6 +377,9 @@ export default function HomePage() {
             updatedAt: new Date().toISOString(),
           }
           localStorage.setItem(`resume-${newId}`, JSON.stringify(duplicated))
+
+          // Also persist to IndexedDB (fire-and-forget)
+          saveResumeToIDB(duplicated).catch(() => {})
         }
       } catch {
         // silently ignore
@@ -374,6 +392,9 @@ export default function HomePage() {
     (id: string) => {
       removeResume(id)
       localStorage.removeItem(`resume-${id}`)
+
+      // Also delete from IndexedDB (fire-and-forget)
+      deleteResumeFromIDB(id).catch(() => {})
     },
     [removeResume],
   )

@@ -11,9 +11,12 @@ import { useStylingStore } from '@/store/stylingStore'
 import { useHistoryStore } from '@/store/historyStore'
 import { useAutoSave } from '@/hooks/useAutoSave'
 import { usePdfExport } from '@/hooks/usePdfExport'
+import { useDocxExport } from '@/hooks/useDocxExport'
 import { getTemplate } from '@/templates'
 import { saveResumeAsJson } from '@/utils/fileIO'
+import { loadResume } from '@/utils/db'
 import AppShell from '@/components/layout/AppShell'
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
 import type { Resume } from '@/types/resume'
 import React from 'react'
 
@@ -34,6 +37,8 @@ export default function EditorPage() {
 
   const { saveNow } = useAutoSave(currentResume)
   const { exportPdf } = usePdfExport()
+  const { exportDocx } = useDocxExport()
+  const showOnboarding = useUIStore((s) => s.showOnboarding)
 
   // -- Load resume from localStorage on mount ---------------------------------
 
@@ -44,27 +49,55 @@ export default function EditorPage() {
       return
     }
 
-    try {
-      const raw = localStorage.getItem(`resume-${resumeId}`)
-      if (!raw) {
-        setError('Resume not found. It may have been deleted.')
+    let cancelled = false
+
+    async function load() {
+      try {
+        // Try IndexedDB first
+        let resume: Resume | undefined | null = null
+        try {
+          resume = await loadResume(resumeId!)
+        } catch {
+          // IndexedDB unavailable, fall through
+        }
+
+        // Fallback to localStorage
+        if (!resume) {
+          const raw = localStorage.getItem(`resume-${resumeId}`)
+          if (raw) {
+            resume = JSON.parse(raw) as Resume
+          }
+        }
+
+        if (cancelled) return
+
+        if (!resume) {
+          setError('Resume not found. It may have been deleted.')
+          setLoading(false)
+          return
+        }
+
+        setResume(resume)
+        setCurrentResumeId(resumeId!)
+
+        // Hydrate the styling store from the loaded resume data
+        if (resume.styling) {
+          hydrateStyling(resume.styling)
+        }
+
         setLoading(false)
-        return
+      } catch {
+        if (!cancelled) {
+          setError('Failed to load resume data.')
+          setLoading(false)
+        }
       }
+    }
 
-      const resume: Resume = JSON.parse(raw)
-      setResume(resume)
-      setCurrentResumeId(resumeId)
+    load()
 
-      // Hydrate the styling store from the loaded resume data
-      if (resume.styling) {
-        hydrateStyling(resume.styling)
-      }
-
-      setLoading(false)
-    } catch {
-      setError('Failed to load resume data.')
-      setLoading(false)
+    return () => {
+      cancelled = true
     }
   }, [resumeId, setResume, setCurrentResumeId, hydrateStyling])
 
@@ -100,6 +133,14 @@ export default function EditorPage() {
         }
       }
 
+      // Ctrl+Shift+D / Cmd+Shift+D: Export DOCX
+      if (isCtrlOrCmd && e.shiftKey && (e.key === 'd' || e.key === 'D')) {
+        e.preventDefault()
+        if (currentResume) {
+          exportDocx(currentResume).catch((err) => console.error('DOCX export failed:', err))
+        }
+      }
+
       // Ctrl+Z / Cmd+Z: Undo
       if (isCtrlOrCmd && e.key === 'z' && !e.shiftKey) {
         e.preventDefault()
@@ -120,7 +161,7 @@ export default function EditorPage() {
         }
       }
     },
-    [currentResume, saveNow, exportPdf],
+    [currentResume, saveNow, exportPdf, exportDocx],
   )
 
   useEffect(() => {
@@ -219,5 +260,10 @@ export default function EditorPage() {
 
   // -- Main editor layout -----------------------------------------------------
 
-  return <AppShell />
+  return (
+    <>
+      <AppShell />
+      {showOnboarding && <OnboardingWizard />}
+    </>
+  )
 }

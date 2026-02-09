@@ -31,6 +31,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
           ref={ref}
           id={textareaId}
           rows={rows}
+          spellCheck={true}
           className={cn(
             'w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900',
             'placeholder:text-gray-400',

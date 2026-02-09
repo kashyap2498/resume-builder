@@ -7,6 +7,7 @@ import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 import { useUIStore } from '@/store/uiStore'
 import { useResumeStore } from '@/store/resumeStore'
 import { getTemplate } from '@/templates'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import type { Resume } from '@/types/resume'
 
 // -- Constants ----------------------------------------------------------------
@@ -95,7 +96,9 @@ export default function PreviewPanel() {
             }}
           >
             {currentResume ? (
-              <PreviewContent resume={currentResume} />
+              <ErrorBoundary fallbackMessage="Preview rendering failed">
+                <PreviewContent resume={currentResume} />
+              </ErrorBoundary>
             ) : (
               <div className="flex h-full items-center justify-center">
                 <p className="text-sm text-gray-400">No resume loaded</p>

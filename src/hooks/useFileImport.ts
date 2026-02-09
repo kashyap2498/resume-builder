@@ -9,6 +9,7 @@ import { useState, useCallback } from 'react';
 import { extractTextFromPdf } from '@/utils/pdfParser';
 import { extractTextFromDocx } from '@/utils/docxParser';
 import { parseResumeText } from '@/utils/resumeParser';
+import { sanitizeResumeData } from '@/utils/sanitize';
 import type { ResumeData } from '@/types/resume';
 
 export type ImportFileType = 'pdf' | 'docx' | 'unknown';
@@ -102,7 +103,7 @@ export function useFileImport(): UseFileImportReturn {
       }
 
       // Step 3: Parse text into structured resume data
-      const parsedData = parseResumeText(rawText);
+      const parsedData = sanitizeResumeData(parseResumeText(rawText));
 
       setResult({
         rawText,

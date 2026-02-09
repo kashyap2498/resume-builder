@@ -2,7 +2,7 @@
 // Resume Builder - AppShell (3-panel layout)
 // =============================================================================
 //
-// Desktop  : 280px sidebar | flex-1 editor | 420px preview
+// Desktop  : 300px sidebar | flex-1 editor | 540px preview
 // Tablet   : toggle between editor and preview
 // Mobile   : tabs for sections / editor / preview
 // =============================================================================
@@ -14,6 +14,7 @@ import Sidebar from './Sidebar'
 import EditorPanel from './EditorPanel'
 import PreviewPanel from './PreviewPanel'
 import { TemplateGallery } from '@/components/templates'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 type MobileTab = 'sections' | 'editor' | 'preview'
 
@@ -55,17 +56,23 @@ export default function AppShell() {
         <div className="flex-1 overflow-hidden">
           {mobileTab === 'sections' && (
             <div className="h-full overflow-y-auto">
-              <Sidebar />
+              <ErrorBoundary fallbackMessage="Sidebar failed to load">
+                <Sidebar />
+              </ErrorBoundary>
             </div>
           )}
           {mobileTab === 'editor' && (
-            <div className="h-full overflow-y-auto">
-              <EditorPanel />
+            <div id="editor-content" className="h-full overflow-y-auto">
+              <ErrorBoundary fallbackMessage="Editor failed to load">
+                <EditorPanel />
+              </ErrorBoundary>
             </div>
           )}
           {mobileTab === 'preview' && (
             <div className="h-full overflow-y-auto">
-              <PreviewPanel />
+              <ErrorBoundary fallbackMessage="Preview failed to load">
+                <PreviewPanel />
+              </ErrorBoundary>
             </div>
           )}
         </div>
@@ -103,13 +110,23 @@ export default function AppShell() {
 
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar always visible on tablet */}
-          <aside className="w-[240px] shrink-0 border-r border-gray-200 bg-white overflow-y-auto">
-            <Sidebar />
+          <aside className="w-[240px] shrink-0 border-r border-gray-200 bg-white overflow-y-auto no-print">
+            <ErrorBoundary fallbackMessage="Sidebar failed to load">
+              <Sidebar />
+            </ErrorBoundary>
           </aside>
 
           {/* Editor or Preview */}
-          <div className="flex-1 overflow-y-auto">
-            {showPreview ? <PreviewPanel /> : <EditorPanel />}
+          <div id={showPreview ? undefined : 'editor-content'} className="flex-1 overflow-y-auto">
+            {showPreview ? (
+              <ErrorBoundary fallbackMessage="Preview failed to load">
+                <PreviewPanel />
+              </ErrorBoundary>
+            ) : (
+              <ErrorBoundary fallbackMessage="Editor failed to load">
+                <EditorPanel />
+              </ErrorBoundary>
+            )}
           </div>
         </div>
       </div>
@@ -122,18 +139,24 @@ export default function AppShell() {
 
         <div className="flex flex-1 overflow-hidden">
           {/* Left sidebar */}
-          <aside className="w-[280px] shrink-0 border-r border-gray-200 bg-white overflow-y-auto">
-            <Sidebar />
+          <aside className="w-[300px] shrink-0 border-r border-gray-200 bg-white overflow-y-auto no-print">
+            <ErrorBoundary fallbackMessage="Sidebar failed to load">
+              <Sidebar />
+            </ErrorBoundary>
           </aside>
 
           {/* Center editor */}
-          <main className="flex-1 overflow-y-auto">
-            <EditorPanel />
+          <main id="editor-content" className="min-w-0 flex-1 overflow-y-auto">
+            <ErrorBoundary fallbackMessage="Editor failed to load">
+              <EditorPanel />
+            </ErrorBoundary>
           </main>
 
           {/* Right preview */}
-          <aside className="w-[420px] shrink-0 border-l border-gray-200 bg-gray-100 overflow-y-auto">
-            <PreviewPanel />
+          <aside className="w-[540px] shrink-0 border-l border-gray-200 bg-gray-100 overflow-y-auto">
+            <ErrorBoundary fallbackMessage="Preview failed to load">
+              <PreviewPanel />
+            </ErrorBoundary>
           </aside>
         </div>
       </div>
@@ -142,6 +165,12 @@ export default function AppShell() {
 
   return (
     <>
+      <a
+        href="#editor-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:bg-white focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:text-blue-600 focus:font-medium"
+      >
+        Skip to editor
+      </a>
       {layoutContent}
       <TemplateGallery />
     </>

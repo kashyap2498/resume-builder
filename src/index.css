@@ -29,6 +29,14 @@ body {
 
 /* Print styles */
 @media print {
+  @page {
+    margin: 0;
+    size: A4;
+  }
+  html, body {
+    width: 210mm;
+    height: 297mm;
+  }
   body * {
     visibility: hidden;
   }
@@ -39,6 +47,15 @@ body {
     position: absolute;
     left: 0;
     top: 0;
-    width: 100%;
+    width: 210mm !important;
+    height: 297mm !important;
+    overflow: hidden;
+    box-shadow: none !important;
+    border: none !important;
   }
+  header, nav, .no-print {
+    display: none !important;
+  }
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }

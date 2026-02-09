@@ -2,8 +2,8 @@
 // Resume Builder - Template Type Definitions
 // =============================================================================
 
-import { ComponentType } from 'react';
-import { Resume } from './resume';
+import type { ComponentType } from 'react';
+import type { Resume } from './resume';
 
 // -- Template Category --------------------------------------------------------
 

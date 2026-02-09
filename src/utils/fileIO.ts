@@ -5,6 +5,8 @@
 // a JSON file upload using the browser File API and Blob.
 
 import type { Resume } from '@/types/resume';
+import { resumeSchema } from '@/schemas';
+import { sanitizeImportedResume } from '@/utils/sanitize';
 
 /**
  * Triggers a browser download of the resume data as a JSON file.
@@ -58,7 +60,15 @@ export function loadResumeFromJsonFile(file: File): Promise<Resume> {
           return;
         }
 
-        resolve(data as Resume);
+        // Validate with Zod schema
+        const validation = resumeSchema.safeParse(data);
+        if (!validation.success) {
+          console.warn('Resume JSON validation warnings:', validation.error);
+        }
+
+        // Sanitize the imported data
+        const sanitized = sanitizeImportedResume(data);
+        resolve((sanitized ?? data) as Resume);
       } catch (error) {
         reject(
           new Error(

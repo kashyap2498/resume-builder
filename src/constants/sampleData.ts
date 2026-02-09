@@ -1,0 +1,101 @@
+import type { ResumeData } from '@/types/resume'
+
+export const sampleResumeData: ResumeData = {
+  contact: {
+    firstName: 'Alex',
+    lastName: 'Johnson',
+    email: 'alex.johnson@email.com',
+    phone: '(555) 987-6543',
+    location: 'San Francisco, CA',
+    website: 'https://alexjohnson.dev',
+    linkedin: 'https://linkedin.com/in/alexjohnson',
+    github: 'https://github.com/alexjohnson',
+    portfolio: '',
+    title: 'Full Stack Software Engineer',
+  },
+  summary: {
+    text: 'Passionate Full Stack Engineer with 5+ years of experience building scalable web applications. Proficient in React, Node.js, and cloud technologies. Led cross-functional teams to deliver products used by 500,000+ users. Committed to writing clean, maintainable code and mentoring junior developers.',
+  },
+  experience: [
+    {
+      id: 'sample-exp-1',
+      company: 'Acme Technologies',
+      position: 'Senior Software Engineer',
+      location: 'San Francisco, CA',
+      startDate: 'Jan 2022',
+      endDate: '',
+      current: true,
+      description: '',
+      highlights: [
+        'Architected and led development of a microservices platform serving 500K+ daily active users',
+        'Reduced API response times by 60% through caching strategies and database optimization',
+        'Mentored a team of 5 junior engineers, conducting code reviews and pair programming sessions',
+        'Implemented CI/CD pipelines that reduced deployment time from 2 hours to 15 minutes',
+      ],
+    },
+    {
+      id: 'sample-exp-2',
+      company: 'StartupCo',
+      position: 'Software Engineer',
+      location: 'Remote',
+      startDate: 'Jun 2019',
+      endDate: 'Dec 2021',
+      current: false,
+      description: '',
+      highlights: [
+        'Built a React-based dashboard that increased customer engagement by 40%',
+        'Developed RESTful APIs handling 50,000+ daily requests with 99.9% uptime',
+        'Collaborated with product and design teams to deliver 12 major features',
+      ],
+    },
+  ],
+  education: [
+    {
+      id: 'sample-edu-1',
+      institution: 'University of California, Berkeley',
+      degree: 'Bachelor of Science',
+      field: 'Computer Science',
+      startDate: '2015',
+      endDate: '2019',
+      gpa: '3.7',
+      description: '',
+      highlights: ["Dean's List 2017-2019", 'Senior thesis on distributed systems'],
+    },
+  ],
+  skills: [
+    {
+      id: 'sample-skill-1',
+      category: 'Languages',
+      items: [
+        { name: 'TypeScript', proficiency: 5 as const },
+        { name: 'Python', proficiency: 4 as const },
+        { name: 'Go', proficiency: 3 as const },
+        { name: 'SQL', proficiency: 4 as const },
+      ],
+    },
+    {
+      id: 'sample-skill-2',
+      category: 'Frameworks & Tools',
+      items: [
+        { name: 'React', proficiency: 5 as const },
+        { name: 'Node.js', proficiency: 5 as const },
+        { name: 'Docker', proficiency: 4 as const },
+        { name: 'AWS', proficiency: 4 as const },
+      ],
+    },
+  ],
+  projects: [],
+  certifications: [],
+  languages: [
+    { id: 'sample-lang-1', name: 'English', proficiency: 'native' },
+    { id: 'sample-lang-2', name: 'Spanish', proficiency: 'intermediate' },
+  ],
+  volunteer: [],
+  awards: [],
+  publications: [],
+  references: [],
+  hobbies: { items: ['Open Source Contributing', 'Rock Climbing', 'Photography'] },
+  affiliations: [],
+  courses: [],
+  customSections: [],
+}

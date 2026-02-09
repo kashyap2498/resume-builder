@@ -11,7 +11,9 @@ import type {
   ExperienceEntry,
   EducationEntry,
   SkillCategory,
+  CertificationEntry,
 } from '@/types/resume';
+
 
 // -- Regex Patterns -----------------------------------------------------------
 
@@ -39,22 +41,22 @@ interface SectionMatch {
 }
 
 const SECTION_HEADINGS: Record<string, RegExp> = {
-  summary: /^(?:summary|profile|objective|about\s*me|professional\s*summary|career\s*objective)/i,
+  summary: /^(?:summary|profile|objective|about\s*me|professional\s*summary|career\s*(?:summary|objective|profile)|executive\s*summary)\s*:?\s*$/i,
   experience:
-    /^(?:experience|work\s*experience|employment|professional\s*experience|work\s*history)/i,
-  education: /^(?:education|academic|academics|educational\s*background)/i,
+    /^(?:experience|work\s*experience|employment(?:\s*history)?|professional\s*experience|work\s*history|relevant\s*experience)\s*:?\s*$/i,
+  education: /^(?:education|academic(?:s|\s*background)?|educational\s*background)\s*:?\s*$/i,
   skills:
-    /^(?:skills|technical\s*skills|core\s*competencies|competencies|areas\s*of\s*expertise|proficiencies)/i,
-  projects: /^(?:projects|personal\s*projects|key\s*projects)/i,
+    /^(?:skills|technical\s*skills|core\s*skills|core\s*competencies|competencies|areas\s*of\s*expertise|proficiencies|key\s*skills|skills\s*(?:&|and)\s*(?:competencies|expertise)|skills\s*summary)\s*:?\s*$/i,
+  projects: /^(?:projects|personal\s*projects|key\s*projects|selected\s*projects)\s*:?\s*$/i,
   certifications:
-    /^(?:certifications?|licenses?|credentials|certifications?\s*(?:&|and)\s*licenses?)/i,
-  languages: /^(?:languages?)/i,
+    /^(?:certifications?|licenses?|credentials|certifications?\s*(?:&|and)\s*licenses?)\s*:?\s*$/i,
+  languages: /^(?:languages?)\s*:?\s*$/i,
   volunteer:
-    /^(?:volunteer|volunteering|community\s*(?:service|involvement))/i,
-  awards: /^(?:awards?|honors?|achievements?|awards?\s*(?:&|and)\s*honors?)/i,
-  publications: /^(?:publications?|papers?|research)/i,
-  references: /^(?:references?)/i,
-  interests: /^(?:interests?|hobbies|activities)/i,
+    /^(?:volunteer(?:\s*(?:experience|work))?|volunteering|community\s*(?:service|involvement))\s*:?\s*$/i,
+  awards: /^(?:awards?|honors?|achievements?|awards?\s*(?:&|and)\s*honors?)\s*:?\s*$/i,
+  publications: /^(?:publications?|papers?|research)\s*:?\s*$/i,
+  references: /^(?:references?)\s*:?\s*$/i,
+  interests: /^(?:interests?|hobbies(?:\s*(?:&|and)\s*interests?)?|activities)\s*:?\s*$/i,
 };
 
 function detectSections(text: string): SectionMatch[] {
@@ -66,18 +68,16 @@ function detectSections(text: string): SectionMatch[] {
     const line = lines[i].trim();
     if (!line) continue;
 
+    // Normalize line for heading matching: strip common decorators
+    const normalized = line.replace(/^[-=_*|:]+\s*/, '').replace(/\s*[-=_*|:]+$/, '').trim();
+
     for (const [type, regex] of Object.entries(SECTION_HEADINGS)) {
-      if (regex.test(line) && line.length < 60) {
+      if ((regex.test(line) || regex.test(normalized)) && line.length < 80) {
         // Close previous section
         if (currentSection) {
           currentSection.endIndex = i - 1;
           currentSection.content = lines
-            .slice(
-              lines.indexOf(lines[currentSection.startIndex + 1]) > -1
-                ? currentSection.startIndex + 1
-                : currentSection.startIndex,
-              i
-            )
+            .slice(currentSection.startIndex + 1, i)
             .join('\n');
           sections.push(currentSection);
         }
@@ -154,85 +154,186 @@ function extractContact(text: string): Partial<ContactData> {
 
 function extractExperience(content: string): ExperienceEntry[] {
   const entries: ExperienceEntry[] = [];
-  const blocks = content.split(/\n{2,}/);
+  const allLines = content.split('\n').map((l) => l.trim());
 
-  let currentEntry: Partial<ExperienceEntry> | null = null;
+  // First, try splitting by double newlines (paragraph breaks)
+  const blocks = content.split(/\n\s*\n/).filter((b) => b.trim());
 
-  for (const block of blocks) {
-    const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
-    if (lines.length === 0) continue;
+  // If we got multiple blocks, process each as a potential entry
+  if (blocks.length > 1) {
+    for (const block of blocks) {
+      const entry = parseExperienceBlock(block);
+      if (entry) entries.push(entry);
+    }
+    return entries;
+  }
 
-    // Check if this block starts a new entry (has a date range)
-    const blockText = lines.join(' ');
-    const dateRangeMatch = blockText.match(DATE_RANGE_REGEX);
+  // No paragraph breaks — detect entry boundaries by scanning lines
+  // for date ranges, which typically mark new entries.
+  const entryBlocks: string[][] = [];
+  let currentBlock: string[] = [];
 
-    if (dateRangeMatch || (lines[0] && lines[0].length < 80 && !lines[0].startsWith('-') && !lines[0].startsWith('*'))) {
-      // Save previous entry
-      if (currentEntry && (currentEntry.company || currentEntry.position)) {
-        entries.push(buildExperienceEntry(currentEntry));
+  for (const line of allLines) {
+    if (!line) {
+      // blank line could be a separator
+      if (currentBlock.length > 0) {
+        entryBlocks.push(currentBlock);
+        currentBlock = [];
       }
+      continue;
+    }
 
-      currentEntry = {};
+    // Check if this line looks like the start of a new entry:
+    // - Contains a date range
+    // - Is NOT a bullet point
+    const isBullet = /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014]/.test(line);
+    const hasDateRange = DATE_RANGE_REGEX.test(line);
 
-      // Try to extract company and position from the first couple of lines
-      if (lines.length >= 1) {
-        // Common formats:
-        // "Company Name" on one line, "Position" on next
-        // "Position at Company"
-        // "Position | Company | Date Range"
-        const firstLine = lines[0];
-        const atMatch = firstLine.match(/^(.+?)\s+at\s+(.+?)$/i);
-        if (atMatch) {
-          currentEntry.position = atMatch[1].trim();
-          currentEntry.company = atMatch[2].trim();
-        } else {
-          currentEntry.position = firstLine;
-          if (lines.length > 1 && !lines[1].startsWith('-') && !lines[1].startsWith('*')) {
-            currentEntry.company = lines[1].replace(DATE_RANGE_REGEX, '').trim();
-          }
-        }
+    // Reset regex lastIndex since we use 'g' flag
+    DATE_RANGE_REGEX.lastIndex = 0;
+
+    if (hasDateRange && !isBullet && currentBlock.length > 0) {
+      // This line starts a new entry — save the current one
+      entryBlocks.push(currentBlock);
+      currentBlock = [line];
+    } else {
+      currentBlock.push(line);
+    }
+  }
+  if (currentBlock.length > 0) {
+    entryBlocks.push(currentBlock);
+  }
+
+  // If we still got just one big block, try splitting on non-bullet
+  // lines that are short (look like titles/positions)
+  if (entryBlocks.length === 1 && allLines.filter(Boolean).length > 3) {
+    const lines = allLines.filter(Boolean);
+    const subBlocks: string[][] = [];
+    let sub: string[] = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const isBullet = /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014]/.test(line);
+      const prevIsBullet = i > 0 && /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014]/.test(lines[i - 1]);
+
+      // If we transition from bullet to non-bullet and the line is short,
+      // it's probably a new entry header
+      if (!isBullet && prevIsBullet && line.length < 80 && sub.length > 0) {
+        subBlocks.push(sub);
+        sub = [line];
+      } else {
+        sub.push(line);
       }
+    }
+    if (sub.length > 0) subBlocks.push(sub);
 
-      // Extract dates
-      if (dateRangeMatch) {
-        const dateParts = dateRangeMatch[0].split(/[-–—]|to/i).map((d) => d.trim());
-        if (dateParts.length >= 2) {
-          currentEntry.startDate = dateParts[0];
-          const endPart = dateParts[dateParts.length - 1].toLowerCase();
-          if (endPart === 'present' || endPart === 'current') {
-            currentEntry.current = true;
-            currentEntry.endDate = '';
-          } else {
-            currentEntry.endDate = dateParts[dateParts.length - 1];
-          }
-        }
+    if (subBlocks.length > 1) {
+      for (const block of subBlocks) {
+        const entry = parseExperienceBlock(block.join('\n'));
+        if (entry) entries.push(entry);
       }
+      return entries;
+    }
+  }
 
-      // Extract bullet points as highlights
-      const highlights: string[] = [];
-      for (const line of lines) {
-        if (line.startsWith('-') || line.startsWith('*') || line.startsWith('\u2022')) {
-          highlights.push(line.replace(/^[-*\u2022]\s*/, ''));
-        }
-      }
-      currentEntry.highlights = highlights;
-    } else if (currentEntry) {
-      // Add bullet points to the current entry
-      for (const line of lines) {
-        if (line.startsWith('-') || line.startsWith('*') || line.startsWith('\u2022')) {
-          currentEntry.highlights = currentEntry.highlights || [];
-          currentEntry.highlights.push(line.replace(/^[-*\u2022]\s*/, ''));
-        }
+  // Process each detected block
+  for (const block of entryBlocks) {
+    const entry = parseExperienceBlock(block.join('\n'));
+    if (entry) entries.push(entry);
+  }
+
+  return entries;
+}
+
+function parseExperienceBlock(blockText: string): ExperienceEntry | null {
+  const lines = blockText.split('\n').map((l) => l.trim()).filter(Boolean);
+  if (lines.length === 0) return null;
+
+  const entry: Partial<ExperienceEntry> = {};
+  const fullText = lines.join(' ');
+
+  // Reset global regex
+  DATE_RANGE_REGEX.lastIndex = 0;
+  const dateRangeMatch = fullText.match(DATE_RANGE_REGEX);
+
+  // Extract dates
+  if (dateRangeMatch) {
+    const dateParts = dateRangeMatch[0].split(/[-–—]|to/i).map((d) => d.trim()).filter(Boolean);
+    if (dateParts.length >= 2) {
+      entry.startDate = dateParts[0];
+      const endPart = dateParts[dateParts.length - 1].toLowerCase();
+      if (endPart === 'present' || endPart === 'current') {
+        entry.current = true;
+        entry.endDate = '';
+      } else {
+        entry.endDate = dateParts[dateParts.length - 1];
       }
     }
   }
 
-  // Don't forget the last entry
-  if (currentEntry && (currentEntry.company || currentEntry.position)) {
-    entries.push(buildExperienceEntry(currentEntry));
+  // Separate header lines (position, company, dates) from content lines (highlights)
+  // Header lines are the first few short non-bullet lines; everything else is a highlight.
+  const BULLET_RE = /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014\u25BA\u25B8\u25B6\u2023\u27A4\u2192>\u2605\u2606\u203A\u276F]/;
+  const headerLines: string[] = [];
+  const highlights: string[] = [];
+  let doneWithHeaders = false;
+
+  for (const line of lines) {
+    const isBullet = BULLET_RE.test(line);
+
+    if (isBullet) {
+      doneWithHeaders = true;
+      highlights.push(line.replace(/^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014\u25BA\u25B8\u25B6\u2023\u27A4\u2192>\u2605\u2606\u203A\u276F]\s*/, ''));
+    } else if (!doneWithHeaders && headerLines.length < 3) {
+      // First few non-bullet lines are headers
+      headerLines.push(line);
+    } else {
+      // Non-bullet line after headers or after bullets started — treat as highlight
+      // (many resumes use plain text descriptions without bullets)
+      doneWithHeaders = true;
+      if (line.length > 15) {
+        highlights.push(line);
+      }
+    }
   }
 
-  return entries;
+  // Parse header lines for position and company
+  if (headerLines.length >= 1) {
+    const firstLine = headerLines[0];
+
+    // Remove date range from the line for cleaner extraction
+    DATE_RANGE_REGEX.lastIndex = 0;
+    const cleanFirst = firstLine.replace(DATE_RANGE_REGEX, '').trim();
+
+    // "Position at Company" pattern
+    const atMatch = cleanFirst.match(/^(.+?)\s+at\s+(.+?)$/i);
+    // "Position | Company" or "Position - Company" pattern
+    const separatorMatch = cleanFirst.match(/^(.+?)\s*[|–—]\s*(.+?)$/);
+
+    if (atMatch) {
+      entry.position = atMatch[1].trim();
+      entry.company = atMatch[2].trim();
+    } else if (separatorMatch) {
+      entry.position = separatorMatch[1].trim();
+      entry.company = separatorMatch[2].trim();
+    } else {
+      entry.position = cleanFirst;
+
+      if (headerLines.length >= 2) {
+        DATE_RANGE_REGEX.lastIndex = 0;
+        entry.company = headerLines[1].replace(DATE_RANGE_REGEX, '').trim();
+      }
+    }
+  }
+
+  entry.highlights = highlights;
+
+  // Only create an entry if we found meaningful content
+  if (!entry.company && !entry.position && highlights.length === 0) {
+    return null;
+  }
+
+  return buildExperienceEntry(entry);
 }
 
 function buildExperienceEntry(partial: Partial<ExperienceEntry>): ExperienceEntry {
@@ -253,7 +354,41 @@ function buildExperienceEntry(partial: Partial<ExperienceEntry>): ExperienceEntr
 
 function extractEducation(content: string): EducationEntry[] {
   const entries: EducationEntry[] = [];
-  const blocks = content.split(/\n{2,}/);
+
+  // Split on paragraph breaks first, then fall back to detecting entry boundaries
+  let blocks = content.split(/\n\s*\n/).filter((b) => b.trim());
+
+  // If only one block, try to split on lines that look like institution names
+  // (non-bullet, short, contain degree keywords or capitalized words)
+  if (blocks.length <= 1) {
+    const allLines = content.split('\n').map((l) => l.trim()).filter(Boolean);
+    const degreePattern = /(?:Bachelor|Master|Doctor|Ph\.?D|B\.?S\.?|B\.?A\.?|M\.?S\.?|M\.?A\.?|M\.?B\.?A\.?|Associate|University|College|Institute|School)/i;
+    const subBlocks: string[][] = [];
+    let current: string[] = [];
+
+    for (let i = 0; i < allLines.length; i++) {
+      const line = allLines[i];
+      const isBullet = /^[-*\u2022\u25CF\u25CB\u25AA\u25AB]/.test(line);
+
+      // Start new block if this non-bullet line has degree/institution keywords
+      // and we already have content
+      if (!isBullet && current.length > 0 && degreePattern.test(line)) {
+        // Check if current block already has institution/degree content
+        const currentText = current.join(' ');
+        if (degreePattern.test(currentText)) {
+          subBlocks.push(current);
+          current = [line];
+          continue;
+        }
+      }
+      current.push(line);
+    }
+    if (current.length > 0) subBlocks.push(current);
+
+    if (subBlocks.length > 1) {
+      blocks = subBlocks.map((b) => b.join('\n'));
+    }
+  }
 
   for (const block of blocks) {
     const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
@@ -271,14 +406,16 @@ function extractEducation(content: string): EducationEntry[] {
     }
 
     // Try to extract dates
+    DATE_RANGE_REGEX.lastIndex = 0;
     const dateRangeMatch = blockText.match(DATE_RANGE_REGEX);
     if (dateRangeMatch) {
-      const dateParts = dateRangeMatch[0].split(/[-–—]|to/i).map((d) => d.trim());
+      const dateParts = dateRangeMatch[0].split(/[-–—]|to/i).map((d) => d.trim()).filter(Boolean);
       if (dateParts.length >= 2) {
         entry.startDate = dateParts[0];
         entry.endDate = dateParts[dateParts.length - 1];
       }
     } else {
+      DATE_REGEX.lastIndex = 0;
       const singleDate = blockText.match(DATE_REGEX);
       if (singleDate) {
         entry.endDate = singleDate[0];
@@ -295,18 +432,30 @@ function extractEducation(content: string): EducationEntry[] {
     if (lines.length >= 1 && !entry.degree) {
       entry.institution = lines[0];
     } else if (lines.length >= 1) {
-      // If we already found the degree, first line is probably the institution
-      entry.institution = lines[0].replace(degreeMatch?.[0] || '', '').trim();
+      // If we found the degree inline, first line is probably the institution
+      DATE_RANGE_REGEX.lastIndex = 0;
+      entry.institution = lines[0]
+        .replace(degreeMatch?.[0] || '', '')
+        .replace(DATE_RANGE_REGEX, '')
+        .trim();
       if (!entry.institution && lines.length > 1) {
         entry.institution = lines[1];
+      }
+    }
+
+    // Extract field of study from degree string
+    if (entry.degree) {
+      const fieldMatch = entry.degree.match(/(?:in|of)\s+(.+)$/i);
+      if (fieldMatch) {
+        entry.field = fieldMatch[1].trim();
       }
     }
 
     // Extract highlights
     const highlights: string[] = [];
     for (const line of lines) {
-      if (line.startsWith('-') || line.startsWith('*') || line.startsWith('\u2022')) {
-        highlights.push(line.replace(/^[-*\u2022]\s*/, ''));
+      if (/^[-*\u2022\u25CF\u25CB\u25AA\u25AB]/.test(line)) {
+        highlights.push(line.replace(/^[-*\u2022\u25CF\u25CB\u25AA\u25AB]\s*/, ''));
       }
     }
 
@@ -394,6 +543,76 @@ function extractSkills(content: string): SkillCategory[] {
   return categories;
 }
 
+// -- Certification Extraction -------------------------------------------------
+
+function extractCertifications(content: string): CertificationEntry[] {
+  const entries: CertificationEntry[] = [];
+
+  // Split on paragraph breaks or individual lines
+  const blocks = content.split(/\n\s*\n/).filter((b) => b.trim());
+  const items = blocks.length > 1
+    ? blocks
+    : content.split('\n').map((l) => l.trim()).filter(Boolean);
+
+  for (const item of items) {
+    const lines = item.split('\n').map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) continue;
+
+    const entry: Partial<CertificationEntry> = {};
+
+    // Clean bullet prefix
+    const firstLine = lines[0].replace(/^[-*\u2022\u25CF\u25CB\u25AA\u25AB]\s*/, '');
+
+    // Try "Name - Issuer" or "Name | Issuer" or "Name, Issuer"
+    const separatorMatch = firstLine.match(/^(.+?)\s*[|\u2013\u2014,]\s*(.+?)$/);
+    if (separatorMatch) {
+      entry.name = separatorMatch[1].trim();
+      entry.issuer = separatorMatch[2].replace(DATE_REGEX, '').trim();
+    } else {
+      entry.name = firstLine;
+    }
+
+    // Try to find issuer on second line if not found
+    if (!entry.issuer && lines.length >= 2) {
+      entry.issuer = lines[1].replace(/^[-*\u2022]\s*/, '').replace(DATE_REGEX, '').trim();
+    }
+
+    // Extract date
+    DATE_REGEX.lastIndex = 0;
+    const blockText = lines.join(' ');
+    const dateMatch = blockText.match(DATE_REGEX);
+    if (dateMatch) {
+      entry.date = dateMatch[0];
+    }
+
+    // Extract credential ID
+    const credMatch = blockText.match(/(?:credential\s*(?:id)?|id)[:\s]*([A-Za-z0-9_-]+)/i);
+    if (credMatch) {
+      entry.credentialId = credMatch[1];
+    }
+
+    // Extract URL
+    const urlMatch = blockText.match(URL_REGEX);
+    if (urlMatch) {
+      entry.url = urlMatch[0];
+    }
+
+    if (entry.name) {
+      entries.push({
+        id: generateId(),
+        name: entry.name,
+        issuer: entry.issuer || '',
+        date: entry.date || '',
+        expiryDate: entry.expiryDate || '',
+        credentialId: entry.credentialId || '',
+        url: entry.url || '',
+      });
+    }
+  }
+
+  return entries;
+}
+
 // -- Helpers ------------------------------------------------------------------
 
 let idCounter = 0;
@@ -449,6 +668,10 @@ export function parseResumeText(text: string): Partial<ResumeData> {
         result.skills = extractSkills(section.content);
         break;
 
+      case 'certifications':
+        result.certifications = extractCertifications(section.content);
+        break;
+
       case 'interests':
         result.hobbies = {
           items: section.content
@@ -458,9 +681,31 @@ export function parseResumeText(text: string): Partial<ResumeData> {
         };
         break;
 
-      // Other sections can be added here as needed
       default:
         break;
+    }
+  }
+
+  // If no explicit summary section was found, try to extract summary text
+  // from between the contact info area and the first detected section heading.
+  if (!result.summary) {
+    const firstSectionStart = sections.length > 0 ? sections[0].startIndex : -1;
+    if (firstSectionStart > 3) {
+      // There's content between the header area and the first section
+      const lines = text.split('\n');
+      const candidateLines: string[] = [];
+      // Start after the likely contact area (first ~5 lines) and before the first section
+      const startLine = Math.min(5, firstSectionStart);
+      for (let i = startLine; i < firstSectionStart; i++) {
+        const line = lines[i]?.trim();
+        if (line && !EMAIL_REGEX.test(line) && !PHONE_REGEX.test(line) && !URL_REGEX.test(line)) {
+          candidateLines.push(line);
+        }
+      }
+      const summaryText = candidateLines.join(' ').trim();
+      if (summaryText.length > 20) {
+        result.summary = { text: summaryText };
+      }
     }
   }
 

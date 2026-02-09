@@ -8,21 +8,26 @@ import {
   ArrowLeft,
   Download,
   FileDown,
+  FileText,
   Upload,
   LayoutGrid,
   Check,
   Loader2,
   Clock,
+  Bookmark,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useResumeStore } from '@/store/resumeStore'
 import { useResumeListStore } from '@/store/resumeListStore'
 import { useUIStore } from '@/store/uiStore'
 import { usePdfExport } from '@/hooks/usePdfExport'
+import { useDocxExport } from '@/hooks/useDocxExport'
 import { useAutoSave } from '@/hooks/useAutoSave'
+import { useVersionStore } from '@/store/versionStore'
 import { ImportModal } from '@/components/import'
 import { saveResumeAsJson } from '@/utils/fileIO'
 import { getTemplate } from '@/templates'
+import { trackEvent } from '@/utils/analytics'
 import React from 'react'
 
 export default function TopBar() {
@@ -40,8 +45,10 @@ export default function TopBar() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const { exportPdf, isExporting } = usePdfExport()
+  const { exportDocx, isExporting: isDocxExporting } = useDocxExport()
   const { lastSaved, isSaving } = useAutoSave(currentResume)
   const showImportModal = useUIStore((s) => s.showImportModal)
+  const saveNewVersion = useVersionStore((s) => s.saveNewVersion)
 
   const resumeName = currentResume?.name ?? 'Untitled Resume'
   const templateId = currentResume?.templateId ?? ''
@@ -85,6 +92,28 @@ export default function TopBar() {
     setTimeout(() => setShowSaved(false), 2000)
   }
 
+  const handleExportDocx = async () => {
+    if (!currentResume) return
+    try {
+      await exportDocx(currentResume)
+      trackEvent('resume_exported_docx')
+    } catch (error) {
+      console.error('DOCX export failed:', error)
+      alert('DOCX export failed. Please try again.')
+    }
+  }
+
+  const handleSaveVersion = async () => {
+    if (!currentResume) return
+    const label = prompt('Version label:', `Version ${new Date().toLocaleString()}`)
+    if (label === null) return
+    try {
+      await saveNewVersion(currentResume.id, currentResume, label || `Version ${new Date().toLocaleString()}`)
+    } catch (error) {
+      console.error('Save version failed:', error)
+    }
+  }
+
   const handleExportPDF = async () => {
     if (!currentResume) return
 
@@ -102,6 +131,7 @@ export default function TopBar() {
         React.createElement(PdfComponent, { resume: currentResume }),
         fileName,
       )
+      trackEvent('resume_exported_pdf')
     } catch (error) {
       console.error('PDF export failed:', error)
       alert('PDF export failed. Please try again.')
@@ -122,7 +152,7 @@ export default function TopBar() {
   }
 
   return (
-    <header className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5 shrink-0 shadow-sm">
+    <header className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5 shrink-0 shadow-sm no-print">
       {/* Left side */}
       <div className="flex items-center gap-3 min-w-0">
         {/* Back button */}
@@ -224,11 +254,32 @@ export default function TopBar() {
         <Button
           variant="ghost"
           size="sm"
+          icon={isDocxExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+          onClick={handleExportDocx}
+          disabled={isDocxExporting}
+          title="Export as DOCX"
+        >
+          <span className="hidden sm:inline">{isDocxExporting ? 'Exporting...' : 'DOCX'}</span>
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
           icon={<Upload className="h-4 w-4" />}
           onClick={toggleImportModal}
           title="Import resume"
         >
           <span className="hidden sm:inline">Import</span>
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Bookmark className="h-4 w-4" />}
+          onClick={handleSaveVersion}
+          title="Save Version"
+        >
+          <span className="hidden sm:inline">Version</span>
         </Button>
 
         <div className="h-6 w-px bg-gray-200" />

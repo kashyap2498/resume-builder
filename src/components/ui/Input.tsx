@@ -35,6 +35,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             id={inputId}
+            spellCheck={true}
             className={cn(
               'w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900',
               'placeholder:text-gray-400',
@@ -44,7 +45,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               error
                 ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                 : 'border-gray-200 focus:border-blue-500 focus:ring-blue-200',
-              icon && 'pl-10',
+              icon ? 'pl-10' : undefined,
               className
             )}
             aria-invalid={error ? 'true' : undefined}

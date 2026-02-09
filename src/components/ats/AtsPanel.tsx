@@ -6,23 +6,31 @@
 
 import { useState, useCallback } from 'react';
 import { FileText } from 'lucide-react';
-import { Button, TextArea } from '@/components/ui';
+import { Button, TextArea, Select } from '@/components/ui';
 import { useResumeStore } from '@/store/resumeStore';
 import { useAtsScore } from '@/hooks/useAtsScore';
+import { INDUSTRY_KEYWORDS, type IndustryId } from '@/constants/atsKeywords';
 import { AtsScoreCard } from './AtsScoreCard';
 import { KeywordAnalysis } from './KeywordAnalysis';
 import { FormattingWarnings } from './FormattingWarnings';
 
+const INDUSTRY_OPTIONS = [
+  { value: '', label: 'No industry selected' },
+  ...INDUSTRY_KEYWORDS.map((i) => ({ value: i.id, label: i.name })),
+];
+
 export function AtsPanel() {
   const [jobDescription, setJobDescription] = useState('');
   const [analyzedDescription, setAnalyzedDescription] = useState('');
+  const [selectedIndustry, setSelectedIndustry] = useState<IndustryId | ''>('');
 
   const currentResume = useResumeStore((s) => s.currentResume);
   const resumeData = currentResume?.data ?? null;
 
   const { score, breakdown, keywords, isCalculating } = useAtsScore(
     resumeData,
-    analyzedDescription
+    analyzedDescription,
+    selectedIndustry || undefined
   );
 
   const handleAnalyze = useCallback(() => {
@@ -37,6 +45,17 @@ export function AtsPanel() {
       <div className="flex items-center gap-2">
         <FileText className="h-5 w-5 text-blue-600" />
         <h2 className="text-lg font-semibold text-gray-900">ATS Analysis</h2>
+      </div>
+
+      {/* Industry Selector */}
+      <div>
+        <Select
+          label="Industry"
+          options={INDUSTRY_OPTIONS}
+          value={selectedIndustry}
+          onChange={(e) => setSelectedIndustry(e.target.value as IndustryId | '')}
+          hint="Select an industry to score against common keywords even without a job description."
+        />
       </div>
 
       {/* Job Description Input */}

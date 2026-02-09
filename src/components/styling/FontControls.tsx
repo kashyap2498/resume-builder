@@ -8,6 +8,7 @@ import { useStylingStore } from '@/store/stylingStore';
 import { FONT_OPTIONS } from '@/constants/fonts';
 import { Select } from '@/components/ui/Select';
 import { Slider } from '@/components/ui/Slider';
+import { loadFont } from '@/utils/fontLoader';
 import type { FontSizes } from '@/types/styling';
 
 // -- Font size slider config --------------------------------------------------
@@ -42,6 +43,10 @@ export function FontControls() {
 
   const handleFamilyChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const fontOption = FONT_OPTIONS.find((f) => f.family === e.target.value);
+      if (fontOption) {
+        loadFont(fontOption.id);
+      }
       setFont({ family: e.target.value });
     },
     [setFont],
@@ -49,6 +54,10 @@ export function FontControls() {
 
   const handleHeaderFamilyChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const fontOption = FONT_OPTIONS.find((f) => f.family === e.target.value);
+      if (fontOption) {
+        loadFont(fontOption.id);
+      }
       setFont({ headerFamily: e.target.value });
     },
     [setFont],

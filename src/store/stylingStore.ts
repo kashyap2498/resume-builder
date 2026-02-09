@@ -49,15 +49,6 @@ const defaultLayout: LayoutStyling = {
   showDividers: true,
 };
 
-// -- Sync helper --------------------------------------------------------------
-
-function syncToResume(styling: ResumeStyling) {
-  const { currentResume, updateStyling } = useResumeStore.getState();
-  if (currentResume) {
-    updateStyling(styling);
-  }
-}
-
 // -- Store Shape --------------------------------------------------------------
 
 interface StylingState {
@@ -81,7 +72,7 @@ export type StylingStore = StylingState & StylingActions;
 
 // -- Store --------------------------------------------------------------------
 
-export const useStylingStore = create<StylingStore>((set, get) => ({
+export const useStylingStore = create<StylingStore>((set) => ({
   // -- State ------------------------------------------------------------------
   font: { ...defaultFonts },
   colors: { ...defaultColors },
@@ -95,8 +86,6 @@ export const useStylingStore = create<StylingStore>((set, get) => ({
       const merged = { ...state.font, ...font };
       return { font: merged };
     });
-    const s = get();
-    syncToResume({ font: s.font, colors: s.colors, layout: s.layout, themeId: s.themeId });
   },
 
   setColors: (colors) => {
@@ -104,8 +93,6 @@ export const useStylingStore = create<StylingStore>((set, get) => ({
       const merged = { ...state.colors, ...colors };
       return { colors: merged, themeId: null };
     });
-    const s = get();
-    syncToResume({ font: s.font, colors: s.colors, layout: s.layout, themeId: s.themeId });
   },
 
   setLayout: (layout) => {
@@ -113,14 +100,10 @@ export const useStylingStore = create<StylingStore>((set, get) => ({
       const merged = { ...state.layout, ...layout };
       return { layout: merged };
     });
-    const s = get();
-    syncToResume({ font: s.font, colors: s.colors, layout: s.layout, themeId: s.themeId });
   },
 
   applyTheme: (theme) => {
     set({ colors: { ...theme.colors }, themeId: theme.id });
-    const s = get();
-    syncToResume({ font: s.font, colors: s.colors, layout: s.layout, themeId: s.themeId });
   },
 
   resetToDefaults: () => {
@@ -130,8 +113,6 @@ export const useStylingStore = create<StylingStore>((set, get) => ({
       layout: { ...defaultLayout },
       themeId: null,
     });
-    const s = get();
-    syncToResume({ font: s.font, colors: s.colors, layout: s.layout, themeId: s.themeId });
   },
 
   hydrate: (styling) => {
@@ -143,3 +124,12 @@ export const useStylingStore = create<StylingStore>((set, get) => ({
     });
   },
 }));
+
+// -- Auto-sync styling changes to the resume store ----------------------------
+
+useStylingStore.subscribe((state) => {
+  const { currentResume, updateStyling } = useResumeStore.getState();
+  if (currentResume) {
+    updateStyling({ font: state.font, colors: state.colors, layout: state.layout, themeId: state.themeId });
+  }
+});

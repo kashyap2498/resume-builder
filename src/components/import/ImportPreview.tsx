@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { Button, Input, TextArea } from '@/components/ui';
-import type { ResumeData } from '@/types/resume';
+import type { ResumeData, CertificationEntry } from '@/types/resume';
 
 interface ImportPreviewProps {
   parsedData: Partial<ResumeData>;
@@ -57,19 +57,43 @@ export function ImportPreview({
     })) ?? []
   );
 
+  const [certifications, setCertifications] = useState(
+    parsedData.certifications?.map((cert) => ({ ...cert })) ?? []
+  );
+
+  const hasAnyData =
+    contact.firstName.trim() !== '' ||
+    contact.lastName.trim() !== '' ||
+    contact.email.trim() !== '' ||
+    contact.phone.trim() !== '' ||
+    summary.trim() !== '' ||
+    experience.length > 0 ||
+    education.length > 0 ||
+    skills.length > 0 ||
+    certifications.length > 0;
+
   const handleApply = () => {
-    const data: Partial<ResumeData> = {
-      contact: { ...contact },
-      summary: { text: summary },
-      experience,
-      education,
-      skills,
-    };
+    const data: Partial<ResumeData> = {};
+
+    // Only include sections that have actual data
+    const hasContact = Object.values(contact).some((v) => v.trim() !== '');
+    if (hasContact) data.contact = { ...contact };
+    if (summary.trim()) data.summary = { text: summary };
+    if (experience.length > 0) data.experience = experience;
+    if (education.length > 0) data.education = education;
+    if (skills.length > 0) data.skills = skills;
+    if (certifications.length > 0) data.certifications = certifications;
+
     onApply(data);
   };
 
   return (
     <div className="max-h-[60vh] space-y-6 overflow-y-auto pr-1">
+      {!hasAnyData && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          No data could be extracted from this file. The file may be image-based or in an unsupported format. You can fill in the fields manually below.
+        </div>
+      )}
       {/* Contact Info */}
       <section>
         <h3 className="mb-3 text-sm font-semibold text-gray-900">
@@ -435,12 +459,98 @@ export function ImportPreview({
         </section>
       )}
 
+      {/* Certifications */}
+      {certifications.length > 0 && (
+        <section>
+          <h3 className="mb-3 text-sm font-semibold text-gray-900">
+            Certifications ({certifications.length})
+          </h3>
+          <div className="space-y-4">
+            {certifications.map((cert, certIdx) => (
+              <div
+                key={cert.id}
+                className="relative rounded-lg border border-gray-200 bg-gray-50 p-4"
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCertifications((prev) =>
+                      prev.filter((_, i) => i !== certIdx)
+                    )
+                  }
+                  className="absolute right-2 top-2 rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                  aria-label="Remove certification"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    label="Name"
+                    value={cert.name}
+                    onChange={(e) =>
+                      setCertifications((prev) =>
+                        prev.map((item, i) =>
+                          i === certIdx
+                            ? { ...item, name: e.target.value }
+                            : item
+                        )
+                      )
+                    }
+                  />
+                  <Input
+                    label="Issuer"
+                    value={cert.issuer}
+                    onChange={(e) =>
+                      setCertifications((prev) =>
+                        prev.map((item, i) =>
+                          i === certIdx
+                            ? { ...item, issuer: e.target.value }
+                            : item
+                        )
+                      )
+                    }
+                  />
+                  <Input
+                    label="Date"
+                    value={cert.date}
+                    onChange={(e) =>
+                      setCertifications((prev) =>
+                        prev.map((item, i) =>
+                          i === certIdx
+                            ? { ...item, date: e.target.value }
+                            : item
+                        )
+                      )
+                    }
+                  />
+                  <Input
+                    label="Credential ID"
+                    value={cert.credentialId}
+                    onChange={(e) =>
+                      setCertifications((prev) =>
+                        prev.map((item, i) =>
+                          i === certIdx
+                            ? { ...item, credentialId: e.target.value }
+                            : item
+                        )
+                      )
+                    }
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Actions */}
       <div className="flex items-center justify-end gap-3 border-t border-gray-200 pt-4">
         <Button variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
-        <Button onClick={handleApply}>Apply to Resume</Button>
+        <Button onClick={handleApply} disabled={!hasAnyData}>
+          Apply to Resume
+        </Button>
       </div>
     </div>
   );

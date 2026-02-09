@@ -6,7 +6,7 @@ import { create } from 'zustand';
 
 // -- Sidebar Tab Type ---------------------------------------------------------
 
-export type SidebarTab = 'sections' | 'styling' | 'ats';
+export type SidebarTab = 'sections' | 'styling' | 'ats' | 'versions';
 
 // -- Store Shape --------------------------------------------------------------
 
@@ -16,6 +16,8 @@ interface UIState {
   previewZoom: number;
   showTemplateGallery: boolean;
   showImportModal: boolean;
+  showOnboarding: boolean;
+  onboardingStep: number;
   isMobile: boolean;
   isTablet: boolean;
 }
@@ -27,6 +29,8 @@ interface UIActions {
   toggleTemplateGallery: () => void;
   toggleImportModal: () => void;
   setShowImportModal: (show: boolean) => void;
+  setShowOnboarding: (show: boolean) => void;
+  setOnboardingStep: (step: number) => void;
   setDeviceSize: (width: number) => void;
 }
 
@@ -46,6 +50,8 @@ export const useUIStore = create<UIStore>((set) => ({
   previewZoom: 100,
   showTemplateGallery: false,
   showImportModal: false,
+  showOnboarding: false,
+  onboardingStep: 0,
   isMobile: false,
   isTablet: false,
 
@@ -65,6 +71,10 @@ export const useUIStore = create<UIStore>((set) => ({
     set((state) => ({ showImportModal: !state.showImportModal })),
 
   setShowImportModal: (show) => set({ showImportModal: show }),
+
+  setShowOnboarding: (show) => set({ showOnboarding: show }),
+
+  setOnboardingStep: (step) => set({ onboardingStep: step }),
 
   setDeviceSize: (width) =>
     set({

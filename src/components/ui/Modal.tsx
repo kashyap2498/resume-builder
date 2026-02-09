@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useRef, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -34,10 +34,13 @@ const panelVariants = {
     opacity: 1,
     scale: 1,
     y: 0,
-    transition: { type: 'spring', stiffness: 400, damping: 30 },
+    transition: { type: 'spring' as const, stiffness: 400, damping: 30 },
   },
   exit: { opacity: 0, scale: 0.95, y: 10, transition: { duration: 0.15 } },
 };
+
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export function Modal({
   open,
@@ -50,16 +53,61 @@ export function Modal({
   closeOnBackdrop = true,
   closeOnEscape = true,
 }: ModalProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+
+  // Focus trap and Escape key handling
   useEffect(() => {
-    if (!open || !closeOnEscape) return;
+    if (!open) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && closeOnEscape) {
+        onClose();
+        return;
+      }
+
+      if (e.key === 'Tab' && panelRef.current) {
+        const focusableElements = panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+        if (focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          // Shift+Tab: if focus is on first element, wrap to last
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          // Tab: if focus is on last element, wrap to first
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, onClose, closeOnEscape]);
+
+  // Focus first focusable element when modal opens
+  useEffect(() => {
+    if (!open || !panelRef.current) return;
+
+    // Small delay to let the animation start and DOM settle
+    const timerId = setTimeout(() => {
+      if (!panelRef.current) return;
+      const firstFocusable = panelRef.current.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+      if (firstFocusable) {
+        firstFocusable.focus();
+      }
+    }, 50);
+
+    return () => clearTimeout(timerId);
+  }, [open]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -91,9 +139,11 @@ export function Modal({
 
           {/* Panel */}
           <motion.div
+            ref={panelRef}
             role="dialog"
             aria-modal="true"
-            aria-label={title}
+            aria-labelledby={title ? titleId : undefined}
+            aria-label={title ? undefined : 'Dialog'}
             className={cn(
               'relative z-10 w-full rounded-xl bg-white shadow-2xl',
               sizeStyles[size],
@@ -107,7 +157,7 @@ export function Modal({
             {/* Header */}
             {title && (
               <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 id={titleId} className="text-lg font-semibold text-gray-900">
                   {title}
                 </h2>
                 <button

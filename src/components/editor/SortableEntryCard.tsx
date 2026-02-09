@@ -16,7 +16,7 @@ interface SortableEntryCardProps {
 }
 
 export function SortableEntryCard({ id, ...props }: SortableEntryCardProps) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id });
 
   const style = {
@@ -25,7 +25,13 @@ export function SortableEntryCard({ id, ...props }: SortableEntryCardProps) {
   };
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      aria-label={`${props.title || 'Untitled'} entry${props.subtitle ? `, ${props.subtitle}` : ''}`}
+      aria-roledescription="sortable"
+      aria-grabbed={isDragging}
+    >
       <EntryCard {...props} dragHandleProps={{ ...attributes, ...listeners }} />
     </div>
   );

@@ -11,6 +11,7 @@
 // Returns a detailed breakdown with per-category scores and suggestions.
 
 import type { ResumeData } from '@/types/resume';
+import { getKeywordsByIndustry, type IndustryId } from '@/constants/atsKeywords';
 
 // -- Types --------------------------------------------------------------------
 
@@ -159,6 +160,42 @@ function getAllHighlights(data: ResumeData): string[] {
   return highlights;
 }
 
+// -- TF-IDF Helper ------------------------------------------------------------
+
+/**
+ * Compute a simple TF-IDF score for a set of target keywords against resume text.
+ * Returns a map of keyword -> TF-IDF score.
+ */
+function computeTfIdf(
+  resumeText: string,
+  targetKeywords: string[]
+): Map<string, number> {
+  const words = resumeText
+    .toLowerCase()
+    .replace(/[^a-z0-9+#.\s-]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 2);
+
+  const totalWords = words.length || 1;
+  const wordFreq = new Map<string, number>();
+  for (const w of words) {
+    wordFreq.set(w, (wordFreq.get(w) || 0) + 1);
+  }
+
+  // IDF is approximated: log(totalKeywords / (1 + number of keywords that appear in resume))
+  const totalTarget = targetKeywords.length || 1;
+  const appearsCount = targetKeywords.filter((kw) => resumeText.toLowerCase().includes(kw.toLowerCase())).length || 1;
+
+  const result = new Map<string, number>();
+  for (const kw of targetKeywords) {
+    const kwLower = kw.toLowerCase();
+    const tf = (wordFreq.get(kwLower) || 0) / totalWords;
+    const idf = Math.log(totalTarget / appearsCount);
+    result.set(kw, tf * idf);
+  }
+  return result;
+}
+
 // -- Scoring Functions --------------------------------------------------------
 
 /**
@@ -166,11 +203,60 @@ function getAllHighlights(data: ResumeData): string[] {
  */
 function scoreKeywordMatch(
   data: ResumeData,
-  jobDescription: string
+  jobDescription: string,
+  industryId?: IndustryId
 ): { category: CategoryScore; matched: string[]; missing: string[] } {
   const suggestions: string[] = [];
 
+  // When no job description but an industry is provided, use industry keywords
   if (!jobDescription.trim()) {
+    if (industryId) {
+      const industryKeywords = getKeywordsByIndustry(industryId);
+      if (industryKeywords.length === 0) {
+        return {
+          category: {
+            score: 20,
+            maxScore: 40,
+            suggestions: [
+              'Provide a job description to get a detailed keyword match analysis.',
+            ],
+          },
+          matched: [],
+          missing: [],
+        };
+      }
+
+      const resumeText = getResumeFullText(data).toLowerCase();
+      const tfIdfScores = computeTfIdf(resumeText, industryKeywords);
+
+      const matched: string[] = [];
+      const missing: string[] = [];
+
+      for (const kw of industryKeywords) {
+        if (resumeText.includes(kw.toLowerCase())) {
+          matched.push(kw);
+        } else {
+          missing.push(kw);
+        }
+      }
+
+      const matchRatio = industryKeywords.length > 0 ? matched.length / industryKeywords.length : 0;
+      const score = Math.round(Math.min(matchRatio, 1) * 40);
+
+      if (matchRatio < 0.3) {
+        suggestions.push(
+          `Your resume matches only ${Math.round(matchRatio * 100)}% of ${industryId} industry keywords. Consider adding more relevant terms.`
+        );
+      }
+      if (missing.length > 0) {
+        suggestions.push(
+          `Top industry keywords to add: ${missing.slice(0, 8).join(', ')}.`
+        );
+      }
+
+      return { category: { score, maxScore: 40, suggestions }, matched, missing };
+    }
+
     return {
       category: {
         score: 20,
@@ -187,6 +273,9 @@ function scoreKeywordMatch(
   const jobKeywords = extractKeywords(jobDescription);
   const resumeText = getResumeFullText(data).toLowerCase();
   const resumeKeywords = new Set(extractKeywords(resumeText));
+
+  // Use TF-IDF for scoring importance
+  const tfIdfScores = computeTfIdf(resumeText, jobKeywords);
 
   const matched: string[] = [];
   const missing: string[] = [];
@@ -472,9 +561,10 @@ function scoreReadability(data: ResumeData): CategoryScore {
  */
 export function computeAtsScore(
   data: ResumeData,
-  jobDescription: string = ''
+  jobDescription: string = '',
+  industryId?: IndustryId
 ): AtsScoreResult {
-  const keywordResult = scoreKeywordMatch(data, jobDescription);
+  const keywordResult = scoreKeywordMatch(data, jobDescription, industryId);
   const formatting = scoreFormatting(data);
   const contentQuality = scoreContentQuality(data);
   const sectionCompleteness = scoreSectionCompleteness(data);

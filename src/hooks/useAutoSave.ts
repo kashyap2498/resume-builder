@@ -6,6 +6,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Resume } from '@/types/resume';
+import { saveResume as saveResumeToIDB, loadResume, isIndexedDBAvailable } from '@/utils/db';
+import { resumeSchema } from '@/schemas';
 
 const AUTO_SAVE_INTERVAL_MS = 30_000; // 30 seconds
 const STORAGE_KEY_PREFIX = 'resume-';
@@ -34,6 +36,12 @@ export function useAutoSave(resume: Resume | null): UseAutoSaveReturn {
     const current = resumeRef.current;
     if (!current) return;
 
+    // Validate before saving -- warn but still save
+    const validation = resumeSchema.safeParse(current);
+    if (!validation.success) {
+      console.warn('Auto-save validation warnings:', validation.error);
+    }
+
     setIsSaving(true);
     try {
       const key = getStorageKey(current.id);
@@ -44,6 +52,17 @@ export function useAutoSave(resume: Resume | null): UseAutoSaveReturn {
       console.error('Auto-save failed:', error);
     } finally {
       setIsSaving(false);
+    }
+
+    // Also persist to IndexedDB (fire-and-forget)
+    if (isIndexedDBAvailable()) {
+      try {
+        saveResumeToIDB(current).catch((err) =>
+          console.warn('IndexedDB auto-save failed:', err)
+        );
+      } catch {
+        // Silently fail
+      }
     }
   }, []);
 
@@ -81,9 +100,21 @@ export function useAutoSave(resume: Resume | null): UseAutoSaveReturn {
 }
 
 /**
- * Load a previously auto-saved resume from localStorage.
+ * Load a previously auto-saved resume.
+ * Tries IndexedDB first, then falls back to localStorage.
  */
-export function loadAutoSavedResume(resumeId: string): Resume | null {
+export async function loadAutoSavedResume(resumeId: string): Promise<Resume | null> {
+  // Try IndexedDB first
+  if (isIndexedDBAvailable()) {
+    try {
+      const idbResume = await loadResume(resumeId);
+      if (idbResume) return idbResume;
+    } catch {
+      // Fall through to localStorage
+    }
+  }
+
+  // Fallback to localStorage
   try {
     const key = getStorageKey(resumeId);
     const raw = localStorage.getItem(key);

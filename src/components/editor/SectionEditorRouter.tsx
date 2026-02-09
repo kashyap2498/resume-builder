@@ -4,6 +4,7 @@
 // Renders the appropriate editor component based on the given sectionType.
 
 import type { SectionType } from '@/types/resume';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ContactEditor } from './ContactEditor';
 import { SummaryEditor } from './SummaryEditor';
 import { ExperienceEditor } from './ExperienceEditor';
@@ -55,5 +56,9 @@ export function SectionEditorRouter({ sectionType }: SectionEditorRouterProps) {
     );
   }
 
-  return <EditorComponent />;
+  return (
+    <ErrorBoundary fallbackMessage={`Failed to load ${sectionType} editor`}>
+      <EditorComponent />
+    </ErrorBoundary>
+  );
 }
