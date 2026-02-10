@@ -4,6 +4,8 @@
 
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery, useMutation } from 'convex/react'
+import { useAuthActions } from '@convex-dev/auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
@@ -14,14 +16,17 @@ import {
   X,
   Clock,
   LayoutTemplate,
+  LogOut,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { useResumeListStore, type ResumeListItem } from '@/store/resumeListStore'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { useToastStore } from '@/hooks/useToast'
 import { useUIStore } from '@/store/uiStore'
 import { createDefaultResume } from '@/constants/sectionDefaults'
 import { getAllTemplates } from '@/templates'
-import { saveResume as saveResumeToIDB, deleteResume as deleteResumeFromIDB } from '@/utils/db'
 import { trackEvent } from '@/utils/analytics'
+import { api } from '../../convex/_generated/api'
+import type { Id } from '../../convex/_generated/dataModel'
 
 // -- Template Options (from registry) -----------------------------------------
 
@@ -242,7 +247,7 @@ function CreateResumeDialog({ open, onClose, onCreate }: CreateResumeDialogProps
 // =============================================================================
 
 interface ResumeCardProps {
-  resume: ResumeListItem
+  resume: { id: string; name: string; templateId: string; updatedAt: string }
   index: number
   onEdit: (id: string) => void
   onDuplicate: (id: string) => void
@@ -284,7 +289,7 @@ function ResumeCard({ resume, index, onEdit, onDuplicate, onDelete }: ResumeCard
       </div>
 
       {/* Action buttons (visible on hover) */}
-      <div className="absolute right-3 top-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+      <div className="absolute right-3 top-3 flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-150">
         <button
           onClick={(e) => { e.stopPropagation(); onEdit(resume.id) }}
           title="Edit"
@@ -317,39 +322,38 @@ function ResumeCard({ resume, index, onEdit, onDuplicate, onDelete }: ResumeCard
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const { signOut } = useAuthActions()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
 
-  const resumes = useResumeListStore((s) => s.resumes)
-  const addResume = useResumeListStore((s) => s.addResume)
-  const removeResume = useResumeListStore((s) => s.removeResume)
-  const duplicateResume = useResumeListStore((s) => s.duplicateResume)
+  const rawResumes = useQuery(api.resumes.list)
+  const createResume = useMutation(api.resumes.create)
+  const removeResume = useMutation(api.resumes.remove)
+  const duplicateResumeMut = useMutation(api.resumes.duplicate)
+  const addToast = useToastStore((s) => s.addToast)
+
+  const resumes = (rawResumes ?? []).map((r) => ({
+    id: r._id as string,
+    name: r.name,
+    templateId: r.templateId,
+    updatedAt: r.updatedAt,
+  }))
 
   const handleCreate = useCallback(
-    (name: string, templateId: string) => {
-      // 1. Create default resume data
+    async (name: string, templateId: string) => {
       const resume = createDefaultResume(name, templateId)
+      const id = await createResume({
+        data: JSON.stringify(resume),
+        name,
+        templateId,
+      })
 
-      // 2. Add to list store (generates id from store)
-      const id = addResume({ name, templateId })
-
-      // 3. Save full resume data to localStorage under key resume-{id}
-      const fullResume = { ...resume, id }
-      localStorage.setItem(`resume-${id}`, JSON.stringify(fullResume))
-
-      // 4. Also persist to IndexedDB (fire-and-forget)
-      saveResumeToIDB(fullResume).catch(() => {})
-
-      // 5. Track analytics event
       trackEvent('resume_created', { template: templateId })
-
-      // 6. Trigger onboarding wizard
       useUIStore.getState().setShowOnboarding(true)
-
-      // 7. Close dialog and navigate to editor
       setDialogOpen(false)
       navigate(`/editor/${id}`)
     },
-    [addResume, navigate],
+    [createResume, navigate],
   )
 
   const handleEdit = useCallback(
@@ -360,44 +364,39 @@ export default function HomePage() {
   )
 
   const handleDuplicate = useCallback(
-    (id: string) => {
-      // Duplicate in list store
-      const newId = duplicateResume(id)
-      if (!newId) return
-
-      // Duplicate full resume data in localStorage
+    async (id: string) => {
       try {
-        const raw = localStorage.getItem(`resume-${id}`)
-        if (raw) {
-          const data = JSON.parse(raw)
-          const duplicated = {
-            ...data,
-            id: newId,
-            name: `${data.name} (Copy)`,
-            updatedAt: new Date().toISOString(),
-          }
-          localStorage.setItem(`resume-${newId}`, JSON.stringify(duplicated))
-
-          // Also persist to IndexedDB (fire-and-forget)
-          saveResumeToIDB(duplicated).catch(() => {})
-        }
+        await duplicateResumeMut({ id: id as Id<"resumes"> })
+        addToast('Resume duplicated', 'success')
       } catch {
-        // silently ignore
+        addToast('Failed to duplicate resume', 'error')
       }
     },
-    [duplicateResume],
+    [duplicateResumeMut, addToast],
   )
 
-  const handleDelete = useCallback(
+  const handleDeleteRequest = useCallback(
     (id: string) => {
-      removeResume(id)
-      localStorage.removeItem(`resume-${id}`)
-
-      // Also delete from IndexedDB (fire-and-forget)
-      deleteResumeFromIDB(id).catch(() => {})
+      const resume = resumes.find((r) => r.id === id)
+      setDeleteTarget({ id, name: resume?.name || 'this resume' })
     },
-    [removeResume],
+    [resumes],
   )
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteTarget) return
+    try {
+      await removeResume({ id: deleteTarget.id as Id<"resumes"> })
+      addToast('Resume deleted', 'success')
+    } catch {
+      addToast('Failed to delete resume', 'error')
+    }
+    setDeleteTarget(null)
+  }, [deleteTarget, removeResume, addToast])
+
+  const handleSignOut = useCallback(async () => {
+    await signOut()
+  }, [signOut])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
@@ -409,23 +408,42 @@ export default function HomePage() {
               Resume Builder
             </h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              Create, edit, and manage your professional resumes
+              {resumes.length === 0
+                ? 'Create, edit, and manage your professional resumes'
+                : `${resumes.length} resume${resumes.length === 1 ? '' : 's'}`}
             </p>
           </div>
-          <Button
-            variant="primary"
-            size="lg"
-            icon={<Plus className="h-5 w-5" />}
-            onClick={() => setDialogOpen(true)}
-          >
-            Create New Resume
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="primary"
+              size="lg"
+              icon={<Plus className="h-5 w-5" />}
+              onClick={() => setDialogOpen(true)}
+            >
+              Create New Resume
+            </Button>
+            <button
+              onClick={handleSignOut}
+              title="Sign out"
+              className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Content */}
       <main className="mx-auto max-w-6xl px-6 py-10">
-        {resumes.length === 0 ? (
+        {rawResumes === undefined ? (
+          /* Loading state */
+          <div className="flex items-center justify-center py-24">
+            <div className="text-center">
+              <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+              <p className="text-sm text-gray-500">Loading resumes...</p>
+            </div>
+          </div>
+        ) : resumes.length === 0 ? (
           /* Empty state */
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -462,7 +480,7 @@ export default function HomePage() {
                   index={i}
                   onEdit={handleEdit}
                   onDuplicate={handleDuplicate}
-                  onDelete={handleDelete}
+                  onDelete={handleDeleteRequest}
                 />
               ))}
             </AnimatePresence>
@@ -475,6 +493,17 @@ export default function HomePage() {
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         onCreate={handleCreate}
+      />
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Resume"
+        message={`Are you sure you want to delete "${deleteTarget?.name}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
       />
     </div>
   )

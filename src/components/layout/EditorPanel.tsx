@@ -2,6 +2,7 @@
 // Resume Builder - Editor Panel (Center)
 // =============================================================================
 
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   User,
   AlignLeft,
@@ -26,8 +27,9 @@ import {
 import { useResumeStore } from '@/store/resumeStore'
 import { useUIStore } from '@/store/uiStore'
 import { SectionEditorRouter } from '@/components/editor'
+import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/utils/cn'
-import type { SectionType } from '@/types/resume'
+import type { SectionType, ResumeData } from '@/types/resume'
 
 // -- Section icon map ---------------------------------------------------------
 
@@ -71,12 +73,56 @@ const SECTION_DESCRIPTIONS: Record<SectionType, string> = {
   customSections: 'Create custom sections with your own headings and content.',
 }
 
+// -- Helpers for section badge counts -----------------------------------------
+
+function getSectionBadge(sectionType: SectionType, data: ResumeData): { label: string; variant: 'blue' | 'green' | 'gray' } | null {
+  const contact = data.contact
+
+  switch (sectionType) {
+    case 'contact': {
+      const filled = [contact.firstName, contact.lastName, contact.email, contact.phone, contact.location].filter(Boolean).length
+      if (filled === 0) return null
+      return { label: `${filled}/5`, variant: filled >= 4 ? 'green' : 'blue' }
+    }
+    case 'summary':
+      if (data.summary?.text?.trim()) return { label: 'Added', variant: 'green' }
+      return null
+    case 'hobbies': {
+      const count = data.hobbies?.items?.filter(Boolean).length ?? 0
+      if (count > 0) return { label: `${count}`, variant: 'blue' }
+      return null
+    }
+    case 'experience':
+    case 'education':
+    case 'skills':
+    case 'projects':
+    case 'certifications':
+    case 'languages':
+    case 'volunteer':
+    case 'awards':
+    case 'publications':
+    case 'references':
+    case 'affiliations':
+    case 'courses':
+    case 'customSections': {
+      const arr = data[sectionType]
+      if (Array.isArray(arr) && arr.length > 0) {
+        return { label: `${arr.length}`, variant: 'blue' }
+      }
+      return null
+    }
+    default:
+      return null
+  }
+}
+
 // =============================================================================
 // EditorPanel
 // =============================================================================
 
 export default function EditorPanel() {
   const sections = useResumeStore((s) => s.currentResume?.sections ?? [])
+  const resumeData = useResumeStore((s) => s.currentResume?.data)
   const activeSection = useUIStore((s) => s.activeSection)
   const setActiveSection = useUIStore((s) => s.setActiveSection)
 
@@ -106,6 +152,7 @@ export default function EditorPanel() {
           const IconComponent = SECTION_ICON_MAP[section.type]
           const description = SECTION_DESCRIPTIONS[section.type]
           const isActive = activeSection === section.id
+          const badge = resumeData ? getSectionBadge(section.type, resumeData) : null
 
           return (
             <div
@@ -114,7 +161,7 @@ export default function EditorPanel() {
               className={cn(
                 'group rounded-xl border bg-white p-6 transition-all duration-200 cursor-pointer',
                 isActive
-                  ? 'border-blue-300 ring-2 ring-blue-100 shadow-sm'
+                  ? 'border-blue-400 ring-2 ring-blue-200 shadow-sm'
                   : 'border-gray-200 hover:border-gray-300 hover:shadow-sm',
               )}
               onClick={() => setActiveSection(section.id)}
@@ -131,10 +178,17 @@ export default function EditorPanel() {
                 >
                   <IconComponent className="h-4.5 w-4.5" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-900">
-                    {section.title}
-                  </h3>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-gray-900">
+                      {section.title}
+                    </h3>
+                    {badge && (
+                      <Badge variant={badge.variant} size="sm">
+                        {badge.label}
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-400">{description}</p>
                 </div>
                 <div className="shrink-0 text-gray-400">
@@ -146,18 +200,37 @@ export default function EditorPanel() {
                 </div>
               </div>
 
-              {/* Section editor content */}
-              {isActive ? (
-                <div className="mt-1">
-                  <SectionEditorRouter sectionType={section.type} />
-                </div>
-              ) : (
-                <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50/50 px-4 py-6">
-                  <p className="text-center text-xs text-gray-400">
-                    Click to expand and edit this section.
-                  </p>
-                </div>
-              )}
+              {/* Section editor content with collapse animation */}
+              <AnimatePresence initial={false}>
+                {isActive ? (
+                  <motion.div
+                    key="editor"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25, ease: 'easeInOut' }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-1">
+                      <SectionEditorRouter sectionType={section.type} />
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="placeholder"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50/50 px-4 py-6">
+                      <p className="text-center text-xs text-gray-400">
+                        Click to expand and edit this section.
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )
         })}

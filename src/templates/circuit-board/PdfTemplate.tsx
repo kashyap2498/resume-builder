@@ -22,8 +22,11 @@ const CircuitBoardPdf: React.FC<TemplateProps> = ({ resume }) => {
       fontSize: font.sizes.normal,
       color: colors.text,
       lineHeight: font.lineHeight,
+      paddingTop: layout.margins.top,
+      paddingBottom: layout.margins.bottom,
     },
     header: {
+      marginTop: -layout.margins.top,
       paddingTop: layout.margins.top,
       paddingHorizontal: layout.margins.left,
       paddingBottom: 10,
@@ -54,7 +57,6 @@ const CircuitBoardPdf: React.FC<TemplateProps> = ({ resume }) => {
       paddingTop: layout.sectionSpacing,
       paddingLeft: layout.margins.left,
       paddingRight: layout.margins.left * 0.6,
-      paddingBottom: layout.margins.bottom,
       borderRightWidth: 1,
       borderRightColor: colors.divider,
     },
@@ -63,7 +65,6 @@ const CircuitBoardPdf: React.FC<TemplateProps> = ({ resume }) => {
       paddingTop: layout.sectionSpacing,
       paddingLeft: layout.margins.left * 0.8,
       paddingRight: layout.margins.right,
-      paddingBottom: layout.margins.bottom,
     },
     sidebarSection: {
       marginBottom: layout.sectionSpacing,

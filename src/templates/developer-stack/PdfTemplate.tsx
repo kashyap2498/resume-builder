@@ -23,9 +23,12 @@ const DeveloperStackPdf: React.FC<TemplateProps> = ({ resume }) => {
       fontSize: font.sizes.normal,
       color: colors.text,
       lineHeight: font.lineHeight,
+      paddingTop: layout.margins.top,
+      paddingBottom: layout.margins.bottom,
     },
     header: {
       backgroundColor: darkBg,
+      marginTop: -layout.margins.top,
       paddingTop: layout.margins.top,
       paddingHorizontal: layout.margins.left,
       paddingBottom: 12,
@@ -56,14 +59,12 @@ const DeveloperStackPdf: React.FC<TemplateProps> = ({ resume }) => {
       paddingTop: layout.sectionSpacing,
       paddingLeft: layout.margins.left,
       paddingRight: layout.margins.left * 0.6,
-      paddingBottom: layout.margins.bottom,
     },
     main: {
       width: '70%',
       paddingTop: layout.sectionSpacing,
       paddingLeft: layout.margins.left * 0.8,
       paddingRight: layout.margins.right,
-      paddingBottom: layout.margins.bottom,
     },
     sidebarSection: {
       marginBottom: layout.sectionSpacing,

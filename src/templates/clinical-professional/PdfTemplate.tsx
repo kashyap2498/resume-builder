@@ -20,11 +20,19 @@ const ClinicalProfessionalPdf: React.FC<TemplateProps> = ({ resume }) => {
       fontSize: font.sizes.normal,
       color: colors.text,
       lineHeight: font.lineHeight,
+      paddingTop: layout.margins.top,
+      paddingRight: layout.margins.right,
+      paddingBottom: layout.margins.bottom,
+      paddingLeft: layout.margins.left,
     },
     headerBanner: {
       backgroundColor: medBlue,
+      marginTop: -layout.margins.top,
+      marginLeft: -layout.margins.left,
+      marginRight: -layout.margins.right,
       paddingTop: layout.margins.top,
-      paddingHorizontal: layout.margins.left,
+      paddingLeft: layout.margins.left,
+      paddingRight: layout.margins.right,
       paddingBottom: 16,
     },
     name: {
@@ -39,9 +47,6 @@ const ClinicalProfessionalPdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     body: {
       paddingTop: 10,
-      paddingRight: layout.margins.right,
-      paddingBottom: layout.margins.bottom,
-      paddingLeft: layout.margins.left,
     },
     contactLine: {
       fontSize: font.sizes.small,

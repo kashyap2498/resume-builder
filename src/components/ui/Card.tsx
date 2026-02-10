@@ -51,28 +51,40 @@ export function Card({
 
 export interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {
   title?: string;
+  subtitle?: string;
   description?: string;
+  icon?: ReactNode;
   action?: ReactNode;
 }
 
 export function CardHeader({
   title,
+  subtitle,
   description,
+  icon,
   action,
   children,
   className,
   ...props
 }: CardHeaderProps) {
+  const desc = subtitle || description;
   return (
     <div className={cn('flex items-start justify-between gap-4', className)} {...props}>
-      <div className="flex flex-col gap-1">
-        {title && (
-          <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+      <div className="flex items-start gap-3">
+        {icon && (
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+            {icon}
+          </div>
         )}
-        {description && (
-          <p className="text-sm text-gray-500">{description}</p>
-        )}
-        {children}
+        <div className="flex flex-col gap-0.5">
+          {title && (
+            <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+          )}
+          {desc && (
+            <p className="text-xs text-gray-500">{desc}</p>
+          )}
+          {children}
+        </div>
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>

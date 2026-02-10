@@ -21,16 +21,20 @@ const ModernCleanPdf: React.FC<TemplateProps> = ({ resume }) => {
       fontSize: font.sizes.normal,
       color: colors.text,
       lineHeight: font.lineHeight,
-    },
-    accentBar: {
-      height: 4,
-      backgroundColor: accentColor,
-    },
-    body: {
       paddingTop: layout.margins.top,
       paddingRight: layout.margins.right,
       paddingBottom: layout.margins.bottom,
       paddingLeft: layout.margins.left,
+    },
+    accentBar: {
+      height: 4,
+      backgroundColor: accentColor,
+      marginTop: -layout.margins.top,
+      marginLeft: -layout.margins.left,
+      marginRight: -layout.margins.right,
+      marginBottom: layout.margins.top,
+    },
+    body: {
     },
     headerContainer: {
       flexDirection: 'row',

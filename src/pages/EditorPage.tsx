@@ -4,8 +4,9 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useQuery } from 'convex/react'
+import { api } from '../../convex/_generated/api'
 import { useResumeStore } from '@/store/resumeStore'
-import { useResumeListStore } from '@/store/resumeListStore'
 import { useUIStore } from '@/store/uiStore'
 import { useStylingStore } from '@/store/stylingStore'
 import { useHistoryStore } from '@/store/historyStore'
@@ -14,7 +15,6 @@ import { usePdfExport } from '@/hooks/usePdfExport'
 import { useDocxExport } from '@/hooks/useDocxExport'
 import { getTemplate } from '@/templates'
 import { saveResumeAsJson } from '@/utils/fileIO'
-import { loadResume } from '@/utils/db'
 import AppShell from '@/components/layout/AppShell'
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
 import type { Resume } from '@/types/resume'
@@ -26,80 +26,49 @@ export default function EditorPage() {
 
   const setResume = useResumeStore((s) => s.setResume)
   const currentResume = useResumeStore((s) => s.currentResume)
-  const setCurrentResumeId = useResumeListStore((s) => s.setCurrentResume)
   const setDeviceSize = useUIStore((s) => s.setDeviceSize)
   const hydrateStyling = useStylingStore((s) => s.hydrate)
 
-  const [loading, setLoading] = useState(true)
+  const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // -- Auto-save hook ---------------------------------------------------------
+  // -- Load resume from Convex ------------------------------------------------
 
-  const { saveNow } = useAutoSave(currentResume)
-  const { exportPdf } = usePdfExport()
-  const { exportDocx } = useDocxExport()
-  const showOnboarding = useUIStore((s) => s.showOnboarding)
-
-  // -- Load resume from localStorage on mount ---------------------------------
+  const convexResume = useQuery(
+    api.resumes.get,
+    resumeId ? { id: resumeId } : "skip",
+  )
 
   useEffect(() => {
-    if (!resumeId) {
-      setError('No resume ID provided.')
-      setLoading(false)
+    if (loaded || error) return
+    if (convexResume === undefined) return // Still loading
+
+    if (convexResume === null) {
+      setError('Resume not found. It may have been deleted.')
       return
     }
 
-    let cancelled = false
+    try {
+      const parsed = JSON.parse(convexResume.data) as Resume
+      parsed.id = convexResume._id as string
+      setResume(parsed)
 
-    async function load() {
-      try {
-        // Try IndexedDB first
-        let resume: Resume | undefined | null = null
-        try {
-          resume = await loadResume(resumeId!)
-        } catch {
-          // IndexedDB unavailable, fall through
-        }
-
-        // Fallback to localStorage
-        if (!resume) {
-          const raw = localStorage.getItem(`resume-${resumeId}`)
-          if (raw) {
-            resume = JSON.parse(raw) as Resume
-          }
-        }
-
-        if (cancelled) return
-
-        if (!resume) {
-          setError('Resume not found. It may have been deleted.')
-          setLoading(false)
-          return
-        }
-
-        setResume(resume)
-        setCurrentResumeId(resumeId!)
-
-        // Hydrate the styling store from the loaded resume data
-        if (resume.styling) {
-          hydrateStyling(resume.styling)
-        }
-
-        setLoading(false)
-      } catch {
-        if (!cancelled) {
-          setError('Failed to load resume data.')
-          setLoading(false)
-        }
+      if (parsed.styling) {
+        hydrateStyling(parsed.styling)
       }
-    }
 
-    load()
-
-    return () => {
-      cancelled = true
+      setLoaded(true)
+    } catch {
+      setError('Failed to load resume data.')
     }
-  }, [resumeId, setResume, setCurrentResumeId, hydrateStyling])
+  }, [convexResume, loaded, error, setResume, hydrateStyling])
+
+  // -- Auto-save hook ---------------------------------------------------------
+
+  const { saveNow } = useAutoSave(loaded ? currentResume : null)
+  const { exportPdf } = usePdfExport()
+  const { exportDocx } = useDocxExport()
+  const showOnboarding = useUIStore((s) => s.showOnboarding)
 
   // -- Keyboard shortcuts -----------------------------------------------------
 
@@ -210,7 +179,7 @@ export default function EditorPage() {
 
   // -- Loading state ----------------------------------------------------------
 
-  if (loading) {
+  if (!loaded && !error) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="text-center">

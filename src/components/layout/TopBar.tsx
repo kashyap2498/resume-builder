@@ -17,9 +17,10 @@ import {
   Bookmark,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
 import { useResumeStore } from '@/store/resumeStore'
-import { useResumeListStore } from '@/store/resumeListStore'
 import { useUIStore } from '@/store/uiStore'
+import { useToastStore } from '@/hooks/useToast'
 import { usePdfExport } from '@/hooks/usePdfExport'
 import { useDocxExport } from '@/hooks/useDocxExport'
 import { useCoverLetterPdfExport, useCoverLetterDocxExport } from '@/hooks/useCoverLetterExport'
@@ -35,16 +36,20 @@ export default function TopBar() {
   const navigate = useNavigate()
 
   const currentResume = useResumeStore((s) => s.currentResume)
-  const renameResume = useResumeListStore((s) => s.renameResume)
   const toggleTemplateGallery = useUIStore((s) => s.toggleTemplateGallery)
   const toggleImportModal = useUIStore((s) => s.toggleImportModal)
   const setShowImportModal = useUIStore((s) => s.setShowImportModal)
   const activeDocType = useUIStore((s) => s.activeDocType)
 
+  const addToast = useToastStore((s) => s.addToast)
+
   const [isEditingName, setIsEditingName] = useState(false)
   const [editName, setEditName] = useState('')
   const [showSaved, setShowSaved] = useState(false)
+  const [versionModalOpen, setVersionModalOpen] = useState(false)
+  const [versionLabel, setVersionLabel] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const versionInputRef = useRef<HTMLInputElement>(null)
 
   const { exportPdf, isExporting } = usePdfExport()
   const { exportDocx, isExporting: isDocxExporting } = useDocxExport()
@@ -74,9 +79,7 @@ export default function TopBar() {
   const handleFinishEdit = () => {
     const trimmed = editName.trim()
     if (trimmed && trimmed !== resumeName && currentResume) {
-      renameResume(currentResume.id, trimmed)
-
-      // Also update in resume store
+      // Update in resume store (auto-save will persist to Convex)
       const updatedResume = { ...currentResume, name: trimmed }
       useResumeStore.getState().setResume(updatedResume)
     }
@@ -92,6 +95,7 @@ export default function TopBar() {
     if (!currentResume) return
 
     saveResumeAsJson(currentResume)
+    addToast('Saved as JSON', 'success')
 
     setShowSaved(true)
     setTimeout(() => setShowSaved(false), 2000)
@@ -107,20 +111,28 @@ export default function TopBar() {
         await exportDocx(currentResume)
         trackEvent('resume_exported_docx')
       }
+      addToast('DOCX exported successfully', 'success')
     } catch (error) {
       console.error('DOCX export failed:', error)
-      alert('DOCX export failed. Please try again.')
+      addToast('DOCX export failed. Please try again.', 'error')
     }
+  }
+
+  const handleOpenVersionModal = () => {
+    setVersionLabel(`Version ${new Date().toLocaleString()}`)
+    setVersionModalOpen(true)
   }
 
   const handleSaveVersion = async () => {
     if (!currentResume) return
-    const label = prompt('Version label:', `Version ${new Date().toLocaleString()}`)
-    if (label === null) return
+    const label = versionLabel.trim() || `Version ${new Date().toLocaleString()}`
+    setVersionModalOpen(false)
     try {
-      await saveNewVersion(currentResume.id, currentResume, label || `Version ${new Date().toLocaleString()}`)
+      await saveNewVersion(currentResume.id, currentResume, label)
+      addToast('Version saved', 'success')
     } catch (error) {
       console.error('Save version failed:', error)
+      addToast('Failed to save version', 'error')
     }
   }
 
@@ -131,16 +143,17 @@ export default function TopBar() {
       try {
         await exportCoverLetterPdf(currentResume)
         trackEvent('cover_letter_exported_pdf')
+        addToast('PDF exported successfully', 'success')
       } catch (error) {
         console.error('Cover letter PDF export failed:', error)
-        alert('PDF export failed. Please try again.')
+        addToast('PDF export failed. Please try again.', 'error')
       }
       return
     }
 
     const template = getTemplate(currentResume.templateId)
     if (!template) {
-      alert(`Template "${currentResume.templateId}" not found. Please select a registered template.`)
+      addToast(`Template "${currentResume.templateId}" not found. Please select a registered template.`, 'error')
       return
     }
 
@@ -153,9 +166,10 @@ export default function TopBar() {
         fileName,
       )
       trackEvent('resume_exported_pdf')
+      addToast('PDF exported successfully', 'success')
     } catch (error) {
       console.error('PDF export failed:', error)
-      alert('PDF export failed. Please try again.')
+      addToast('PDF export failed. Please try again.', 'error')
     }
   }
 
@@ -302,7 +316,7 @@ export default function TopBar() {
               variant="ghost"
               size="sm"
               icon={<Bookmark className="h-4 w-4" />}
-              onClick={handleSaveVersion}
+              onClick={handleOpenVersionModal}
               title="Save Version"
             >
               <span className="hidden sm:inline">Version</span>
@@ -321,6 +335,38 @@ export default function TopBar() {
           </>
         )}
       </div>
+
+      {/* Version Label Modal */}
+      <Modal
+        open={versionModalOpen}
+        onClose={() => setVersionModalOpen(false)}
+        title="Save Version"
+        size="sm"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setVersionModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="sm" onClick={handleSaveVersion}>
+              Save Version
+            </Button>
+          </div>
+        }
+      >
+        <label className="block">
+          <span className="block text-sm font-medium text-gray-700 mb-1.5">Version Label</span>
+          <input
+            ref={versionInputRef}
+            type="text"
+            value={versionLabel}
+            onChange={(e) => setVersionLabel(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSaveVersion() }}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+            placeholder="e.g. Final draft, Before redesign..."
+            autoFocus
+          />
+        </label>
+      </Modal>
 
       {/* Import Modal */}
       <ImportModal

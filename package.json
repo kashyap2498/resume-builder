@@ -14,6 +14,8 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@auth/core": "^0.37.4",
+    "@convex-dev/auth": "^0.0.90",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -34,6 +36,7 @@
     "@sentry/react": "^10.38.0",
     "@tanstack/react-virtual": "^3.13.18",
     "@types/dompurify": "^3.0.5",
+    "convex": "^1.31.7",
     "docx": "^9.5.1",
     "dompurify": "^3.3.1",
     "framer-motion": "^12.33.0",

@@ -23,10 +23,14 @@ const ModernSidebarPdf: React.FC<TemplateProps> = ({ resume }) => {
       color: colors.text,
       lineHeight: font.lineHeight,
       flexDirection: 'row',
+      paddingTop: layout.margins.top,
+      paddingBottom: layout.margins.bottom,
     },
     sidebar: {
       width: '35%',
       backgroundColor: accentColor,
+      marginTop: -layout.margins.top,
+      marginBottom: -layout.margins.bottom,
       paddingTop: layout.margins.top,
       paddingBottom: layout.margins.bottom,
       paddingLeft: layout.margins.left,
@@ -34,8 +38,6 @@ const ModernSidebarPdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     main: {
       width: '65%',
-      paddingTop: layout.margins.top,
-      paddingBottom: layout.margins.bottom,
       paddingLeft: layout.margins.left * 0.8,
       paddingRight: layout.margins.right,
     },

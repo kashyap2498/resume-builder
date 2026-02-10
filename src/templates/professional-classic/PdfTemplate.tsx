@@ -22,9 +22,16 @@ const ProfessionalClassicPdf: React.FC<TemplateProps> = ({ resume }) => {
       fontSize: font.sizes.normal,
       color: colors.text,
       lineHeight: font.lineHeight,
+      paddingTop: layout.margins.top,
+      paddingRight: layout.margins.right,
+      paddingBottom: layout.margins.bottom,
+      paddingLeft: layout.margins.left,
     },
     header: {
       backgroundColor: headerBg,
+      marginTop: -layout.margins.top,
+      marginLeft: -layout.margins.left,
+      marginRight: -layout.margins.right,
       paddingTop: layout.margins.top,
       paddingRight: layout.margins.right,
       paddingBottom: layout.margins.top,
@@ -50,9 +57,6 @@ const ProfessionalClassicPdf: React.FC<TemplateProps> = ({ resume }) => {
       color: headerText,
     },
     body: {
-      paddingRight: layout.margins.right,
-      paddingBottom: layout.margins.bottom,
-      paddingLeft: layout.margins.left,
     },
     sectionContainer: {
       marginBottom: layout.sectionSpacing,

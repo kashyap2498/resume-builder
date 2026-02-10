@@ -3,8 +3,10 @@
 // =============================================================================
 
 import { useState, type ReactNode } from 'react';
-import { ChevronDown, ChevronRight, Trash2, GripVertical } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, ChevronRight, Trash2, Copy, GripVertical } from 'lucide-react';
 import { IconButton } from '@/components/ui';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { cn } from '@/utils/cn';
 
 interface EntryCardProps {
@@ -12,6 +14,7 @@ interface EntryCardProps {
   subtitle?: string;
   defaultExpanded?: boolean;
   onDelete: () => void;
+  onDuplicate?: () => void;
   children: ReactNode;
   className?: string;
   dragHandleProps?: Record<string, unknown>;
@@ -22,16 +25,19 @@ export function EntryCard({
   subtitle,
   defaultExpanded = false,
   onDelete,
+  onDuplicate,
   children,
   className,
   dragHandleProps,
 }: EntryCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   return (
     <div
       className={cn(
-        'rounded-lg border border-gray-200 bg-white overflow-hidden',
+        'rounded-lg border border-gray-200 bg-white overflow-hidden transition-shadow duration-200',
+        dragHandleProps && 'hover:shadow-sm',
         className
       )}
     >
@@ -69,6 +75,19 @@ export function EntryCard({
           )}
         </div>
 
+        {onDuplicate && (
+          <IconButton
+            icon={<Copy />}
+            label="Duplicate entry"
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDuplicate();
+            }}
+          />
+        )}
+
         <IconButton
           icon={<Trash2 />}
           label="Delete entry"
@@ -76,17 +95,38 @@ export function EntryCard({
           size="sm"
           onClick={(e) => {
             e.stopPropagation();
-            onDelete();
+            setShowDeleteConfirm(true);
           }}
         />
       </div>
 
-      {/* Body */}
-      {expanded && (
-        <div className="px-4 pb-4 pt-2 border-t border-gray-100">
-          {children}
-        </div>
-      )}
+      {/* Body with animation */}
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 pt-2 border-t border-gray-100">
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={onDelete}
+        title="Delete Entry"
+        message={`Are you sure you want to delete "${title || 'this entry'}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </div>
   );
 }

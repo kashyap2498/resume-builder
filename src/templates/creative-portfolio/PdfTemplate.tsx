@@ -17,9 +17,9 @@ const CreativePortfolioPdf: React.FC<TemplateProps> = ({ resume }) => {
   const darkBg = '#2d2d2d';
 
   const styles = StyleSheet.create({
-    page: { backgroundColor: colors.background, fontFamily: 'Helvetica', fontSize: font.sizes.normal, color: colors.text, lineHeight: font.lineHeight, flexDirection: 'row' },
-    sidebar: { width: '33%', backgroundColor: darkBg, paddingTop: layout.margins.top, paddingBottom: layout.margins.bottom, paddingLeft: layout.margins.left, paddingRight: layout.margins.left * 0.6 },
-    main: { width: '67%', paddingTop: layout.margins.top, paddingBottom: layout.margins.bottom, paddingLeft: layout.margins.left * 0.8, paddingRight: layout.margins.right },
+    page: { backgroundColor: colors.background, fontFamily: 'Helvetica', fontSize: font.sizes.normal, color: colors.text, lineHeight: font.lineHeight, flexDirection: 'row', paddingTop: layout.margins.top, paddingBottom: layout.margins.bottom },
+    sidebar: { width: '33%', backgroundColor: darkBg, marginTop: -layout.margins.top, marginBottom: -layout.margins.bottom, paddingTop: layout.margins.top, paddingBottom: layout.margins.bottom, paddingLeft: layout.margins.left, paddingRight: layout.margins.left * 0.6 },
+    main: { width: '67%', paddingLeft: layout.margins.left * 0.8, paddingRight: layout.margins.right },
     name: { fontSize: font.sizes.name + 4, fontFamily: 'Helvetica-Bold', color: '#ffffff', marginBottom: 4 },
     jobTitle: { fontSize: font.sizes.title, fontFamily: 'Helvetica-Bold', color: accentColor, marginBottom: 8 },
     accentLine: { width: 40, height: 3, backgroundColor: accentColor, marginBottom: 12 },

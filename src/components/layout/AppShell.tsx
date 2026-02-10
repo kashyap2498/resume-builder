@@ -8,9 +8,11 @@
 // =============================================================================
 
 import { useState, useCallback } from 'react'
+import { FileText, Mail } from 'lucide-react'
 import { useUIStore } from '@/store/uiStore'
 import { useResumeStore } from '@/store/resumeStore'
 import { createDefaultCoverLetter } from '@/utils/coverLetterDefaults'
+import { Tabs } from '@/components/ui/Tabs'
 import TopBar from './TopBar'
 import Sidebar from './Sidebar'
 import EditorPanel from './EditorPanel'
@@ -45,29 +47,29 @@ export default function AppShell() {
     setActiveDocType('coverLetter')
   }, [currentResume, updateCoverLetter, setActiveDocType])
 
+  const docTabs = [
+    { id: 'resume', label: 'Resume', icon: <FileText className="h-3.5 w-3.5" /> },
+    { id: 'coverLetter', label: 'Cover Letter', icon: <Mail className="h-3.5 w-3.5" /> },
+  ]
+
+  const handleDocTabChange = useCallback((tabId: string) => {
+    if (tabId === 'coverLetter') {
+      handleSwitchToCoverLetter()
+    } else {
+      setActiveDocType('resume')
+    }
+  }, [handleSwitchToCoverLetter, setActiveDocType])
+
   // -- Toggle bar component (shared across layouts) ---------------------------
   const DocToggleBar = (
-    <div className="flex items-center justify-center gap-1 border-b border-gray-200 bg-white py-1.5 shrink-0">
-      <button
-        onClick={() => setActiveDocType('resume')}
-        className={`rounded-lg px-4 py-1 text-sm font-medium transition-colors ${
-          !isCoverLetter
-            ? 'bg-blue-50 text-blue-700'
-            : 'text-gray-500 hover:text-gray-700'
-        }`}
-      >
-        Resume
-      </button>
-      <button
-        onClick={handleSwitchToCoverLetter}
-        className={`rounded-lg px-4 py-1 text-sm font-medium transition-colors ${
-          isCoverLetter
-            ? 'bg-blue-50 text-blue-700'
-            : 'text-gray-500 hover:text-gray-700'
-        }`}
-      >
-        Cover Letter
-      </button>
+    <div className="flex items-center justify-center border-b border-gray-200 bg-white py-1.5 shrink-0">
+      <Tabs
+        tabs={docTabs}
+        activeTab={activeDocType}
+        onTabChange={handleDocTabChange}
+        variant="pills"
+        size="sm"
+      />
     </div>
   )
 

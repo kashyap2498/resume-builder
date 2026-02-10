@@ -1,20 +1,17 @@
 // =============================================================================
-// Resume Builder - Auto-Save Hook
+// Resume Builder - Auto-Save Hook (Convex)
 // =============================================================================
-// Saves the current resume to localStorage every 30 seconds.
-// Also saves on beforeunload to prevent data loss.
+// Saves the current resume to Convex with debouncing.
+// Fires 2 seconds after the last change, plus a periodic backup every 30s.
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import type { Resume } from '@/types/resume';
-import { saveResume as saveResumeToIDB, loadResume, isIndexedDBAvailable } from '@/utils/db';
-import { resumeSchema } from '@/schemas';
+import type { Id } from '../../convex/_generated/dataModel';
 
-const AUTO_SAVE_INTERVAL_MS = 30_000; // 30 seconds
-const STORAGE_KEY_PREFIX = 'resume-';
-
-function getStorageKey(resumeId: string): string {
-  return `${STORAGE_KEY_PREFIX}${resumeId}`;
-}
+const DEBOUNCE_MS = 2_000;
+const PERIODIC_SAVE_MS = 30_000;
 
 export interface UseAutoSaveReturn {
   lastSaved: Date | null;
@@ -26,113 +23,74 @@ export function useAutoSave(resume: Resume | null): UseAutoSaveReturn {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const resumeRef = useRef<Resume | null>(resume);
+  const saveToConvex = useMutation(api.resumes.save);
+  const pendingRef = useRef(false);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savingRef = useRef(false);
 
-  // Keep the ref in sync so the beforeunload handler always has the latest data
+  // Keep the ref in sync so we always save the latest data
   useEffect(() => {
     resumeRef.current = resume;
   }, [resume]);
 
-  const save = useCallback(() => {
+  const save = useCallback(async () => {
     const current = resumeRef.current;
-    if (!current) return;
+    if (!current || !current.id) return;
+    if (savingRef.current) return; // Prevent concurrent saves
 
-    // Validate before saving -- warn but still save
-    const validation = resumeSchema.safeParse(current);
-    if (!validation.success) {
-      console.warn('Auto-save validation warnings:', validation.error);
-    }
-
+    savingRef.current = true;
     setIsSaving(true);
     try {
-      const key = getStorageKey(current.id);
-      const serialized = JSON.stringify(current);
-      localStorage.setItem(key, serialized);
+      await saveToConvex({
+        id: current.id as Id<"resumes">,
+        data: JSON.stringify(current),
+        name: current.name,
+        templateId: current.templateId,
+      });
       setLastSaved(new Date());
+      pendingRef.current = false;
     } catch (error) {
       console.error('Auto-save failed:', error);
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
+  }, [saveToConvex]);
 
-    // Also persist to IndexedDB (fire-and-forget)
-    if (isIndexedDBAvailable()) {
-      try {
-        saveResumeToIDB(current).catch((err) =>
-          console.warn('IndexedDB auto-save failed:', err)
-        );
-      } catch {
-        // Silently fail
-      }
-    }
-  }, []);
-
-  // Periodic auto-save
+  // Debounced save on every resume change
   useEffect(() => {
     if (!resume) return;
 
-    const intervalId = setInterval(save, AUTO_SAVE_INTERVAL_MS);
+    pendingRef.current = true;
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      save();
+    }, DEBOUNCE_MS);
 
     return () => {
-      clearInterval(intervalId);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     };
   }, [resume, save]);
 
-  // Save on beforeunload
+  // Periodic backup save every 30s
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      const current = resumeRef.current;
-      if (!current) return;
-      try {
-        const key = getStorageKey(current.id);
-        localStorage.setItem(key, JSON.stringify(current));
-      } catch {
-        // Silently fail on beforeunload -- we cannot do much here
+    if (!resume) return;
+    const interval = setInterval(() => {
+      if (pendingRef.current) save();
+    }, PERIODIC_SAVE_MS);
+    return () => clearInterval(interval);
+  }, [resume, save]);
+
+  // Warn on beforeunload if there are unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (pendingRef.current) {
+        e.preventDefault();
       }
     };
-
     window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
   return { lastSaved, isSaving, saveNow: save };
-}
-
-/**
- * Load a previously auto-saved resume.
- * Tries IndexedDB first, then falls back to localStorage.
- */
-export async function loadAutoSavedResume(resumeId: string): Promise<Resume | null> {
-  // Try IndexedDB first
-  if (isIndexedDBAvailable()) {
-    try {
-      const idbResume = await loadResume(resumeId);
-      if (idbResume) return idbResume;
-    } catch {
-      // Fall through to localStorage
-    }
-  }
-
-  // Fallback to localStorage
-  try {
-    const key = getStorageKey(resumeId);
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    return JSON.parse(raw) as Resume;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Remove auto-saved data for a resume.
- */
-export function clearAutoSavedResume(resumeId: string): void {
-  try {
-    const key = getStorageKey(resumeId);
-    localStorage.removeItem(key);
-  } catch {
-    // Silently fail
-  }
 }

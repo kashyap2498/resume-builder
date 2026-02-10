@@ -16,9 +16,9 @@ const HealthcareModernPdf: React.FC<TemplateProps> = ({ resume }) => {
   const tealColor = colors.accent || '#00897B';
 
   const styles = StyleSheet.create({
-    page: { backgroundColor: colors.background, fontFamily: 'Helvetica', fontSize: font.sizes.normal, color: colors.text, lineHeight: font.lineHeight, flexDirection: 'row' },
-    sidebar: { width: '35%', backgroundColor: tealColor, paddingTop: layout.margins.top, paddingBottom: layout.margins.bottom, paddingLeft: layout.margins.left, paddingRight: layout.margins.left * 0.6 },
-    main: { width: '65%', paddingTop: layout.margins.top, paddingBottom: layout.margins.bottom, paddingLeft: layout.margins.left * 0.8, paddingRight: layout.margins.right },
+    page: { backgroundColor: colors.background, fontFamily: 'Helvetica', fontSize: font.sizes.normal, color: colors.text, lineHeight: font.lineHeight, flexDirection: 'row', paddingTop: layout.margins.top, paddingBottom: layout.margins.bottom },
+    sidebar: { width: '35%', backgroundColor: tealColor, marginTop: -layout.margins.top, marginBottom: -layout.margins.bottom, paddingTop: layout.margins.top, paddingBottom: layout.margins.bottom, paddingLeft: layout.margins.left, paddingRight: layout.margins.left * 0.6 },
+    main: { width: '65%', paddingLeft: layout.margins.left * 0.8, paddingRight: layout.margins.right },
     name: { fontSize: font.sizes.name, fontFamily: 'Helvetica-Bold', color: '#ffffff', marginBottom: 4 },
     jobTitle: { fontSize: font.sizes.title, color: 'rgba(255,255,255,0.85)', marginBottom: 12 },
     contactItem: { fontSize: font.sizes.small, color: 'rgba(255,255,255,0.75)', marginBottom: 3 },
