@@ -133,7 +133,7 @@ async function renderPdfToImages(blob: Blob): Promise<string[]> {
     canvas.height = viewport.height
 
     const context = canvas.getContext('2d')!
-    await page.render({ canvasContext: context, viewport }).promise
+    await page.render({ canvas, canvasContext: context, viewport }).promise
 
     dataUrls.push(canvas.toDataURL('image/png'))
   }

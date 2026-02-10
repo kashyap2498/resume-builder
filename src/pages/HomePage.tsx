@@ -332,7 +332,7 @@ export default function HomePage() {
   const duplicateResumeMut = useMutation(api.resumes.duplicate)
   const addToast = useToastStore((s) => s.addToast)
 
-  const resumes = (rawResumes ?? []).map((r) => ({
+  const resumes = (rawResumes ?? []).map((r: { _id: string; name: string; templateId: string; updatedAt: string }) => ({
     id: r._id as string,
     name: r.name,
     templateId: r.templateId,
