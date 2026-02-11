@@ -8,10 +8,13 @@ import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import type { TemplateProps } from '@/types/template';
 import type { SectionConfig } from '@/types/resume';
 import { formatDateRange } from '../shared/DateRange';
+import { resolvePdfFontFamily } from '@/utils/pdfFontRegistry'
 
 const WhitespacePdf: React.FC<TemplateProps> = ({ resume }) => {
   const { data, styling, sections } = resume;
   const { font, colors, layout } = styling;
+  const bodyFont = resolvePdfFontFamily(font.family)
+  const headerFont = resolvePdfFontFamily(font.headerFamily)
 
   const sectionGap = layout.sectionSpacing * 1.5;
 
@@ -22,14 +25,14 @@ const WhitespacePdf: React.FC<TemplateProps> = ({ resume }) => {
       paddingBottom: layout.margins.bottom + 8,
       paddingLeft: layout.margins.left + 8,
       backgroundColor: colors.background,
-      fontFamily: 'Helvetica',
+      fontFamily: bodyFont,
       fontSize: font.sizes.normal,
       color: colors.text,
       lineHeight: font.lineHeight,
     },
     name: {
       fontSize: font.sizes.name,
-      fontFamily: 'Helvetica',
+      fontFamily: headerFont,
       fontWeight: 400,
       color: colors.text,
       textAlign: 'center',
@@ -55,7 +58,7 @@ const WhitespacePdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     sectionTitle: {
       fontSize: font.sizes.sectionHeader,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: headerFont, fontWeight: 700 as const,
       color: colors.primary,
       marginBottom: 8,
     },
@@ -66,12 +69,12 @@ const WhitespacePdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     entryTitle: {
       fontSize: font.sizes.normal,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: bodyFont, fontWeight: 700 as const,
       color: colors.text,
     },
     entrySubtitle: {
       fontSize: font.sizes.normal,
-      fontFamily: 'Helvetica-Oblique',
+      fontFamily: bodyFont, fontStyle: 'italic' as const,
       color: colors.secondary,
     },
     entryDate: {
@@ -98,7 +101,7 @@ const WhitespacePdf: React.FC<TemplateProps> = ({ resume }) => {
       marginBottom: 4,
     },
     skillCategory: {
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: bodyFont, fontWeight: 700 as const,
     },
     bodyText: {
       fontSize: font.sizes.normal,

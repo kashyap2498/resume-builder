@@ -7,10 +7,13 @@ import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import type { TemplateProps } from '@/types/template';
 import type { SectionConfig } from '@/types/resume';
 import { formatDateRange } from '../shared/DateRange';
+import { resolvePdfFontFamily } from '@/utils/pdfFontRegistry'
 
 const ExecutiveSuitePdf: React.FC<TemplateProps> = ({ resume }) => {
   const { data, styling, sections } = resume;
   const { font, colors, layout } = styling;
+  const bodyFont = resolvePdfFontFamily(font.family)
+  const headerFont = resolvePdfFontFamily(font.headerFamily)
   const accentColor = colors.accent || '#8B7355';
 
   const styles = StyleSheet.create({
@@ -20,7 +23,7 @@ const ExecutiveSuitePdf: React.FC<TemplateProps> = ({ resume }) => {
       paddingBottom: layout.margins.bottom,
       paddingLeft: layout.margins.left,
       backgroundColor: colors.background,
-      fontFamily: 'Times-Roman',
+      fontFamily: bodyFont,
       fontSize: font.sizes.normal,
       color: colors.text,
       lineHeight: font.lineHeight,
@@ -36,7 +39,8 @@ const ExecutiveSuitePdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     name: {
       fontSize: font.sizes.name + 6,
-      fontFamily: 'Times-Bold',
+      fontFamily: headerFont,
+      fontWeight: 700 as const,
       color: colors.text,
       textTransform: 'uppercase',
       letterSpacing: 3,
@@ -60,7 +64,8 @@ const ExecutiveSuitePdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     sectionTitle: {
       fontSize: font.sizes.sectionHeader,
-      fontFamily: 'Times-Bold',
+      fontFamily: headerFont,
+      fontWeight: 700 as const,
       color: accentColor,
       textTransform: 'uppercase',
       letterSpacing: 2,
@@ -76,12 +81,14 @@ const ExecutiveSuitePdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     entryTitle: {
       fontSize: font.sizes.normal,
-      fontFamily: 'Times-Bold',
+      fontFamily: bodyFont,
+      fontWeight: 700 as const,
       color: colors.text,
     },
     entrySubtitle: {
       fontSize: font.sizes.normal,
-      fontFamily: 'Times-Italic',
+      fontFamily: bodyFont,
+      fontStyle: 'italic' as const,
       color: colors.secondary,
     },
     entryDate: {
@@ -92,7 +99,8 @@ const ExecutiveSuitePdf: React.FC<TemplateProps> = ({ resume }) => {
       fontSize: font.sizes.normal,
       color: colors.text,
       marginTop: 2,
-      fontFamily: 'Times-Italic',
+      fontFamily: bodyFont,
+      fontStyle: 'italic' as const,
     },
     descriptionNormal: {
       fontSize: font.sizes.normal,
@@ -114,7 +122,8 @@ const ExecutiveSuitePdf: React.FC<TemplateProps> = ({ resume }) => {
       marginBottom: 4,
     },
     skillCategory: {
-      fontFamily: 'Times-Bold',
+      fontFamily: bodyFont,
+      fontWeight: 700 as const,
       color: accentColor,
     },
     bodyText: {

@@ -7,16 +7,19 @@ import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import type { TemplateProps } from '@/types/template';
 import type { SectionConfig } from '@/types/resume';
 import { formatDateRange } from '../shared/DateRange';
+import { resolvePdfFontFamily } from '@/utils/pdfFontRegistry'
 
 const ClinicalProfessionalPdf: React.FC<TemplateProps> = ({ resume }) => {
   const { data, styling, sections } = resume;
   const { font, colors, layout } = styling;
+  const bodyFont = resolvePdfFontFamily(font.family)
+  const headerFont = resolvePdfFontFamily(font.headerFamily)
   const medBlue = colors.accent || '#1565C0';
 
   const styles = StyleSheet.create({
     page: {
       backgroundColor: colors.background,
-      fontFamily: 'Helvetica',
+      fontFamily: bodyFont,
       fontSize: font.sizes.normal,
       color: colors.text,
       lineHeight: font.lineHeight,
@@ -37,7 +40,7 @@ const ClinicalProfessionalPdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     name: {
       fontSize: font.sizes.name,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: headerFont, fontWeight: 700 as const,
       color: '#ffffff',
       marginBottom: 8,
       lineHeight: 1.2,
@@ -58,7 +61,7 @@ const ClinicalProfessionalPdf: React.FC<TemplateProps> = ({ resume }) => {
     sectionContainer: { marginBottom: layout.sectionSpacing },
     sectionTitle: {
       fontSize: font.sizes.sectionHeader,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: headerFont, fontWeight: 700 as const,
       color: medBlue,
       textTransform: 'uppercase',
       letterSpacing: 1,
@@ -68,14 +71,14 @@ const ClinicalProfessionalPdf: React.FC<TemplateProps> = ({ resume }) => {
       paddingBottom: 3,
     },
     entryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-    entryTitle: { fontSize: font.sizes.normal, fontFamily: 'Helvetica-Bold', color: colors.text },
-    entrySubtitle: { fontSize: font.sizes.normal, fontFamily: 'Helvetica-Oblique', color: colors.secondary },
+    entryTitle: { fontSize: font.sizes.normal, fontFamily: bodyFont, fontWeight: 700 as const, color: colors.text },
+    entrySubtitle: { fontSize: font.sizes.normal, fontFamily: bodyFont, fontStyle: 'italic' as const, color: colors.secondary },
     entryDate: { fontSize: font.sizes.small, color: colors.lightText },
     description: { fontSize: font.sizes.normal, color: colors.text, marginTop: 2 },
     bulletItem: { fontSize: font.sizes.normal, color: colors.text, marginLeft: 12, marginBottom: 1 },
     entryBlock: { marginBottom: layout.itemSpacing },
     skillLine: { fontSize: font.sizes.normal, color: colors.text, marginBottom: 4 },
-    skillCategory: { fontFamily: 'Helvetica-Bold', color: medBlue },
+    skillCategory: { fontFamily: bodyFont, fontWeight: 700 as const, color: medBlue },
     bodyText: { fontSize: font.sizes.normal, color: colors.text },
     smallText: { fontSize: font.sizes.small, color: colors.lightText },
   });

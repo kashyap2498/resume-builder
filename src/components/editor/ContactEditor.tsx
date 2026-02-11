@@ -15,10 +15,14 @@ import {
 } from 'lucide-react';
 import { useResumeStore } from '@/store/resumeStore';
 import { Input } from '@/components/ui';
+import { contactSchema } from '@/schemas/contact';
+import { useFieldValidation } from '@/hooks/useFieldValidation';
 
 export function ContactEditor() {
   const contact = useResumeStore((s) => s.currentResume?.data.contact);
   const updateContact = useResumeStore((s) => s.updateContact);
+
+  const { onBlur, getError } = useFieldValidation(contactSchema, contact ?? {} as Record<string, unknown>);
 
   if (!contact) return null;
 
@@ -40,6 +44,8 @@ export function ContactEditor() {
           placeholder="John"
           value={contact.firstName}
           onChange={(e) => updateContact({ firstName: e.target.value })}
+          onBlur={() => onBlur('firstName')}
+          error={getError('firstName')}
           icon={<User className="h-4 w-4" />}
         />
         <Input
@@ -47,6 +53,8 @@ export function ContactEditor() {
           placeholder="Doe"
           value={contact.lastName}
           onChange={(e) => updateContact({ lastName: e.target.value })}
+          onBlur={() => onBlur('lastName')}
+          error={getError('lastName')}
         />
       </div>
 
@@ -67,6 +75,8 @@ export function ContactEditor() {
           placeholder="john@example.com"
           value={contact.email}
           onChange={(e) => updateContact({ email: e.target.value })}
+          onBlur={() => onBlur('email')}
+          error={getError('email')}
           icon={<Mail className="h-4 w-4" />}
         />
         <Input
@@ -75,6 +85,8 @@ export function ContactEditor() {
           placeholder="+1 (555) 123-4567"
           value={contact.phone}
           onChange={(e) => updateContact({ phone: e.target.value })}
+          onBlur={() => onBlur('phone')}
+          error={getError('phone')}
           icon={<Phone className="h-4 w-4" />}
         />
       </div>
@@ -94,6 +106,8 @@ export function ContactEditor() {
           placeholder="https://johndoe.com"
           value={contact.website}
           onChange={(e) => updateContact({ website: e.target.value })}
+          onBlur={() => onBlur('website')}
+          error={getError('website')}
           icon={<Globe className="h-4 w-4" />}
         />
       </div>
@@ -105,6 +119,8 @@ export function ContactEditor() {
           placeholder="https://linkedin.com/in/johndoe"
           value={contact.linkedin}
           onChange={(e) => updateContact({ linkedin: e.target.value })}
+          onBlur={() => onBlur('linkedin')}
+          error={getError('linkedin')}
           icon={<Linkedin className="h-4 w-4" />}
         />
         <Input
@@ -112,6 +128,8 @@ export function ContactEditor() {
           placeholder="https://github.com/johndoe"
           value={contact.github}
           onChange={(e) => updateContact({ github: e.target.value })}
+          onBlur={() => onBlur('github')}
+          error={getError('github')}
           icon={<Github className="h-4 w-4" />}
         />
       </div>
@@ -122,6 +140,8 @@ export function ContactEditor() {
         placeholder="https://portfolio.johndoe.com"
         value={contact.portfolio}
         onChange={(e) => updateContact({ portfolio: e.target.value })}
+        onBlur={() => onBlur('portfolio')}
+        error={getError('portfolio')}
         icon={<Link className="h-4 w-4" />}
       />
     </div>

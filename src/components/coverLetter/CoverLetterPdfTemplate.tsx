@@ -5,6 +5,7 @@
 import React from 'react';
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import type { Resume } from '@/types/resume';
+import { resolvePdfFontFamily } from '@/utils/pdfFontRegistry'
 
 interface CoverLetterPdfProps {
   resume: Resume;
@@ -14,11 +15,13 @@ const CoverLetterPdfTemplate: React.FC<CoverLetterPdfProps> = ({ resume }) => {
   const cl = resume.coverLetter;
   const contact = resume.data.contact;
   const { font, colors, layout } = resume.styling;
+  const bodyFont = resolvePdfFontFamily(font.family)
+  const headerFont = resolvePdfFontFamily(font.headerFamily)
 
   const styles = StyleSheet.create({
     page: {
       backgroundColor: colors.background,
-      fontFamily: 'Helvetica',
+      fontFamily: bodyFont,
       fontSize: font.sizes.normal,
       color: colors.text,
       lineHeight: font.lineHeight,
@@ -29,7 +32,8 @@ const CoverLetterPdfTemplate: React.FC<CoverLetterPdfProps> = ({ resume }) => {
     },
     senderName: {
       fontSize: font.sizes.name,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: bodyFont,
+      fontWeight: 700 as const,
       color: colors.primary,
       lineHeight: 1.2,
       marginBottom: 4,
@@ -54,7 +58,8 @@ const CoverLetterPdfTemplate: React.FC<CoverLetterPdfProps> = ({ resume }) => {
     },
     salutation: {
       fontSize: font.sizes.normal,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: bodyFont,
+      fontWeight: 700 as const,
       color: colors.text,
       marginBottom: layout.itemSpacing + 4,
     },
@@ -71,7 +76,8 @@ const CoverLetterPdfTemplate: React.FC<CoverLetterPdfProps> = ({ resume }) => {
     },
     signatureName: {
       fontSize: font.sizes.normal,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: bodyFont,
+      fontWeight: 700 as const,
       color: colors.text,
     },
   });

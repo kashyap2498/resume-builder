@@ -85,6 +85,9 @@ async function generatePdfBlob(
   resume: Resume,
   type: 'resume' | 'coverLetter'
 ): Promise<Blob> {
+  const { ensurePdfFontsRegistered } = await import('@/utils/pdfFontRegistry')
+  await ensurePdfFontsRegistered()
+
   const { pdf } = await import('@react-pdf/renderer')
   const React = await import('react')
 

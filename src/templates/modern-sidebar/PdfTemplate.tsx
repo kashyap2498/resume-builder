@@ -7,18 +7,21 @@ import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import type { TemplateProps } from '@/types/template';
 import type { SectionConfig } from '@/types/resume';
 import { formatDateRange } from '../shared/DateRange';
+import { resolvePdfFontFamily } from '@/utils/pdfFontRegistry'
 
 const SIDEBAR_SECTIONS = new Set(['contact', 'skills', 'languages', 'certifications', 'hobbies']);
 
 const ModernSidebarPdf: React.FC<TemplateProps> = ({ resume }) => {
   const { data, styling, sections } = resume;
   const { font, colors, layout } = styling;
+  const bodyFont = resolvePdfFontFamily(font.family)
+  const headerFont = resolvePdfFontFamily(font.headerFamily)
   const accentColor = colors.accent || colors.primary;
 
   const styles = StyleSheet.create({
     page: {
       backgroundColor: colors.background,
-      fontFamily: 'Helvetica',
+      fontFamily: bodyFont,
       fontSize: font.sizes.normal,
       color: colors.text,
       lineHeight: font.lineHeight,
@@ -43,7 +46,7 @@ const ModernSidebarPdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     name: {
       fontSize: font.sizes.name,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: headerFont, fontWeight: 700 as const,
       color: '#ffffff',
       marginBottom: 8,
       lineHeight: 1.2,
@@ -60,7 +63,7 @@ const ModernSidebarPdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     sidebarSectionTitle: {
       fontSize: font.sizes.sectionHeader,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: headerFont, fontWeight: 700 as const,
       color: '#ffffff',
       textTransform: 'uppercase',
       letterSpacing: 1,
@@ -74,7 +77,7 @@ const ModernSidebarPdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     sidebarCategoryName: {
       fontSize: font.sizes.small,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: bodyFont, fontWeight: 700 as const,
       color: 'rgba(255,255,255,0.9)',
       marginBottom: 2,
     },
@@ -85,7 +88,7 @@ const ModernSidebarPdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     sidebarEntryTitle: {
       fontSize: font.sizes.small,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: bodyFont, fontWeight: 700 as const,
       color: '#ffffff',
     },
     sidebarEntrySubtitle: {
@@ -94,7 +97,7 @@ const ModernSidebarPdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     mainSectionTitle: {
       fontSize: font.sizes.sectionHeader,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: headerFont, fontWeight: 700 as const,
       color: accentColor,
       textTransform: 'uppercase',
       letterSpacing: 1,
@@ -113,12 +116,12 @@ const ModernSidebarPdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     entryTitle: {
       fontSize: font.sizes.normal,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: bodyFont, fontWeight: 700 as const,
       color: colors.text,
     },
     entrySubtitle: {
       fontSize: font.sizes.normal,
-      fontFamily: 'Helvetica-Oblique',
+      fontFamily: bodyFont, fontStyle: 'italic' as const,
       color: colors.secondary,
     },
     entryDate: {

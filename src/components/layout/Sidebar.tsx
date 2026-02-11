@@ -9,11 +9,14 @@ import {
   Clock,
 } from 'lucide-react'
 import { useUIStore, type SidebarTab } from '@/store/uiStore'
+import { useResumeStore } from '@/store/resumeStore'
 import { cn } from '@/utils/cn'
 import { SectionManager, FontControls, ColorControls, ThemePicker, LayoutControls } from '@/components/styling'
 import { AtsPanel } from '@/components/ats'
 import { VersionPanel } from '@/components/versioning/VersionPanel'
 import { JobTracker } from '@/components/versioning/JobTracker'
+import { ProgressRing } from '@/components/ui/ProgressRing'
+import { getResumeCompleteness } from '@/utils/resumeCompleteness'
 
 // -- Tab config ---------------------------------------------------------------
 
@@ -31,9 +34,31 @@ const TABS: { id: SidebarTab; label: string; icon: React.ReactNode }[] = [
 export default function Sidebar() {
   const sidebarTab = useUIStore((s) => s.sidebarTab)
   const setSidebarTab = useUIStore((s) => s.setSidebarTab)
+  const resumeData = useResumeStore((s) => s.currentResume?.data)
+  const completeness = resumeData ? getResumeCompleteness(resumeData) : null
 
   return (
     <div className="flex h-full flex-col">
+      {/* Resume completion indicator */}
+      {completeness && (
+        <div className="px-4 pt-4 pb-2 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <ProgressRing percent={completeness.percent} />
+            <div>
+              <p className="text-xs font-semibold text-gray-800">Resume Strength</p>
+              {completeness.details.length > 0 ? (
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  Missing: {completeness.details.slice(0, 2).join(', ')}
+                  {completeness.details.length > 2 && ` +${completeness.details.length - 2} more`}
+                </p>
+              ) : (
+                <p className="text-[11px] text-green-600 mt-0.5">Looking great!</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Tab switcher */}
       <div className="flex border-b border-gray-200 shrink-0" role="tablist" aria-label="Sidebar tabs">
         {TABS.map((tab) => (

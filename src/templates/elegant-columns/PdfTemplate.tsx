@@ -7,33 +7,36 @@ import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import type { TemplateProps } from '@/types/template';
 import type { SectionConfig } from '@/types/resume';
 import { formatDateRange } from '../shared/DateRange';
+import { resolvePdfFontFamily } from '@/utils/pdfFontRegistry'
 
 const SIDEBAR_SECTIONS = new Set(['contact', 'skills', 'languages', 'certifications', 'hobbies']);
 
 const ElegantColumnsPdf: React.FC<TemplateProps> = ({ resume }) => {
   const { data, styling, sections } = resume;
   const { font, colors, layout } = styling;
+  const bodyFont = resolvePdfFontFamily(font.family)
+  const headerFont = resolvePdfFontFamily(font.headerFamily)
   const accentColor = colors.accent || '#5C6BC0';
 
   const styles = StyleSheet.create({
-    page: { backgroundColor: colors.background, fontFamily: 'Helvetica', fontSize: font.sizes.normal, color: colors.text, lineHeight: font.lineHeight, flexDirection: 'row', paddingTop: layout.margins.top, paddingBottom: layout.margins.bottom },
+    page: { backgroundColor: colors.background, fontFamily: bodyFont, fontSize: font.sizes.normal, color: colors.text, lineHeight: font.lineHeight, flexDirection: 'row', paddingTop: layout.margins.top, paddingBottom: layout.margins.bottom },
     sidebar: { width: '33%', marginTop: -layout.margins.top, marginBottom: -layout.margins.bottom, paddingTop: layout.margins.top, paddingBottom: layout.margins.bottom, paddingLeft: layout.margins.left, paddingRight: layout.margins.left * 0.6, borderRightWidth: 1, borderRightColor: colors.divider },
     main: { width: '67%', paddingLeft: layout.margins.left * 0.8, paddingRight: layout.margins.right },
-    name: { fontSize: font.sizes.name, fontFamily: 'Helvetica-Bold', color: colors.text, marginBottom: 8, lineHeight: 1.2 },
-    jobTitle: { fontSize: font.sizes.title, fontFamily: 'Helvetica-Oblique', color: accentColor, marginBottom: 8 },
+    name: { fontSize: font.sizes.name, fontFamily: headerFont, fontWeight: 700 as const, color: colors.text, marginBottom: 8, lineHeight: 1.2 },
+    jobTitle: { fontSize: font.sizes.title, fontFamily: bodyFont, fontStyle: 'italic' as const, color: accentColor, marginBottom: 8 },
     accentLine: { width: 30, height: 2, backgroundColor: accentColor, marginBottom: 10 },
     contactItem: { fontSize: font.sizes.small, color: colors.lightText, marginBottom: 3 },
     sidebarSection: { marginBottom: layout.sectionSpacing },
-    sidebarSectionTitle: { fontSize: font.sizes.sectionHeader - 1, fontFamily: 'Helvetica-Bold', color: accentColor, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6, borderBottomWidth: 1, borderBottomColor: accentColor, paddingBottom: 4 },
-    sidebarCategoryName: { fontSize: font.sizes.small, fontFamily: 'Helvetica-Bold', color: accentColor, marginBottom: 2 },
+    sidebarSectionTitle: { fontSize: font.sizes.sectionHeader - 1, fontFamily: headerFont, fontWeight: 700 as const, color: accentColor, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6, borderBottomWidth: 1, borderBottomColor: accentColor, paddingBottom: 4 },
+    sidebarCategoryName: { fontSize: font.sizes.small, fontFamily: bodyFont, fontWeight: 700 as const, color: accentColor, marginBottom: 2 },
     sidebarText: { fontSize: font.sizes.small, color: colors.text, marginBottom: 6 },
-    sidebarEntryTitle: { fontSize: font.sizes.small, fontFamily: 'Helvetica-Bold', color: colors.text },
+    sidebarEntryTitle: { fontSize: font.sizes.small, fontFamily: bodyFont, fontWeight: 700 as const, color: colors.text },
     sidebarEntrySubtitle: { fontSize: font.sizes.small - 1, color: colors.lightText },
     mainSection: { marginBottom: layout.sectionSpacing },
-    mainSectionTitle: { fontSize: font.sizes.sectionHeader, fontFamily: 'Helvetica-Bold', color: accentColor, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6, borderBottomWidth: 1, borderBottomColor: colors.divider, paddingBottom: 4 },
+    mainSectionTitle: { fontSize: font.sizes.sectionHeader, fontFamily: headerFont, fontWeight: 700 as const, color: accentColor, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6, borderBottomWidth: 1, borderBottomColor: colors.divider, paddingBottom: 4 },
     entryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-    entryTitle: { fontSize: font.sizes.normal, fontFamily: 'Helvetica-Bold', color: colors.text },
-    entrySubtitle: { fontSize: font.sizes.normal, fontFamily: 'Helvetica-Oblique', color: colors.secondary },
+    entryTitle: { fontSize: font.sizes.normal, fontFamily: bodyFont, fontWeight: 700 as const, color: colors.text },
+    entrySubtitle: { fontSize: font.sizes.normal, fontFamily: bodyFont, fontStyle: 'italic' as const, color: colors.secondary },
     entryDate: { fontSize: font.sizes.small, color: colors.lightText },
     description: { fontSize: font.sizes.normal, color: colors.text, marginTop: 2 },
     bulletItem: { fontSize: font.sizes.normal, color: colors.text, marginLeft: 12, marginBottom: 1 },

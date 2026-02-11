@@ -23,6 +23,7 @@ interface UIState {
   isMobile: boolean;
   isTablet: boolean;
   activeDocType: ActiveDocType;
+  showShortcuts: boolean;
 }
 
 interface UIActions {
@@ -37,6 +38,7 @@ interface UIActions {
   setOnboardingStep: (step: number) => void;
   setDeviceSize: (width: number) => void;
   setActiveDocType: (type: ActiveDocType) => void;
+  setShowShortcuts: (show: boolean) => void;
 }
 
 export type UIStore = UIState & UIActions;
@@ -60,6 +62,7 @@ export const useUIStore = create<UIStore>((set) => ({
   isMobile: false,
   isTablet: false,
   activeDocType: 'resume',
+  showShortcuts: false,
 
   // -- Actions ----------------------------------------------------------------
 
@@ -102,4 +105,6 @@ export const useUIStore = create<UIStore>((set) => ({
     }),
 
   setActiveDocType: (type) => set({ activeDocType: type }),
+
+  setShowShortcuts: (show) => set({ showShortcuts: show }),
 }));

@@ -219,15 +219,20 @@ export default function EditorPanel() {
               key={section.id}
               data-section-id={section.id}
               className={cn(
-                'group rounded-xl border bg-white p-6 transition-all duration-200 cursor-pointer',
+                'group rounded-xl border bg-white p-6 transition-all duration-200',
                 isActive
                   ? 'border-blue-400 ring-2 ring-blue-200 shadow-sm'
                   : 'border-gray-200 hover:border-gray-300 hover:shadow-sm',
               )}
-              onClick={() => toggleSection(section.id)}
             >
               {/* Section header */}
-              <div className="flex items-center gap-3 mb-4">
+              <div
+                className="flex items-center gap-3 mb-4 cursor-pointer"
+                onClick={() => toggleSection(section.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSection(section.id) } }}
+              >
                 <div
                   className={cn(
                     'flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
@@ -268,10 +273,10 @@ export default function EditorPanel() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.25, ease: 'easeInOut' }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                     className="overflow-hidden"
                   >
-                    <div className="mt-1">
+                    <div className="mt-1" onClick={(e) => e.stopPropagation()}>
                       <SectionEditorRouter sectionType={section.type} />
                     </div>
                   </motion.div>
@@ -283,7 +288,10 @@ export default function EditorPanel() {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.15 }}
                   >
-                    <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50/50 px-4 py-3">
+                    <div
+                      className="rounded-lg border border-dashed border-gray-200 bg-gray-50/50 px-4 py-3 cursor-pointer"
+                      onClick={() => toggleSection(section.id)}
+                    >
                       <p className={cn(
                         'text-xs truncate',
                         summary ? 'text-gray-500' : 'text-center text-gray-500 italic'

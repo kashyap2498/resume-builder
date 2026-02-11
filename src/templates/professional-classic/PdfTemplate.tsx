@@ -8,17 +8,20 @@ import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import type { TemplateProps } from '@/types/template';
 import type { SectionConfig } from '@/types/resume';
 import { formatDateRange } from '../shared/DateRange';
+import { resolvePdfFontFamily } from '@/utils/pdfFontRegistry'
 
 const ProfessionalClassicPdf: React.FC<TemplateProps> = ({ resume }) => {
   const { data, styling, sections } = resume;
   const { font, colors, layout } = styling;
+  const bodyFont = resolvePdfFontFamily(font.family)
+  const headerFont = resolvePdfFontFamily(font.headerFamily)
   const headerBg = colors.headerBg || '#1a2744';
   const headerText = colors.headerText || '#ffffff';
 
   const styles = StyleSheet.create({
     page: {
       backgroundColor: colors.background,
-      fontFamily: 'Helvetica',
+      fontFamily: bodyFont,
       fontSize: font.sizes.normal,
       color: colors.text,
       lineHeight: font.lineHeight,
@@ -41,7 +44,7 @@ const ProfessionalClassicPdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     name: {
       fontSize: font.sizes.name,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: headerFont, fontWeight: 700 as const,
       color: headerText,
       marginBottom: 8,
       lineHeight: 1.2,
@@ -64,7 +67,7 @@ const ProfessionalClassicPdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     sectionTitle: {
       fontSize: font.sizes.sectionHeader,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: headerFont, fontWeight: 700 as const,
       color: colors.primary,
       textTransform: 'uppercase',
       letterSpacing: 1.5,
@@ -80,12 +83,12 @@ const ProfessionalClassicPdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     entryTitle: {
       fontSize: font.sizes.normal,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: bodyFont, fontWeight: 700 as const,
       color: colors.text,
     },
     entrySubtitle: {
       fontSize: font.sizes.normal,
-      fontFamily: 'Helvetica-Oblique',
+      fontFamily: bodyFont, fontStyle: 'italic' as const,
       color: colors.secondary,
     },
     entryDate: {
@@ -112,7 +115,7 @@ const ProfessionalClassicPdf: React.FC<TemplateProps> = ({ resume }) => {
       marginBottom: 2,
     },
     skillCategory: {
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: bodyFont, fontWeight: 700 as const,
       color: colors.primary,
     },
     bodyText: {

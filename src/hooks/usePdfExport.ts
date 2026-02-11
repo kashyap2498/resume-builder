@@ -19,6 +19,8 @@ export function usePdfExport(): UsePdfExportReturn {
     async (element: React.ReactElement, fileName: string) => {
       setIsExporting(true);
       try {
+        const { ensurePdfFontsRegistered } = await import('@/utils/pdfFontRegistry');
+        await ensurePdfFontsRegistered();
         const { pdf } = await import('@react-pdf/renderer');
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const blob = await pdf(element as any).toBlob();

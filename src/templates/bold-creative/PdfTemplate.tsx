@@ -7,30 +7,33 @@ import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import type { TemplateProps } from '@/types/template';
 import type { SectionConfig } from '@/types/resume';
 import { formatDateRange } from '../shared/DateRange';
+import { resolvePdfFontFamily } from '@/utils/pdfFontRegistry'
 
 const BoldCreativePdf: React.FC<TemplateProps> = ({ resume }) => {
   const { data, styling, sections } = resume;
   const { font, colors, layout } = styling;
+  const bodyFont = resolvePdfFontFamily(font.family)
+  const headerFont = resolvePdfFontFamily(font.headerFamily)
   const accentColor = colors.accent || '#FF6F00';
 
   const styles = StyleSheet.create({
-    page: { paddingTop: layout.margins.top, paddingRight: layout.margins.right, paddingBottom: layout.margins.bottom, paddingLeft: layout.margins.left, backgroundColor: colors.background, fontFamily: 'Helvetica', fontSize: font.sizes.normal, color: colors.text, lineHeight: font.lineHeight },
+    page: { paddingTop: layout.margins.top, paddingRight: layout.margins.right, paddingBottom: layout.margins.bottom, paddingLeft: layout.margins.left, backgroundColor: colors.background, fontFamily: bodyFont, fontSize: font.sizes.normal, color: colors.text, lineHeight: font.lineHeight },
     nameBlock: { textAlign: 'center', marginBottom: 8 },
-    name: { fontSize: font.sizes.name + 10, fontFamily: 'Helvetica-Bold', color: accentColor, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8, lineHeight: 1.1 },
+    name: { fontSize: font.sizes.name + 10, fontFamily: headerFont, fontWeight: 700 as const, color: accentColor, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8, lineHeight: 1.1 },
     jobTitle: { fontSize: font.sizes.title + 2, color: colors.text, letterSpacing: 4, textTransform: 'uppercase', marginBottom: 8 },
     accentLine: { width: 60, height: 4, backgroundColor: accentColor, marginBottom: 8, marginHorizontal: 'auto' },
     contactLine: { fontSize: font.sizes.small, color: colors.lightText, textAlign: 'center', marginBottom: layout.sectionSpacing },
     sectionContainer: { marginBottom: layout.sectionSpacing },
-    sectionTitle: { fontSize: font.sizes.sectionHeader + 4, fontFamily: 'Helvetica-Bold', color: accentColor, textTransform: 'uppercase', letterSpacing: 3, marginBottom: 8 },
+    sectionTitle: { fontSize: font.sizes.sectionHeader + 4, fontFamily: headerFont, fontWeight: 700 as const, color: accentColor, textTransform: 'uppercase', letterSpacing: 3, marginBottom: 8 },
     entryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-    entryTitle: { fontSize: font.sizes.normal, fontFamily: 'Helvetica-Bold', color: colors.text },
-    entrySubtitle: { fontSize: font.sizes.normal, fontFamily: 'Helvetica-Oblique', color: colors.secondary },
+    entryTitle: { fontSize: font.sizes.normal, fontFamily: bodyFont, fontWeight: 700 as const, color: colors.text },
+    entrySubtitle: { fontSize: font.sizes.normal, fontFamily: bodyFont, fontStyle: 'italic' as const, color: colors.secondary },
     entryDate: { fontSize: font.sizes.small, color: colors.lightText },
     description: { fontSize: font.sizes.normal, color: colors.text, marginTop: 2 },
     bulletItem: { fontSize: font.sizes.normal, color: colors.text, marginLeft: 12, marginBottom: 1 },
     entryBlock: { marginBottom: layout.itemSpacing },
     skillLine: { fontSize: font.sizes.normal, color: colors.text, marginBottom: 4 },
-    skillCategory: { fontFamily: 'Helvetica-Bold', color: accentColor },
+    skillCategory: { fontFamily: bodyFont, fontWeight: 700 as const, color: accentColor },
     bodyText: { fontSize: font.sizes.normal, color: colors.text },
     smallText: { fontSize: font.sizes.small, color: colors.lightText },
   });

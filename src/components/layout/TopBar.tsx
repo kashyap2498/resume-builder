@@ -4,6 +4,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft,
   Download,
@@ -16,9 +17,11 @@ import {
   Clock,
   Bookmark,
   ChevronDown,
+  HelpCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
+import { KeyboardShortcutsModal } from '@/components/ui/KeyboardShortcutsModal'
 import { useResumeStore } from '@/store/resumeStore'
 import { useUIStore } from '@/store/uiStore'
 import { useToastStore } from '@/hooks/useToast'
@@ -50,6 +53,8 @@ export default function TopBar() {
   const [versionModalOpen, setVersionModalOpen] = useState(false)
   const [versionLabel, setVersionLabel] = useState('')
   const [exportOpen, setExportOpen] = useState(false)
+  const shortcutsOpen = useUIStore((s) => s.showShortcuts)
+  const setShortcutsOpen = useUIStore((s) => s.setShowShortcuts)
   const inputRef = useRef<HTMLInputElement>(null)
   const versionInputRef = useRef<HTMLInputElement>(null)
   const exportRef = useRef<HTMLDivElement>(null)
@@ -282,6 +287,14 @@ export default function TopBar() {
           </span>
         )}
 
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<HelpCircle className="h-4 w-4" />}
+          onClick={() => setShortcutsOpen(true)}
+          title="Keyboard shortcuts"
+        />
+
         <div className="relative" ref={exportRef}>
           <Button
             variant="ghost"
@@ -298,25 +311,33 @@ export default function TopBar() {
             {!anyExporting && <ChevronDown className="h-3 w-3 ml-0.5" />}
           </Button>
 
-          {exportOpen && (
-            <div className="absolute right-0 top-full mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg py-1 z-50">
-              <button onClick={() => { setExportOpen(false); handleExportPDF() }}
-                disabled={pdfExporting}
-                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                <FileDown className="h-4 w-4 text-gray-500" /> Download PDF
-              </button>
-              <button onClick={() => { setExportOpen(false); handleExportDocx() }}
-                disabled={docxExporting}
-                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                <FileText className="h-4 w-4 text-gray-500" /> Download DOCX
-              </button>
-              <div className="my-1 h-px bg-gray-100" />
-              <button onClick={() => { setExportOpen(false); handleSaveJSON() }}
-                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                <Download className="h-4 w-4 text-gray-500" /> Save as JSON
-              </button>
-            </div>
-          )}
+          <AnimatePresence>
+            {exportOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                className="absolute right-0 top-full mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg py-1 z-50"
+              >
+                <button onClick={() => { setExportOpen(false); handleExportPDF() }}
+                  disabled={pdfExporting}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  <FileDown className="h-4 w-4 text-gray-500" /> Download PDF
+                </button>
+                <button onClick={() => { setExportOpen(false); handleExportDocx() }}
+                  disabled={docxExporting}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  <FileText className="h-4 w-4 text-gray-500" /> Download DOCX
+                </button>
+                <div className="my-1 h-px bg-gray-100" />
+                <button onClick={() => { setExportOpen(false); handleSaveJSON() }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  <Download className="h-4 w-4 text-gray-500" /> Save as JSON
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {!isCoverLetter && (
@@ -386,6 +407,9 @@ export default function TopBar() {
           />
         </label>
       </Modal>
+
+      {/* Keyboard Shortcuts Modal */}
+      <KeyboardShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
       {/* Import Modal */}
       <ImportModal

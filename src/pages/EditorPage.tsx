@@ -7,7 +7,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { useResumeStore } from '@/store/resumeStore'
-import { useUIStore } from '@/store/uiStore'
+import { useUIStore, type UIStore } from '@/store/uiStore'
 import { useStylingStore } from '@/store/stylingStore'
 import { useHistoryStore } from '@/store/historyStore'
 import { useAutoSave } from '@/hooks/useAutoSave'
@@ -127,6 +127,15 @@ export default function EditorPage() {
         if (current) {
           const next = useHistoryStore.getState().redo(current)
           if (next) useResumeStore.getState().setResume(next)
+        }
+      }
+
+      // ? key: Open keyboard shortcuts modal (when not in input)
+      if (e.key === '?' && !isCtrlOrCmd) {
+        const tag = (e.target as HTMLElement).tagName
+        if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') {
+          e.preventDefault()
+          ;(useUIStore.getState() as UIStore).setShowShortcuts(true)
         }
       }
     },

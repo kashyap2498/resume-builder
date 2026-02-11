@@ -7,34 +7,37 @@ import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import type { TemplateProps } from '@/types/template';
 import type { SectionConfig } from '@/types/resume';
 import { formatDateRange } from '../shared/DateRange';
+import { resolvePdfFontFamily } from '@/utils/pdfFontRegistry'
 
 const AcademicCvPdf: React.FC<TemplateProps> = ({ resume }) => {
   const { data, styling, sections } = resume;
   const { font, colors, layout } = styling;
+  const bodyFont = resolvePdfFontFamily(font.family)
+  const headerFont = resolvePdfFontFamily(font.headerFamily)
   const accentColor = colors.accent || '#37474F';
 
   const styles = StyleSheet.create({
-    page: { paddingTop: layout.margins.top, paddingRight: layout.margins.right, paddingBottom: layout.margins.bottom, paddingLeft: layout.margins.left, backgroundColor: colors.background, fontFamily: 'Times-Roman', fontSize: font.sizes.normal, color: colors.text, lineHeight: font.lineHeight },
+    page: { paddingTop: layout.margins.top, paddingRight: layout.margins.right, paddingBottom: layout.margins.bottom, paddingLeft: layout.margins.left, backgroundColor: colors.background, fontFamily: bodyFont, fontSize: font.sizes.normal, color: colors.text, lineHeight: font.lineHeight },
     headerBlock: { textAlign: 'center', marginBottom: layout.sectionSpacing, borderBottomWidth: 1, borderBottomColor: colors.divider, paddingBottom: 8 },
-    name: { fontSize: font.sizes.name + 2, fontFamily: 'Times-Bold', color: colors.text, marginBottom: 8, lineHeight: 1.2 },
-    jobTitle: { fontSize: font.sizes.title, fontFamily: 'Times-Italic', color: accentColor, marginBottom: 6 },
+    name: { fontSize: font.sizes.name + 2, fontFamily: headerFont, fontWeight: 700 as const, color: colors.text, marginBottom: 8, lineHeight: 1.2 },
+    jobTitle: { fontSize: font.sizes.title, fontFamily: bodyFont, fontStyle: 'italic' as const, color: accentColor, marginBottom: 6 },
     contactLine: { fontSize: font.sizes.small, color: colors.lightText },
     sectionContainer: { marginBottom: layout.sectionSpacing },
-    sectionTitle: { fontSize: font.sizes.sectionHeader, fontFamily: 'Times-Bold', color: colors.text, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4, borderBottomWidth: 2, borderBottomColor: accentColor, paddingBottom: 3 },
+    sectionTitle: { fontSize: font.sizes.sectionHeader, fontFamily: headerFont, fontWeight: 700 as const, color: colors.text, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4, borderBottomWidth: 2, borderBottomColor: accentColor, paddingBottom: 3 },
     entryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-    entryTitle: { fontSize: font.sizes.normal, fontFamily: 'Times-Bold', color: colors.text },
-    entrySubtitle: { fontSize: font.sizes.normal, fontFamily: 'Times-Italic', color: colors.secondary },
+    entryTitle: { fontSize: font.sizes.normal, fontFamily: bodyFont, fontWeight: 700 as const, color: colors.text },
+    entrySubtitle: { fontSize: font.sizes.normal, fontFamily: bodyFont, fontStyle: 'italic' as const, color: colors.secondary },
     entryDate: { fontSize: font.sizes.small, color: colors.lightText },
     description: { fontSize: font.sizes.normal, color: colors.text, marginTop: 2 },
-    descriptionItalic: { fontSize: font.sizes.normal, fontFamily: 'Times-Italic', color: colors.text, marginTop: 2 },
+    descriptionItalic: { fontSize: font.sizes.normal, fontFamily: bodyFont, fontStyle: 'italic' as const, color: colors.text, marginTop: 2 },
     bulletItem: { fontSize: font.sizes.normal, color: colors.text, marginLeft: 12, marginBottom: 1 },
     entryBlock: { marginBottom: layout.itemSpacing },
     pubEntry: { marginBottom: layout.itemSpacing, paddingLeft: 16 },
-    pubTitle: { fontSize: font.sizes.normal, fontFamily: 'Times-Bold', color: colors.text },
-    pubDetail: { fontSize: font.sizes.normal, fontFamily: 'Times-Italic', color: colors.secondary },
+    pubTitle: { fontSize: font.sizes.normal, fontFamily: bodyFont, fontWeight: 700 as const, color: colors.text },
+    pubDetail: { fontSize: font.sizes.normal, fontFamily: bodyFont, fontStyle: 'italic' as const, color: colors.secondary },
     bodyText: { fontSize: font.sizes.normal, color: colors.text },
     skillLine: { fontSize: font.sizes.normal, color: colors.text, marginBottom: 2 },
-    skillCategory: { fontFamily: 'Times-Bold' },
+    skillCategory: { fontFamily: bodyFont, fontWeight: 700 as const },
     smallText: { fontSize: font.sizes.small, color: colors.lightText },
   });
 

@@ -7,19 +7,22 @@ import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import type { TemplateProps } from '@/types/template';
 import type { SectionConfig } from '@/types/resume';
 import { formatDateRange } from '../shared/DateRange';
+import { resolvePdfFontFamily } from '@/utils/pdfFontRegistry'
 
 const SIDEBAR_SECTIONS = new Set(['skills', 'languages', 'certifications', 'hobbies']);
 
 const DeveloperStackPdf: React.FC<TemplateProps> = ({ resume }) => {
   const { data, styling, sections } = resume;
   const { font, colors, layout } = styling;
+  const bodyFont = resolvePdfFontFamily(font.family)
+  const headerFont = resolvePdfFontFamily(font.headerFamily)
   const accentColor = colors.accent || '#61DAFB';
   const darkBg = '#282c34';
 
   const styles = StyleSheet.create({
     page: {
       backgroundColor: colors.background,
-      fontFamily: 'Helvetica',
+      fontFamily: bodyFont,
       fontSize: font.sizes.normal,
       color: colors.text,
       lineHeight: font.lineHeight,
@@ -35,14 +38,14 @@ const DeveloperStackPdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     name: {
       fontSize: font.sizes.name,
-      fontFamily: 'Courier-Bold',
+      fontFamily: headerFont, fontWeight: 700 as const,
       color: accentColor,
       marginBottom: 8,
       lineHeight: 1.2,
     },
     jobTitle: {
       fontSize: font.sizes.title,
-      fontFamily: 'Courier',
+      fontFamily: bodyFont,
       color: '#abb2bf',
       marginBottom: 8,
     },
@@ -72,37 +75,37 @@ const DeveloperStackPdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     sidebarSectionTitle: {
       fontSize: font.sizes.sectionHeader - 1,
-      fontFamily: 'Courier-Bold',
+      fontFamily: headerFont, fontWeight: 700 as const,
       color: accentColor,
       marginBottom: 6,
     },
     sidebarCategoryName: {
       fontSize: font.sizes.small,
-      fontFamily: 'Courier-Bold',
+      fontFamily: bodyFont, fontWeight: 700 as const,
       color: '#e06c75',
       marginBottom: 2,
     },
     sidebarSkillItem: {
       fontSize: font.sizes.small,
-      fontFamily: 'Courier',
+      fontFamily: bodyFont,
       color: '#abb2bf',
       paddingLeft: 8,
       marginBottom: 1,
     },
     sidebarText: {
       fontSize: font.sizes.small,
-      fontFamily: 'Courier',
+      fontFamily: bodyFont,
       color: '#abb2bf',
       marginBottom: 3,
     },
     sidebarEntryTitle: {
       fontSize: font.sizes.small,
-      fontFamily: 'Courier-Bold',
+      fontFamily: bodyFont, fontWeight: 700 as const,
       color: '#e5c07b',
     },
     sidebarEntrySubtitle: {
       fontSize: font.sizes.small - 1,
-      fontFamily: 'Courier',
+      fontFamily: bodyFont,
       color: '#abb2bf',
     },
     mainSection: {
@@ -110,7 +113,7 @@ const DeveloperStackPdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     mainSectionTitle: {
       fontSize: font.sizes.sectionHeader,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: headerFont, fontWeight: 700 as const,
       color: colors.text,
       marginBottom: 6,
       borderBottomWidth: 2,
@@ -124,12 +127,12 @@ const DeveloperStackPdf: React.FC<TemplateProps> = ({ resume }) => {
     },
     entryTitle: {
       fontSize: font.sizes.normal,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: bodyFont, fontWeight: 700 as const,
       color: colors.text,
     },
     entrySubtitle: {
       fontSize: font.sizes.normal,
-      fontFamily: 'Helvetica-Oblique',
+      fontFamily: bodyFont, fontStyle: 'italic' as const,
       color: colors.secondary,
     },
     entryDate: {

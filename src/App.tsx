@@ -3,6 +3,7 @@ import { useCallback, lazy, Suspense } from 'react'
 import { useConvexAuth } from 'convex/react'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
+import LandingPage from './pages/LandingPage'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ToastContainer } from '@/components/ui/Toast'
 
@@ -59,6 +60,10 @@ export default function App() {
                 <HomePage />
               </AuthGuard>
             }
+          />
+          <Route
+            path="/landing"
+            element={<LandingPage />}
           />
           <Route
             path="/editor/:resumeId"
