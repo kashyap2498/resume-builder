@@ -30,7 +30,7 @@ const AtsProfessionalPdf: React.FC<TemplateProps> = ({ resume }) => {
       fontFamily: 'Helvetica-Bold',
       color: headingColor,
       textAlign: 'center',
-      marginBottom: 2,
+      marginBottom: 8,
     },
     accentLine: {
       width: 60,

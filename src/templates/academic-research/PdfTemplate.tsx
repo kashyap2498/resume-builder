@@ -16,7 +16,7 @@ const AcademicResearchPdf: React.FC<TemplateProps> = ({ resume }) => {
   const styles = StyleSheet.create({
     page: { paddingTop: layout.margins.top, paddingRight: layout.margins.right, paddingBottom: layout.margins.bottom, paddingLeft: layout.margins.left, backgroundColor: colors.background, fontFamily: 'Times-Roman', fontSize: font.sizes.normal, color: colors.text, lineHeight: font.lineHeight },
     headerBlock: { textAlign: 'center', borderBottomWidth: 2, borderBottomColor: accentColor, paddingBottom: 8, marginBottom: layout.sectionSpacing },
-    name: { fontSize: font.sizes.name, fontFamily: 'Times-Bold', color: colors.text, marginBottom: 2 },
+    name: { fontSize: font.sizes.name, fontFamily: 'Times-Bold', color: colors.text, marginBottom: 8 },
     jobTitle: { fontSize: font.sizes.title, color: colors.lightText, marginBottom: 6 },
     contactLine: { fontSize: font.sizes.small, color: colors.lightText },
     sectionContainer: { marginBottom: layout.sectionSpacing },

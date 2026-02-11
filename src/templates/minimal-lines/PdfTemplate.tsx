@@ -31,7 +31,7 @@ const MinimalLinesPdf: React.FC<TemplateProps> = ({ resume }) => {
       fontWeight: 300,
       color: colors.text,
       letterSpacing: 2,
-      marginBottom: 2,
+      marginBottom: 8,
     },
     jobTitle: {
       fontSize: font.sizes.title,

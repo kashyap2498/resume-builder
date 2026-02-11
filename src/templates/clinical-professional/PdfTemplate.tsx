@@ -39,7 +39,7 @@ const ClinicalProfessionalPdf: React.FC<TemplateProps> = ({ resume }) => {
       fontSize: font.sizes.name,
       fontFamily: 'Helvetica-Bold',
       color: '#ffffff',
-      marginBottom: 4,
+      marginBottom: 8,
     },
     jobTitle: {
       fontSize: font.sizes.title,

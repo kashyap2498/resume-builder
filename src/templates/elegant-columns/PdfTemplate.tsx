@@ -19,7 +19,7 @@ const ElegantColumnsPdf: React.FC<TemplateProps> = ({ resume }) => {
     page: { backgroundColor: colors.background, fontFamily: 'Helvetica', fontSize: font.sizes.normal, color: colors.text, lineHeight: font.lineHeight, flexDirection: 'row', paddingTop: layout.margins.top, paddingBottom: layout.margins.bottom },
     sidebar: { width: '33%', marginTop: -layout.margins.top, marginBottom: -layout.margins.bottom, paddingTop: layout.margins.top, paddingBottom: layout.margins.bottom, paddingLeft: layout.margins.left, paddingRight: layout.margins.left * 0.6, borderRightWidth: 1, borderRightColor: colors.divider },
     main: { width: '67%', paddingLeft: layout.margins.left * 0.8, paddingRight: layout.margins.right },
-    name: { fontSize: font.sizes.name, fontFamily: 'Helvetica-Bold', color: colors.text, marginBottom: 4 },
+    name: { fontSize: font.sizes.name, fontFamily: 'Helvetica-Bold', color: colors.text, marginBottom: 8 },
     jobTitle: { fontSize: font.sizes.title, fontFamily: 'Helvetica-Oblique', color: accentColor, marginBottom: 8 },
     accentLine: { width: 30, height: 2, backgroundColor: accentColor, marginBottom: 10 },
     contactItem: { fontSize: font.sizes.small, color: colors.lightText, marginBottom: 3 },

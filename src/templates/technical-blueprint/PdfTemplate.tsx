@@ -35,7 +35,7 @@ const TechnicalBlueprintPdf: React.FC<TemplateProps> = ({ resume }) => {
       fontSize: font.sizes.name,
       fontFamily: 'Courier-Bold',
       color: colors.text,
-      marginBottom: 2,
+      marginBottom: 8,
     },
     jobTitle: {
       fontSize: font.sizes.title,

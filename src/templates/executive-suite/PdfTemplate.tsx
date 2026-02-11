@@ -40,7 +40,7 @@ const ExecutiveSuitePdf: React.FC<TemplateProps> = ({ resume }) => {
       color: colors.text,
       textTransform: 'uppercase',
       letterSpacing: 3,
-      marginBottom: 4,
+      marginBottom: 8,
     },
     jobTitle: {
       fontSize: font.sizes.title,

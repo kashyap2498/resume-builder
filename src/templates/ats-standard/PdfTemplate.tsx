@@ -29,7 +29,7 @@ const AtsStandardPdf: React.FC<TemplateProps> = ({ resume }) => {
       fontFamily: 'Helvetica-Bold',
       color: colors.text,
       textAlign: 'center',
-      marginBottom: 2,
+      marginBottom: 8,
     },
     jobTitle: {
       fontSize: font.sizes.title,
