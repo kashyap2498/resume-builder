@@ -39,3 +39,6 @@ export type { EmptyStateProps } from './EmptyState';
 
 export { Divider } from './Divider';
 export type { DividerProps } from './Divider';
+
+export { MonthYearPicker } from './MonthYearPicker';
+export type { MonthYearPickerProps } from './MonthYearPicker';

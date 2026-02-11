@@ -58,7 +58,7 @@ export function EntryCard({
           <GripVertical className="h-4 w-4 text-gray-300 shrink-0" />
         )}
 
-        <span className="shrink-0 text-gray-400">
+        <span className="shrink-0 text-gray-500">
           {expanded ? (
             <ChevronDown className="h-4 w-4" />
           ) : (

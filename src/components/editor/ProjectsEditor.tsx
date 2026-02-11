@@ -185,7 +185,7 @@ export function ProjectsEditor() {
                         onClick={() =>
                           handleRemoveHighlight(entry.id, entry.highlights, idx)
                         }
-                        className="shrink-0 p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                        className="shrink-0 p-1.5 text-gray-500 hover:text-red-500 transition-colors"
                         aria-label="Remove highlight"
                       >
                         <X className="h-4 w-4" />

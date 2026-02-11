@@ -19,7 +19,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { useResumeStore } from '@/store/resumeStore';
-import { Input, TextArea, Toggle, Button, EmptyState } from '@/components/ui';
+import { Input, TextArea, Toggle, Button, EmptyState, MonthYearPicker } from '@/components/ui';
 import { SortableEntryCard } from './SortableEntryCard';
 
 export function ExperienceEditor() {
@@ -170,23 +170,22 @@ export function ExperienceEditor() {
 
                 {/* Dates */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
+                  <MonthYearPicker
                     label="Start Date"
-                    placeholder="Jan 2020"
                     value={entry.startDate}
-                    onChange={(e) =>
-                      updateExperience(entry.id, { startDate: e.target.value })
+                    onChange={(val) =>
+                      updateExperience(entry.id, { startDate: val })
                     }
                   />
-                  <Input
-                    label="End Date"
-                    placeholder="Dec 2023"
-                    value={entry.endDate}
-                    onChange={(e) =>
-                      updateExperience(entry.id, { endDate: e.target.value })
-                    }
-                    disabled={entry.current}
-                  />
+                  {!entry.current && (
+                    <MonthYearPicker
+                      label="End Date"
+                      value={entry.endDate}
+                      onChange={(val) =>
+                        updateExperience(entry.id, { endDate: val })
+                      }
+                    />
+                  )}
                 </div>
 
                 {/* Currently working */}
@@ -238,7 +237,7 @@ export function ExperienceEditor() {
                         onClick={() =>
                           handleRemoveHighlight(entry.id, entry.highlights, idx)
                         }
-                        className="shrink-0 p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                        className="shrink-0 p-1.5 text-gray-500 hover:text-red-500 transition-colors"
                         aria-label="Remove highlight"
                       >
                         <X className="h-4 w-4" />

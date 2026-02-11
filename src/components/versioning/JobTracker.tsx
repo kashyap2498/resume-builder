@@ -78,7 +78,7 @@ export function JobTracker() {
                 </div>
                 <button
                   onClick={() => removeJob(job.id)}
-                  className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                  className="rounded p-1 text-gray-500 hover:bg-red-50 hover:text-red-600"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -94,7 +94,7 @@ export function JobTracker() {
                   {job.status}
                 </Badge>
               </div>
-              <p className="text-xs text-gray-400">{job.dateApplied}</p>
+              <p className="text-xs text-gray-500">{job.dateApplied}</p>
             </div>
           ))
         )}

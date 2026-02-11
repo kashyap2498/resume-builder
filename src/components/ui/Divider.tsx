@@ -28,7 +28,7 @@ export function Divider({
         role="separator"
       >
         <div className="h-px flex-1 bg-gray-200" />
-        <span className="text-xs font-medium text-gray-400 uppercase tracking-wider select-none">
+        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider select-none">
           {label}
         </span>
         <div className="h-px flex-1 bg-gray-200" />

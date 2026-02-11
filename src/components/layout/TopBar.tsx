@@ -15,6 +15,7 @@ import {
   Loader2,
   Clock,
   Bookmark,
+  ChevronDown,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
@@ -48,8 +49,10 @@ export default function TopBar() {
   const [showSaved, setShowSaved] = useState(false)
   const [versionModalOpen, setVersionModalOpen] = useState(false)
   const [versionLabel, setVersionLabel] = useState('')
+  const [exportOpen, setExportOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const versionInputRef = useRef<HTMLInputElement>(null)
+  const exportRef = useRef<HTMLDivElement>(null)
 
   const { exportPdf, isExporting } = usePdfExport()
   const { exportDocx, isExporting: isDocxExporting } = useDocxExport()
@@ -70,6 +73,16 @@ export default function TopBar() {
       inputRef.current.select()
     }
   }, [isEditingName])
+
+  useEffect(() => {
+    if (!exportOpen) return
+    const handler = (e: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node))
+        setExportOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [exportOpen])
 
   const handleStartEdit = () => {
     setEditName(resumeName)
@@ -188,6 +201,7 @@ export default function TopBar() {
 
   const pdfExporting = isCoverLetter ? isCLPdfExporting : isExporting
   const docxExporting = isCoverLetter ? isCLDocxExporting : isDocxExporting
+  const anyExporting = pdfExporting || docxExporting
 
   return (
     <header className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5 shrink-0 shadow-sm no-print">
@@ -196,7 +210,7 @@ export default function TopBar() {
         {/* Back button */}
         <button
           onClick={() => navigate('/')}
-          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors shrink-0"
+          className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-600 transition-colors shrink-0"
           title="Back to dashboard"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -226,7 +240,7 @@ export default function TopBar() {
               <span className="text-sm font-semibold text-gray-900 truncate max-w-[200px]">
                 {resumeName}
               </span>
-              <span className="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+              <span className="text-xs text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                 edit
               </span>
             </button>
@@ -234,7 +248,7 @@ export default function TopBar() {
 
           {/* Template name */}
           {templateId && (
-            <p className="pl-2 text-xs text-gray-400 capitalize">
+            <p className="pl-2 text-xs text-gray-500 capitalize">
               {templateId.replace(/-/g, ' ')} template
             </p>
           )}
@@ -245,7 +259,7 @@ export default function TopBar() {
       <div className="flex items-center gap-2 shrink-0">
         {/* Auto-save indicator */}
         {(lastSaved || isSaving) && (
-          <span className="flex items-center gap-1 text-xs text-gray-400 mr-1">
+          <span className="flex items-center gap-1 text-xs text-gray-500 mr-1">
             {isSaving ? (
               <>
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -268,37 +282,42 @@ export default function TopBar() {
           </span>
         )}
 
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<Download className="h-4 w-4" />}
-          onClick={handleSaveJSON}
-          title="Save as JSON"
-        >
-          <span className="hidden sm:inline">Save</span>
-        </Button>
+        <div className="relative" ref={exportRef}>
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={anyExporting
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <Download className="h-4 w-4" />}
+            onClick={() => setExportOpen(!exportOpen)}
+            disabled={anyExporting}
+          >
+            <span className="hidden sm:inline">
+              {anyExporting ? 'Exporting...' : 'Export'}
+            </span>
+            {!anyExporting && <ChevronDown className="h-3 w-3 ml-0.5" />}
+          </Button>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={pdfExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
-          onClick={handleExportPDF}
-          disabled={pdfExporting}
-          title={isCoverLetter ? 'Export cover letter as PDF' : 'Export as PDF'}
-        >
-          <span className="hidden sm:inline">{pdfExporting ? 'Exporting...' : 'PDF'}</span>
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={docxExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-          onClick={handleExportDocx}
-          disabled={docxExporting}
-          title={isCoverLetter ? 'Export cover letter as DOCX' : 'Export as DOCX'}
-        >
-          <span className="hidden sm:inline">{docxExporting ? 'Exporting...' : 'DOCX'}</span>
-        </Button>
+          {exportOpen && (
+            <div className="absolute right-0 top-full mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg py-1 z-50">
+              <button onClick={() => { setExportOpen(false); handleExportPDF() }}
+                disabled={pdfExporting}
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <FileDown className="h-4 w-4 text-gray-500" /> Download PDF
+              </button>
+              <button onClick={() => { setExportOpen(false); handleExportDocx() }}
+                disabled={docxExporting}
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <FileText className="h-4 w-4 text-gray-500" /> Download DOCX
+              </button>
+              <div className="my-1 h-px bg-gray-100" />
+              <button onClick={() => { setExportOpen(false); handleSaveJSON() }}
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <Download className="h-4 w-4 text-gray-500" /> Save as JSON
+              </button>
+            </div>
+          )}
+        </div>
 
         {!isCoverLetter && (
           <>

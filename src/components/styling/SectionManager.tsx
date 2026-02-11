@@ -69,13 +69,12 @@ const SECTION_ICONS: Record<SectionType, React.ElementType> = {
 
 interface SectionRowProps {
   section: SectionConfig;
-  activeSection: string | null;
   onToggleVisibility: (id: string, visible: boolean) => void;
 }
 
-function SectionRow({ section, activeSection, onToggleVisibility }: SectionRowProps) {
+function SectionRow({ section, onToggleVisibility }: SectionRowProps) {
   const Icon = SECTION_ICONS[section.type] || Layers;
-  const setActiveSection = useUIStore((s) => s.setActiveSection);
+  const expandSection = useUIStore((s) => s.expandSection);
 
   const {
     attributes,
@@ -93,7 +92,7 @@ function SectionRow({ section, activeSection, onToggleVisibility }: SectionRowPr
 
   const handleClick = () => {
     if (isDragging) return;
-    setActiveSection(section.id);
+    expandSection(section.id);
     const el = document.querySelector(`[data-section-id="${section.id}"]`);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -108,7 +107,6 @@ function SectionRow({ section, activeSection, onToggleVisibility }: SectionRowPr
       className={cn(
         'flex items-center gap-2 px-2 py-1.5 rounded-md group cursor-pointer',
         'hover:bg-gray-50 transition-colors',
-        activeSection === section.id && 'bg-blue-50 text-blue-700 hover:bg-blue-50',
         !section.visible && 'opacity-50',
         isDragging && 'z-10 bg-white shadow-md',
       )}
@@ -124,10 +122,10 @@ function SectionRow({ section, activeSection, onToggleVisibility }: SectionRowPr
       </span>
 
       {/* Section icon */}
-      <Icon className={cn('h-3.5 w-3.5 shrink-0', activeSection === section.id ? 'text-blue-600' : 'text-gray-500')} />
+      <Icon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
 
       {/* Section title */}
-      <span className={cn('text-xs font-medium flex-1 truncate', activeSection === section.id ? 'text-blue-700' : 'text-gray-700')}>
+      <span className="text-xs font-medium flex-1 truncate text-gray-700">
         {section.title}
       </span>
 
@@ -146,7 +144,6 @@ function SectionRow({ section, activeSection, onToggleVisibility }: SectionRowPr
 export function SectionManager() {
   const currentResume = useResumeStore((s) => s.currentResume);
   const updateSections = useResumeStore((s) => s.updateSections);
-  const activeSection = useUIStore((s) => s.activeSection);
 
   const sections = currentResume?.sections ?? [];
 
@@ -194,7 +191,7 @@ export function SectionManager() {
           <Layers className="h-4 w-4" />
           <span>Sections</span>
         </div>
-        <p className="text-xs text-gray-400 italic px-1">
+        <p className="text-xs text-gray-500 italic px-1">
           No resume loaded. Open a resume to manage sections.
         </p>
       </div>
@@ -209,7 +206,7 @@ export function SectionManager() {
         <span>Sections</span>
       </div>
 
-      <p className="text-xs text-gray-400 px-1">
+      <p className="text-xs text-gray-500 px-1">
         Toggle visibility and reorder sections.
       </p>
 
@@ -228,7 +225,6 @@ export function SectionManager() {
               <SectionRow
                 key={section.id}
                 section={section}
-                activeSection={activeSection}
                 onToggleVisibility={handleToggleVisibility}
               />
             ))}

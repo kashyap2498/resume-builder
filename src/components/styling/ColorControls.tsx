@@ -70,7 +70,7 @@ function ColorSwatch({ color, label, onChange }: ColorSwatchProps) {
         <span className="text-xs font-medium text-gray-700 flex-1 truncate">
           {label}
         </span>
-        <span className="text-xs text-gray-400 font-mono uppercase">
+        <span className="text-xs text-gray-500 font-mono uppercase">
           {color}
         </span>
       </button>

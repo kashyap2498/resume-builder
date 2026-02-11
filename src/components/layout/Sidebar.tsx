@@ -81,7 +81,7 @@ export default function Sidebar() {
 function SectionsTab() {
   return (
     <div className="p-3">
-      <p className="px-2 pb-3 text-xs text-gray-400">
+      <p className="px-2 pb-3 text-xs text-gray-500">
         Drag to reorder. Click to edit. Toggle visibility with the switch.
       </p>
       <SectionManager />

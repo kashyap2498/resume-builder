@@ -133,7 +133,7 @@ function CreateResumeDialog({ open, onClose, onCreate }: CreateResumeDialogProps
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute right-4 top-4 rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+              className="absolute right-4 top-4 rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-600 transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
@@ -210,10 +210,10 @@ function CreateResumeDialog({ open, onClose, onCreate }: CreateResumeDialogProps
                       {t.description}
                     </span>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400 capitalize">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 capitalize">
                         {t.category.replace(/-/g, ' ')}
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">
                         {t.layout === 'two-column' ? '2-col' : '1-col'}
                       </span>
                     </div>
@@ -283,7 +283,7 @@ function ResumeCard({ resume, index, onEdit, onDuplicate, onDelete }: ResumeCard
       </div>
 
       {/* Updated */}
-      <div className="flex items-center gap-1.5 text-xs text-gray-400">
+      <div className="flex items-center gap-1.5 text-xs text-gray-500">
         <Clock className="h-3.5 w-3.5" />
         <span>{formatDate(resume.updatedAt)}</span>
       </div>
@@ -293,21 +293,21 @@ function ResumeCard({ resume, index, onEdit, onDuplicate, onDelete }: ResumeCard
         <button
           onClick={(e) => { e.stopPropagation(); onEdit(resume.id) }}
           title="Edit"
-          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+          className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-600 transition-colors"
         >
           <Edit3 className="h-4 w-4" />
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); onDuplicate(resume.id) }}
           title="Duplicate"
-          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+          className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-600 transition-colors"
         >
           <Copy className="h-4 w-4" />
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(resume.id) }}
           title="Delete"
-          className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+          className="rounded-lg p-1.5 text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -425,7 +425,7 @@ export default function HomePage() {
             <button
               onClick={handleSignOut}
               title="Sign out"
-              className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-600 transition-colors"
             >
               <LogOut className="h-5 w-5" />
             </button>
@@ -450,7 +450,7 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-24 text-center"
           >
-            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gray-100 text-gray-400">
+            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gray-100 text-gray-500">
               <FileText className="h-10 w-10" />
             </div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">

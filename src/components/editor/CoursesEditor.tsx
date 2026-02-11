@@ -4,7 +4,7 @@
 
 import { Plus, BookMarked } from 'lucide-react';
 import { useResumeStore } from '@/store/resumeStore';
-import { Input, TextArea, Button, EmptyState } from '@/components/ui';
+import { Input, TextArea, Button, EmptyState, MonthYearPicker } from '@/components/ui';
 import { EntryCard } from './EntryCard';
 
 export function CoursesEditor() {
@@ -83,12 +83,11 @@ export function CoursesEditor() {
                 </div>
 
                 {/* Completion Date */}
-                <Input
+                <MonthYearPicker
                   label="Completion Date"
-                  placeholder="Jun 2023"
                   value={entry.completionDate}
-                  onChange={(e) =>
-                    updateCourse(entry.id, { completionDate: e.target.value })
+                  onChange={(val) =>
+                    updateCourse(entry.id, { completionDate: val })
                   }
                   wrapperClassName="sm:w-1/2"
                 />

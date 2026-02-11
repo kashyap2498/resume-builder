@@ -44,12 +44,12 @@ export default function CoverLetterPreview() {
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-gray-500">Cover Letter Preview</span>
           {numPages > 1 && (
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-gray-500">
               {numPages} pages
             </span>
           )}
           {isGenerating && (
-            <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
+            <Loader2 className="h-3 w-3 animate-spin text-gray-500" />
           )}
         </div>
 
@@ -57,7 +57,7 @@ export default function CoverLetterPreview() {
           <button
             onClick={handleZoomOut}
             disabled={previewZoom <= MIN_ZOOM}
-            className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             title="Zoom out"
           >
             <ZoomOut className="h-4 w-4" />
@@ -70,7 +70,7 @@ export default function CoverLetterPreview() {
           <button
             onClick={handleZoomIn}
             disabled={previewZoom >= MAX_ZOOM}
-            className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             title="Zoom in"
           >
             <ZoomIn className="h-4 w-4" />
@@ -80,7 +80,7 @@ export default function CoverLetterPreview() {
 
           <button
             onClick={handleFitWidth}
-            className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-600 transition-colors"
             title="Fit to width"
           >
             <Maximize2 className="h-4 w-4" />
@@ -120,7 +120,7 @@ export default function CoverLetterPreview() {
                   className="flex items-center justify-center mt-2"
                   style={{ width: A4_WIDTH * scale }}
                 >
-                  <span className="text-xs text-gray-400 tabular-nums">
+                  <span className="text-xs text-gray-500 tabular-nums">
                     Page {i + 1}{numPages > 1 ? ` of ${numPages}` : ''}
                   </span>
                 </div>
@@ -139,10 +139,10 @@ export default function CoverLetterPreview() {
                 {isGenerating ? (
                   <div className="flex flex-col items-center gap-2">
                     <Loader2 className="h-6 w-6 animate-spin text-gray-300" />
-                    <span className="text-xs text-gray-400">Generating preview...</span>
+                    <span className="text-xs text-gray-500">Generating preview...</span>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-gray-500">
                     {currentResume ? 'Preparing preview...' : 'No resume loaded'}
                   </p>
                 )}

@@ -116,6 +116,64 @@ function getSectionBadge(sectionType: SectionType, data: ResumeData): { label: s
   }
 }
 
+// -- Helpers for collapsed section summaries ----------------------------------
+
+function getSectionSummary(sectionType: SectionType, data: ResumeData): string | null {
+  switch (sectionType) {
+    case 'contact': {
+      const c = data.contact
+      const parts = [
+        [c.firstName, c.lastName].filter(Boolean).join(' '),
+        c.email, c.location,
+      ].filter(Boolean)
+      return parts.length > 0 ? parts.join(' \u00B7 ') : null
+    }
+    case 'summary': {
+      const text = data.summary?.text?.trim()
+      if (!text) return null
+      return text.length > 80 ? text.slice(0, 80) + '\u2026' : text
+    }
+    case 'experience':
+      return joinNames(data.experience.map(e => e.company))
+    case 'education':
+      return joinNames(data.education.map(e => e.institution))
+    case 'skills': {
+      const cats = data.skills.length
+      const total = data.skills.reduce((s, c) => s + c.items.length, 0)
+      return cats > 0 ? `${cats} categor${cats === 1 ? 'y' : 'ies'} \u00B7 ${total} skill${total === 1 ? '' : 's'}` : null
+    }
+    case 'projects':
+      return joinNames(data.projects.map(p => p.name))
+    case 'certifications':
+      return joinNames(data.certifications.map(c => c.name))
+    case 'languages':
+      return joinNames(data.languages.map(l => l.name))
+    case 'volunteer':
+      return joinNames(data.volunteer.map(v => v.organization))
+    case 'awards':
+      return joinNames(data.awards.map(a => a.title))
+    case 'publications':
+      return joinNames(data.publications.map(p => p.title))
+    case 'references':
+      return joinNames(data.references.map(r => r.name))
+    case 'hobbies':
+      return joinNames(data.hobbies?.items?.filter(Boolean) ?? [])
+    case 'affiliations':
+      return joinNames(data.affiliations.map(a => a.organization))
+    case 'courses':
+      return joinNames(data.courses.map(c => c.name))
+    case 'customSections':
+      return joinNames(data.customSections.map(s => s.title))
+    default:
+      return null
+  }
+}
+
+function joinNames(items: string[]): string | null {
+  const filtered = items.filter(Boolean)
+  return filtered.length > 0 ? filtered.join(' \u00B7 ') : null
+}
+
 // =============================================================================
 // EditorPanel
 // =============================================================================
@@ -123,8 +181,8 @@ function getSectionBadge(sectionType: SectionType, data: ResumeData): { label: s
 export default function EditorPanel() {
   const sections = useResumeStore((s) => s.currentResume?.sections ?? [])
   const resumeData = useResumeStore((s) => s.currentResume?.data)
-  const activeSection = useUIStore((s) => s.activeSection)
-  const setActiveSection = useUIStore((s) => s.setActiveSection)
+  const collapsedSections = useUIStore((s) => s.collapsedSections)
+  const toggleSection = useUIStore((s) => s.toggleSection)
 
   const sorted = [...sections]
     .sort((a, b) => a.order - b.order)
@@ -151,8 +209,10 @@ export default function EditorPanel() {
         {sorted.map((section) => {
           const IconComponent = SECTION_ICON_MAP[section.type]
           const description = SECTION_DESCRIPTIONS[section.type]
-          const isActive = activeSection === section.id
+          const isCollapsed = collapsedSections.has(section.id)
+          const isActive = !isCollapsed
           const badge = resumeData ? getSectionBadge(section.type, resumeData) : null
+          const summary = resumeData ? getSectionSummary(section.type, resumeData) : null
 
           return (
             <div
@@ -164,7 +224,7 @@ export default function EditorPanel() {
                   ? 'border-blue-400 ring-2 ring-blue-200 shadow-sm'
                   : 'border-gray-200 hover:border-gray-300 hover:shadow-sm',
               )}
-              onClick={() => setActiveSection(section.id)}
+              onClick={() => toggleSection(section.id)}
             >
               {/* Section header */}
               <div className="flex items-center gap-3 mb-4">
@@ -189,9 +249,9 @@ export default function EditorPanel() {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-gray-400">{description}</p>
+                  <p className="text-xs text-gray-500">{description}</p>
                 </div>
-                <div className="shrink-0 text-gray-400">
+                <div className="shrink-0 text-gray-500">
                   {isActive ? (
                     <ChevronDown className="h-4 w-4" />
                   ) : (
@@ -223,9 +283,12 @@ export default function EditorPanel() {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.15 }}
                   >
-                    <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50/50 px-4 py-6">
-                      <p className="text-center text-xs text-gray-400">
-                        Click to expand and edit this section.
+                    <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50/50 px-4 py-3">
+                      <p className={cn(
+                        'text-xs truncate',
+                        summary ? 'text-gray-500' : 'text-center text-gray-500 italic'
+                      )}>
+                        {summary || 'Not yet added \u2014 click to expand'}
                       </p>
                     </div>
                   </motion.div>

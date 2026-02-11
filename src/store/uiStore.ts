@@ -13,7 +13,7 @@ export type SidebarTab = 'sections' | 'styling' | 'ats' | 'versions';
 export type ActiveDocType = 'resume' | 'coverLetter';
 
 interface UIState {
-  activeSection: string | null;
+  collapsedSections: Set<string>;
   sidebarTab: SidebarTab;
   previewZoom: number;
   showTemplateGallery: boolean;
@@ -26,7 +26,8 @@ interface UIState {
 }
 
 interface UIActions {
-  setActiveSection: (sectionId: string | null) => void;
+  toggleSection: (id: string) => void;
+  expandSection: (id: string) => void;
   setSidebarTab: (tab: SidebarTab) => void;
   setPreviewZoom: (zoom: number) => void;
   toggleTemplateGallery: () => void;
@@ -49,7 +50,7 @@ const TABLET_MAX = 1024;
 
 export const useUIStore = create<UIStore>((set) => ({
   // -- State ------------------------------------------------------------------
-  activeSection: null,
+  collapsedSections: new Set<string>(),
   sidebarTab: 'sections',
   previewZoom: 100,
   showTemplateGallery: false,
@@ -62,7 +63,20 @@ export const useUIStore = create<UIStore>((set) => ({
 
   // -- Actions ----------------------------------------------------------------
 
-  setActiveSection: (sectionId) => set({ activeSection: sectionId }),
+  toggleSection: (id) =>
+    set((state) => {
+      const next = new Set(state.collapsedSections);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return { collapsedSections: next };
+    }),
+
+  expandSection: (id) =>
+    set((state) => {
+      const next = new Set(state.collapsedSections);
+      next.delete(id);
+      return { collapsedSections: next };
+    }),
 
   setSidebarTab: (tab) => set({ sidebarTab: tab }),
 

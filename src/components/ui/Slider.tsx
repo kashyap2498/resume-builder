@@ -66,8 +66,8 @@ export function Slider({
         {...props}
       />
       <div className="flex items-center justify-between">
-        <span className="text-xs text-gray-400">{String(min)}</span>
-        <span className="text-xs text-gray-400">{String(max)}</span>
+        <span className="text-xs text-gray-500">{String(min)}</span>
+        <span className="text-xs text-gray-500">{String(max)}</span>
       </div>
     </div>
   );

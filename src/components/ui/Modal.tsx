@@ -163,7 +163,7 @@ export function Modal({
                 <button
                   onClick={onClose}
                   className={cn(
-                    'rounded-lg p-1.5 text-gray-400 transition-colors',
+                    'rounded-lg p-1.5 text-gray-500 transition-colors',
                     'hover:bg-gray-100 hover:text-gray-600',
                     'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
                   )}
@@ -179,7 +179,7 @@ export function Modal({
               <button
                 onClick={onClose}
                 className={cn(
-                  'absolute right-3 top-3 rounded-lg p-1.5 text-gray-400 transition-colors',
+                  'absolute right-3 top-3 rounded-lg p-1.5 text-gray-500 transition-colors',
                   'hover:bg-gray-100 hover:text-gray-600',
                   'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
                 )}

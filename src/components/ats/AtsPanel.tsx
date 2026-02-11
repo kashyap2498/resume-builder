@@ -108,7 +108,7 @@ export function AtsPanel() {
       {/* Empty state when no resume is loaded */}
       {!resumeData && (
         <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
-          <FileText className="mx-auto h-8 w-8 text-gray-400" />
+          <FileText className="mx-auto h-8 w-8 text-gray-500" />
           <p className="mt-2 text-sm text-gray-500">
             Open a resume to start ATS analysis.
           </p>

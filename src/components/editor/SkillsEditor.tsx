@@ -137,7 +137,7 @@ export function SkillsEditor() {
                   className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
                   onClick={() => toggleExpand(cat.id)}
                 >
-                  <span className="shrink-0 text-gray-400">
+                  <span className="shrink-0 text-gray-500">
                     {isExpanded ? (
                       <ChevronDown className="h-4 w-4" />
                     ) : (
@@ -210,7 +210,7 @@ export function SkillsEditor() {
                           <button
                             type="button"
                             onClick={() => handleRemoveItem(cat.id, idx)}
-                            className="shrink-0 p-2 mb-0.5 text-gray-400 hover:text-red-500 transition-colors"
+                            className="shrink-0 p-2 mb-0.5 text-gray-500 hover:text-red-500 transition-colors"
                             aria-label="Remove skill"
                           >
                             <X className="h-4 w-4" />

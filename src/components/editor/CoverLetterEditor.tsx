@@ -192,24 +192,24 @@ export default function CoverLetterEditor() {
             <div className="space-y-1">
               {contact.email && (
                 <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Mail className="h-3.5 w-3.5 text-gray-400" />
+                  <Mail className="h-3.5 w-3.5 text-gray-500" />
                   <span>{contact.email}</span>
                 </div>
               )}
               {contact.phone && (
                 <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Phone className="h-3.5 w-3.5 text-gray-400" />
+                  <Phone className="h-3.5 w-3.5 text-gray-500" />
                   <span>{contact.phone}</span>
                 </div>
               )}
               {contact.location && (
                 <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <MapPin className="h-3.5 w-3.5 text-gray-400" />
+                  <MapPin className="h-3.5 w-3.5 text-gray-500" />
                   <span>{contact.location}</span>
                 </div>
               )}
               {!fullName && !contact.email && !contact.phone && !contact.location && (
-                <p className="text-sm text-gray-400 italic">No contact info on resume yet</p>
+                <p className="text-sm text-gray-500 italic">No contact info on resume yet</p>
               )}
             </div>
           </div>

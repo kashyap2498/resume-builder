@@ -121,7 +121,7 @@ export function OnboardingWizard() {
           <Button variant="ghost" onClick={handlePrev} icon={<ChevronLeft className="h-4 w-4" />}>
             Previous
           </Button>
-          <span className="text-xs text-gray-400">Step {step} of {STEPS.length - 1}</span>
+          <span className="text-xs text-gray-500">Step {step} of {STEPS.length - 1}</span>
           <Button
             variant="primary"
             onClick={handleNext}

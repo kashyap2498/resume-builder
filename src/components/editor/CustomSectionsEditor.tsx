@@ -176,7 +176,7 @@ export function CustomSectionsEditor() {
                   className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors bg-gray-50/50"
                   onClick={() => toggleSection(section.id)}
                 >
-                  <span className="shrink-0 text-gray-400">
+                  <span className="shrink-0 text-gray-500">
                     {isSectionExpanded ? (
                       <ChevronDown className="h-4 w-4" />
                     ) : (
@@ -238,7 +238,7 @@ export function CustomSectionsEditor() {
                       </div>
 
                       {section.entries.length === 0 && (
-                        <p className="text-sm text-gray-400 text-center py-4">
+                        <p className="text-sm text-gray-500 text-center py-4">
                           No entries yet. Click "Add Entry" to get started.
                         </p>
                       )}
@@ -256,7 +256,7 @@ export function CustomSectionsEditor() {
                               className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 transition-colors"
                               onClick={() => toggleEntry(entry.id)}
                             >
-                              <span className="shrink-0 text-gray-400">
+                              <span className="shrink-0 text-gray-500">
                                 {isEntryExpanded ? (
                                   <ChevronDown className="h-3.5 w-3.5" />
                                 ) : (
@@ -383,7 +383,7 @@ export function CustomSectionsEditor() {
                                             idx
                                           )
                                         }
-                                        className="shrink-0 p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                        className="shrink-0 p-1 text-gray-500 hover:text-red-500 transition-colors"
                                         aria-label="Remove highlight"
                                       >
                                         <X className="h-3.5 w-3.5" />

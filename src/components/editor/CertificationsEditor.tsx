@@ -4,7 +4,7 @@
 
 import { Plus, Award } from 'lucide-react';
 import { useResumeStore } from '@/store/resumeStore';
-import { Input, Button, EmptyState } from '@/components/ui';
+import { Input, Button, EmptyState, MonthYearPicker } from '@/components/ui';
 import { EntryCard } from './EntryCard';
 
 export function CertificationsEditor() {
@@ -89,22 +89,18 @@ export function CertificationsEditor() {
 
                 {/* Dates */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
+                  <MonthYearPicker
                     label="Date Issued"
-                    placeholder="Jan 2023"
                     value={entry.date}
-                    onChange={(e) =>
-                      updateCertification(entry.id, { date: e.target.value })
+                    onChange={(val) =>
+                      updateCertification(entry.id, { date: val })
                     }
                   />
-                  <Input
+                  <MonthYearPicker
                     label="Expiry Date"
-                    placeholder="Jan 2026"
                     value={entry.expiryDate}
-                    onChange={(e) =>
-                      updateCertification(entry.id, {
-                        expiryDate: e.target.value,
-                      })
+                    onChange={(val) =>
+                      updateCertification(entry.id, { expiryDate: val })
                     }
                     hint="Leave blank if it does not expire"
                   />

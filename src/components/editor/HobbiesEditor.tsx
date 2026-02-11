@@ -73,7 +73,7 @@ export function HobbiesEditor() {
               <button
                 type="button"
                 onClick={() => handleRemove(idx)}
-                className="shrink-0 p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                className="shrink-0 p-1.5 text-gray-500 hover:text-red-500 transition-colors"
                 aria-label="Remove hobby"
               >
                 <X className="h-4 w-4" />

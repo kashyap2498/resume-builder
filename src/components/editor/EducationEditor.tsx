@@ -19,7 +19,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { useResumeStore } from '@/store/resumeStore';
-import { Input, TextArea, Button, EmptyState } from '@/components/ui';
+import { Input, TextArea, Button, EmptyState, MonthYearPicker } from '@/components/ui';
 import { SortableEntryCard } from './SortableEntryCard';
 
 export function EducationEditor() {
@@ -169,33 +169,34 @@ export function EducationEditor() {
                   />
                 </div>
 
-                {/* Dates & GPA */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <Input
+                {/* Dates */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <MonthYearPicker
                     label="Start Date"
-                    placeholder="Sep 2016"
                     value={entry.startDate}
-                    onChange={(e) =>
-                      updateEducation(entry.id, { startDate: e.target.value })
+                    onChange={(val) =>
+                      updateEducation(entry.id, { startDate: val })
                     }
                   />
-                  <Input
+                  <MonthYearPicker
                     label="End Date"
-                    placeholder="Jun 2020"
                     value={entry.endDate}
-                    onChange={(e) =>
-                      updateEducation(entry.id, { endDate: e.target.value })
-                    }
-                  />
-                  <Input
-                    label="GPA"
-                    placeholder="3.8 / 4.0"
-                    value={entry.gpa}
-                    onChange={(e) =>
-                      updateEducation(entry.id, { gpa: e.target.value })
+                    onChange={(val) =>
+                      updateEducation(entry.id, { endDate: val })
                     }
                   />
                 </div>
+
+                {/* GPA */}
+                <Input
+                  label="GPA"
+                  placeholder="3.8 / 4.0"
+                  value={entry.gpa}
+                  onChange={(e) =>
+                    updateEducation(entry.id, { gpa: e.target.value })
+                  }
+                  wrapperClassName="sm:w-1/2"
+                />
 
                 {/* Description */}
                 <TextArea
@@ -233,7 +234,7 @@ export function EducationEditor() {
                         onClick={() =>
                           handleRemoveHighlight(entry.id, entry.highlights, idx)
                         }
-                        className="shrink-0 p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                        className="shrink-0 p-1.5 text-gray-500 hover:text-red-500 transition-colors"
                         aria-label="Remove highlight"
                       >
                         <X className="h-4 w-4" />

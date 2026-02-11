@@ -191,7 +191,7 @@ export function ImportPreview({
                       prev.filter((_, i) => i !== expIdx)
                     )
                   }
-                  className="absolute right-2 top-2 rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                  className="absolute right-2 top-2 rounded p-1 text-gray-500 hover:bg-gray-200 hover:text-gray-600"
                   aria-label="Remove experience entry"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -311,7 +311,7 @@ export function ImportPreview({
                       prev.filter((_, i) => i !== eduIdx)
                     )
                   }
-                  className="absolute right-2 top-2 rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                  className="absolute right-2 top-2 rounded p-1 text-gray-500 hover:bg-gray-200 hover:text-gray-600"
                   aria-label="Remove education entry"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -445,7 +445,7 @@ export function ImportPreview({
                             )
                           )
                         }
-                        className="text-gray-400 hover:text-red-500"
+                        className="text-gray-500 hover:text-red-500"
                         aria-label="Remove skill"
                       >
                         <X className="h-3 w-3" />
@@ -478,7 +478,7 @@ export function ImportPreview({
                       prev.filter((_, i) => i !== certIdx)
                     )
                   }
-                  className="absolute right-2 top-2 rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                  className="absolute right-2 top-2 rounded p-1 text-gray-500 hover:bg-gray-200 hover:text-gray-600"
                   aria-label="Remove certification"
                 >
                   <X className="h-3.5 w-3.5" />

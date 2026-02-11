@@ -5,7 +5,7 @@ import type { SidebarTab } from '@/store/uiStore';
 describe('uiStore', () => {
   beforeEach(() => {
     useUIStore.setState({
-      activeSection: null,
+      collapsedSections: new Set<string>(),
       sidebarTab: 'sections',
       previewZoom: 100,
       showTemplateGallery: false,
@@ -22,7 +22,8 @@ describe('uiStore', () => {
   describe('initial state', () => {
     it('should have correct default values', () => {
       const state = useUIStore.getState();
-      expect(state.activeSection).toBeNull();
+      expect(state.collapsedSections).toBeInstanceOf(Set);
+      expect(state.collapsedSections.size).toBe(0);
       expect(state.sidebarTab).toBe('sections');
       expect(state.previewZoom).toBe(100);
       expect(state.showTemplateGallery).toBe(false);
@@ -33,25 +34,49 @@ describe('uiStore', () => {
   });
 
   // =========================================================================
-  // setActiveSection
+  // toggleSection
   // =========================================================================
 
-  describe('setActiveSection', () => {
-    it('should set the active section', () => {
-      useUIStore.getState().setActiveSection('experience');
-      expect(useUIStore.getState().activeSection).toBe('experience');
+  describe('toggleSection', () => {
+    it('should add section to collapsedSections when toggled', () => {
+      useUIStore.getState().toggleSection('experience');
+      expect(useUIStore.getState().collapsedSections.has('experience')).toBe(true);
     });
 
-    it('should allow setting to null', () => {
-      useUIStore.getState().setActiveSection('experience');
-      useUIStore.getState().setActiveSection(null);
-      expect(useUIStore.getState().activeSection).toBeNull();
+    it('should remove section from collapsedSections when toggled again', () => {
+      useUIStore.getState().toggleSection('experience');
+      useUIStore.getState().toggleSection('experience');
+      expect(useUIStore.getState().collapsedSections.has('experience')).toBe(false);
+      expect(useUIStore.getState().collapsedSections.size).toBe(0);
     });
 
-    it('should overwrite a previously set section', () => {
-      useUIStore.getState().setActiveSection('experience');
-      useUIStore.getState().setActiveSection('education');
-      expect(useUIStore.getState().activeSection).toBe('education');
+    it('should handle multiple sections independently', () => {
+      useUIStore.getState().toggleSection('experience');
+      useUIStore.getState().toggleSection('education');
+      expect(useUIStore.getState().collapsedSections.has('experience')).toBe(true);
+      expect(useUIStore.getState().collapsedSections.has('education')).toBe(true);
+      useUIStore.getState().toggleSection('experience');
+      expect(useUIStore.getState().collapsedSections.has('experience')).toBe(false);
+      expect(useUIStore.getState().collapsedSections.has('education')).toBe(true);
+    });
+  });
+
+  // =========================================================================
+  // expandSection
+  // =========================================================================
+
+  describe('expandSection', () => {
+    it('should remove section from collapsedSections when collapsed', () => {
+      useUIStore.getState().toggleSection('experience');
+      expect(useUIStore.getState().collapsedSections.has('experience')).toBe(true);
+      useUIStore.getState().expandSection('experience');
+      expect(useUIStore.getState().collapsedSections.has('experience')).toBe(false);
+    });
+
+    it('should not change state when section is already expanded', () => {
+      useUIStore.getState().expandSection('experience');
+      expect(useUIStore.getState().collapsedSections.has('experience')).toBe(false);
+      expect(useUIStore.getState().collapsedSections.size).toBe(0);
     });
   });
 

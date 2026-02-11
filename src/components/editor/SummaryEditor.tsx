@@ -46,7 +46,7 @@ export function SummaryEditor() {
                 ? 'text-red-600'
                 : charCount > MAX_CHARS * 0.8
                   ? 'text-amber-600'
-                  : 'text-gray-400'
+                  : 'text-gray-500'
             }`}
           >
             {charCount} / {MAX_CHARS}

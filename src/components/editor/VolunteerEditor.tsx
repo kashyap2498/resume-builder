@@ -4,7 +4,7 @@
 
 import { Plus, X, Heart } from 'lucide-react';
 import { useResumeStore } from '@/store/resumeStore';
-import { Input, TextArea, Button, EmptyState } from '@/components/ui';
+import { Input, TextArea, Button, EmptyState, MonthYearPicker } from '@/components/ui';
 import { EntryCard } from './EntryCard';
 
 export function VolunteerEditor() {
@@ -116,20 +116,18 @@ export function VolunteerEditor() {
 
                 {/* Dates */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
+                  <MonthYearPicker
                     label="Start Date"
-                    placeholder="Jun 2021"
                     value={entry.startDate}
-                    onChange={(e) =>
-                      updateVolunteer(entry.id, { startDate: e.target.value })
+                    onChange={(val) =>
+                      updateVolunteer(entry.id, { startDate: val })
                     }
                   />
-                  <Input
+                  <MonthYearPicker
                     label="End Date"
-                    placeholder="Present"
                     value={entry.endDate}
-                    onChange={(e) =>
-                      updateVolunteer(entry.id, { endDate: e.target.value })
+                    onChange={(val) =>
+                      updateVolunteer(entry.id, { endDate: val })
                     }
                   />
                 </div>
@@ -170,7 +168,7 @@ export function VolunteerEditor() {
                         onClick={() =>
                           handleRemoveHighlight(entry.id, entry.highlights, idx)
                         }
-                        className="shrink-0 p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                        className="shrink-0 p-1.5 text-gray-500 hover:text-red-500 transition-colors"
                         aria-label="Remove highlight"
                       >
                         <X className="h-4 w-4" />

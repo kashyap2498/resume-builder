@@ -2,7 +2,7 @@
 // Resume Builder - Template Gallery Modal
 // =============================================================================
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Check } from 'lucide-react';
 import { Modal } from '@/components/ui';
 import { getAllTemplates } from '@/templates';
@@ -13,6 +13,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { trackEvent } from '@/utils/analytics';
 import { useInView } from '@/hooks/useInView';
 import type { TemplateCategory, TemplateDefinition } from '@/types/template';
+import type { Resume } from '@/types/resume';
 
 const ALL_CATEGORIES: Array<{ id: TemplateCategory | 'all'; label: string }> = [
   { id: 'all', label: 'All' },
@@ -32,10 +33,16 @@ interface LazyTemplateCardProps {
   template: TemplateDefinition;
   isActive: boolean;
   onSelect: (id: string) => void;
+  currentResume: Resume | null;
 }
 
-function LazyTemplateCard({ template, isActive, onSelect }: LazyTemplateCardProps) {
+function LazyTemplateCard({ template, isActive, onSelect, currentResume }: LazyTemplateCardProps) {
   const { ref, isInView } = useInView({ rootMargin: '100px' });
+
+  const previewResume = useMemo(() => {
+    if (!currentResume) return null;
+    return { ...currentResume, templateId: template.id };
+  }, [currentResume, template.id]);
 
   if (!isInView) {
     return (
@@ -68,27 +75,45 @@ function LazyTemplateCard({ template, isActive, onSelect }: LazyTemplateCardProp
         )}
 
         {/* Mini layout preview */}
-        <div className="w-full h-20 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden p-2">
-          {template.layout === 'two-column' ? (
-            <div className="flex gap-1 w-full h-full">
-              <div className="w-1/3 bg-gray-300 rounded-sm" />
-              <div className="flex-1 flex flex-col gap-1">
-                <div className="h-2 bg-gray-300 rounded-sm w-3/4" />
-                <div className="h-1.5 bg-gray-200 rounded-sm w-full" />
-                <div className="h-1.5 bg-gray-200 rounded-sm w-full" />
-                <div className="h-1.5 bg-gray-200 rounded-sm w-5/6" />
-                <div className="flex-1" />
-              </div>
+        <div className="w-full h-[120px] rounded-lg border border-gray-200 overflow-hidden relative bg-white">
+          {previewResume ? (
+            <div
+              className="pointer-events-none select-none"
+              style={{
+                width: 595,
+                height: 842,
+                transform: 'scale(0.336)',
+                transformOrigin: 'top left',
+              }}
+            >
+              <ErrorBoundary fallbackMessage="Preview unavailable">
+                <template.previewComponent resume={previewResume} />
+              </ErrorBoundary>
             </div>
           ) : (
-            <div className="flex flex-col gap-1 w-full h-full">
-              <div className="h-3 bg-gray-300 rounded-sm w-1/2 mx-auto" />
-              <div className="h-1.5 bg-gray-200 rounded-sm w-3/4 mx-auto" />
-              <div className="h-px bg-gray-200 w-full my-0.5" />
-              <div className="h-1.5 bg-gray-200 rounded-sm w-full" />
-              <div className="h-1.5 bg-gray-200 rounded-sm w-full" />
-              <div className="h-1.5 bg-gray-200 rounded-sm w-5/6" />
-              <div className="flex-1" />
+            <div className="w-full h-full bg-gray-100 flex items-center justify-center p-2">
+              {template.layout === 'two-column' ? (
+                <div className="flex gap-1 w-full h-full">
+                  <div className="w-1/3 bg-gray-300 rounded-sm" />
+                  <div className="flex-1 flex flex-col gap-1">
+                    <div className="h-2 bg-gray-300 rounded-sm w-3/4" />
+                    <div className="h-1.5 bg-gray-200 rounded-sm w-full" />
+                    <div className="h-1.5 bg-gray-200 rounded-sm w-full" />
+                    <div className="h-1.5 bg-gray-200 rounded-sm w-5/6" />
+                    <div className="flex-1" />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1 w-full h-full">
+                  <div className="h-3 bg-gray-300 rounded-sm w-1/2 mx-auto" />
+                  <div className="h-1.5 bg-gray-200 rounded-sm w-3/4 mx-auto" />
+                  <div className="h-px bg-gray-200 w-full my-0.5" />
+                  <div className="h-1.5 bg-gray-200 rounded-sm w-full" />
+                  <div className="h-1.5 bg-gray-200 rounded-sm w-full" />
+                  <div className="h-1.5 bg-gray-200 rounded-sm w-5/6" />
+                  <div className="flex-1" />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -168,6 +193,7 @@ export function TemplateGallery() {
             template={template}
             isActive={currentResume?.templateId === template.id}
             onSelect={handleSelect}
+            currentResume={currentResume ?? null}
           />
         ))}
       </div>
