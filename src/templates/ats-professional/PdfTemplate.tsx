@@ -31,6 +31,7 @@ const AtsProfessionalPdf: React.FC<TemplateProps> = ({ resume }) => {
       color: headingColor,
       textAlign: 'center',
       marginBottom: 8,
+      lineHeight: 1.2,
     },
     accentLine: {
       width: 60,

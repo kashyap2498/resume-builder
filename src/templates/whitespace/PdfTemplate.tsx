@@ -35,6 +35,7 @@ const WhitespacePdf: React.FC<TemplateProps> = ({ resume }) => {
       textAlign: 'center',
       letterSpacing: 3,
       marginBottom: 8,
+      lineHeight: 1.2,
     },
     jobTitle: {
       fontSize: font.sizes.title,

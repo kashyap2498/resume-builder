@@ -38,6 +38,7 @@ const DeveloperStackPdf: React.FC<TemplateProps> = ({ resume }) => {
       fontFamily: 'Courier-Bold',
       color: accentColor,
       marginBottom: 8,
+      lineHeight: 1.2,
     },
     jobTitle: {
       fontSize: font.sizes.title,

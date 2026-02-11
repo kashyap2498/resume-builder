@@ -38,6 +38,7 @@ const CircuitBoardPdf: React.FC<TemplateProps> = ({ resume }) => {
       fontFamily: 'Courier-Bold',
       color: colors.text,
       marginBottom: 8,
+      lineHeight: 1.2,
     },
     jobTitle: {
       fontSize: font.sizes.title,

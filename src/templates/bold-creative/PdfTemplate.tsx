@@ -16,7 +16,7 @@ const BoldCreativePdf: React.FC<TemplateProps> = ({ resume }) => {
   const styles = StyleSheet.create({
     page: { paddingTop: layout.margins.top, paddingRight: layout.margins.right, paddingBottom: layout.margins.bottom, paddingLeft: layout.margins.left, backgroundColor: colors.background, fontFamily: 'Helvetica', fontSize: font.sizes.normal, color: colors.text, lineHeight: font.lineHeight },
     nameBlock: { textAlign: 'center', marginBottom: 8 },
-    name: { fontSize: font.sizes.name + 10, fontFamily: 'Helvetica-Bold', color: accentColor, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 },
+    name: { fontSize: font.sizes.name + 10, fontFamily: 'Helvetica-Bold', color: accentColor, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8, lineHeight: 1.1 },
     jobTitle: { fontSize: font.sizes.title + 2, color: colors.text, letterSpacing: 4, textTransform: 'uppercase', marginBottom: 8 },
     accentLine: { width: 60, height: 4, backgroundColor: accentColor, marginBottom: 8, marginHorizontal: 'auto' },
     contactLine: { fontSize: font.sizes.small, color: colors.lightText, textAlign: 'center', marginBottom: layout.sectionSpacing },

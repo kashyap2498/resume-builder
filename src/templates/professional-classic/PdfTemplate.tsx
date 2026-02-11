@@ -44,6 +44,7 @@ const ProfessionalClassicPdf: React.FC<TemplateProps> = ({ resume }) => {
       fontFamily: 'Helvetica-Bold',
       color: headerText,
       marginBottom: 8,
+      lineHeight: 1.2,
     },
     jobTitle: {
       fontSize: font.sizes.title,

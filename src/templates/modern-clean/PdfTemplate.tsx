@@ -47,6 +47,7 @@ const ModernCleanPdf: React.FC<TemplateProps> = ({ resume }) => {
       fontFamily: 'Helvetica-Bold',
       color: colors.text,
       marginBottom: 8,
+      lineHeight: 1.2,
     },
     jobTitle: {
       fontSize: font.sizes.title,
