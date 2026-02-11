@@ -31,7 +31,8 @@ const CoverLetterPdfTemplate: React.FC<CoverLetterPdfProps> = ({ resume }) => {
       fontSize: font.sizes.name,
       fontFamily: 'Helvetica-Bold',
       color: colors.primary,
-      marginBottom: 8,
+      lineHeight: 1.2,
+      marginBottom: 4,
     },
     senderContact: {
       fontSize: font.sizes.small,
