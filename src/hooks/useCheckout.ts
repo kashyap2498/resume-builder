@@ -29,5 +29,7 @@ export function useCheckout() {
     }
   }
 
-  return { openCheckout }
+  const isReady = isAuthenticated && !!userId
+
+  return { openCheckout, isReady }
 }

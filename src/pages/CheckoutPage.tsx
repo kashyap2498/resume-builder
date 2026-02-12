@@ -27,7 +27,7 @@ const lifetimeFeatures = [
 
 export default function CheckoutPage() {
   const navigate = useNavigate()
-  const { openCheckout } = useCheckout()
+  const { openCheckout, isReady } = useCheckout()
   const { isActive, isLoading } = usePurchase()
   const { signOut } = useAuthActions()
 
@@ -41,14 +41,14 @@ export default function CheckoutPage() {
   // Auto-open checkout if user pre-selected a plan before signing up
   const didAutoOpen = useRef(false)
   useEffect(() => {
-    if (didAutoOpen.current || isLoading || isActive) return
+    if (didAutoOpen.current || isLoading || isActive || !isReady) return
     const pendingPlan = sessionStorage.getItem('pending_plan') as 'monthly' | 'lifetime' | null
     if (pendingPlan) {
       sessionStorage.removeItem('pending_plan')
       didAutoOpen.current = true
       openCheckout(pendingPlan)
     }
-  }, [isLoading, isActive, openCheckout])
+  }, [isLoading, isActive, isReady, openCheckout])
 
   if (isLoading) {
     return (
