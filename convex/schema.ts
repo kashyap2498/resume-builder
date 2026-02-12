@@ -16,7 +16,7 @@ export default defineSchema({
     lemonSqueezyOrderId: v.string(),
     variantId: v.string(),
     plan: v.union(v.literal("monthly"), v.literal("lifetime")),
-    status: v.union(v.literal("active"), v.literal("expired")),
+    status: v.union(v.literal("active"), v.literal("expired"), v.literal("refunded")),
     purchasedAt: v.string(),
     expiresAt: v.optional(v.string()),
     customerEmail: v.optional(v.string()),

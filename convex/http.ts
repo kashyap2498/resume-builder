@@ -49,7 +49,16 @@ http.route({
     const payload = JSON.parse(body);
     const eventName = payload.meta?.event_name;
 
-    // Only process order_created events
+    // Handle order_refunded — revoke access
+    if (eventName === "order_refunded") {
+      const orderId = String(payload.data?.id);
+      await ctx.runMutation(internal.purchases.revokePurchase, {
+        lemonSqueezyOrderId: orderId,
+      });
+      return new Response("OK", { status: 200 });
+    }
+
+    // Handle order_created — grant access
     if (eventName !== "order_created") {
       return new Response("OK", { status: 200 });
     }

@@ -38,6 +38,27 @@ export const getCurrentUserId = query({
   },
 });
 
+export const revokePurchase = internalMutation({
+  args: {
+    lemonSqueezyOrderId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const purchase = await ctx.db
+      .query("purchases")
+      .withIndex("by_order", (q) =>
+        q.eq("lemonSqueezyOrderId", args.lemonSqueezyOrderId)
+      )
+      .first();
+
+    if (!purchase) {
+      console.error("No purchase found for order:", args.lemonSqueezyOrderId);
+      return;
+    }
+
+    await ctx.db.patch(purchase._id, { status: "refunded" });
+  },
+});
+
 export const recordPurchase = internalMutation({
   args: {
     userId: v.id("users"),
