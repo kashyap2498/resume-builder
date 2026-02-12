@@ -6,6 +6,9 @@ import { Password } from "@convex-dev/auth/providers/Password";
 const ResendOTPForVerification = Resend({
   from: "Resumello <noreply@resumello.app>",
   apiKey: process.env.RESEND_API_KEY,
+  generateVerificationToken() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  },
   async sendVerificationRequest({ identifier: email, token, provider }) {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -42,6 +45,9 @@ const ResendOTPForVerification = Resend({
 const ResendOTPForReset = Resend({
   from: "Resumello <noreply@resumello.app>",
   apiKey: process.env.RESEND_API_KEY,
+  generateVerificationToken() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  },
   async sendVerificationRequest({ identifier: email, token, provider }) {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
