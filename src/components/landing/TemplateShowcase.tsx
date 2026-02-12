@@ -89,7 +89,7 @@ export default function TemplateShowcase() {
         <p className="text-center text-xs font-semibold uppercase tracking-widest text-gray-400">
           Templates
         </p>
-        <h2 className="mt-3 text-center font-display text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+        <h2 className="mt-3 text-center font-display text-3xl font-semibold tracking-tight text-gray-900 sm:text-4xl">
           Professional templates for every industry.{' '}
           <span className="text-gray-400">All included.</span>
         </h2>

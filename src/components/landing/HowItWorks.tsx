@@ -26,8 +26,8 @@ const steps: Step[] = [
     description:
       'Type or import your existing resume. Drag sections to reorder. Check your ATS score in real time.',
     icon: PenLine,
-    iconColor: 'text-emerald-600',
-    iconBg: 'bg-emerald-50',
+    iconColor: 'text-blue-600',
+    iconBg: 'bg-blue-50',
   },
   {
     number: '03',
@@ -35,8 +35,8 @@ const steps: Step[] = [
     description:
       "Export as PDF or Word. ATS-parseable and ready to send. No watermarks. No paywall. It's yours.",
     icon: Download,
-    iconColor: 'text-purple-600',
-    iconBg: 'bg-purple-50',
+    iconColor: 'text-blue-600',
+    iconBg: 'bg-blue-50',
   },
 ];
 
@@ -54,7 +54,7 @@ const stepVariants: Variants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: 'easeOut' },
+    transition: { duration: 0.55, ease: [0.21, 0.47, 0.32, 0.98] },
   },
 };
 
@@ -66,7 +66,7 @@ export default function HowItWorks() {
         <p className="text-center text-xs font-semibold uppercase tracking-widest text-gray-400">
           How it works
         </p>
-        <h2 className="mt-3 text-center text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+        <h2 className="mt-3 text-center font-display text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
           Up and running in 3 steps.
         </h2>
 
@@ -87,7 +87,7 @@ export default function HowItWorks() {
               return (
                 <motion.div
                   key={step.number}
-                  className="group relative rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100 transition-all duration-300 hover:shadow-md"
+                  className="group relative rounded-2xl border-[0.8px] border-gray-200/60 bg-white p-8 shadow-sm transition-all duration-300 hover:shadow-md"
                   variants={stepVariants}
                 >
                   {/* Step number badge */}

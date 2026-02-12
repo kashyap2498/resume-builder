@@ -11,7 +11,7 @@ const faqs: FaqItem[] = [
   {
     question: 'Is there really no subscription?',
     answer:
-      'The lifetime plan is a one-time payment. We never charge you again. No auto-renewals. No "your plan expired" emails. No fine print. Check your bank statement in a year \u2014 you\u2019ll see nothing from us. If you choose monthly, it\u2019s $12.99/month and you can cancel with one click, anytime.',
+      'The lifetime plan is a one-time payment. We never charge you again. No auto-renewals. No "your plan expired" emails. No fine print. Check your bank statement in a year \u2014 you\u2019ll see nothing from us. We also offer a $12.99 month pass if you only need it short-term \u2014 no recurring billing, just single-month access you can repurchase if you want.',
   },
   {
     question: 'What if I don\u2019t like it?',
@@ -71,7 +71,7 @@ export default function FaqSection() {
         viewport={{ once: true, margin: '-50px' }}
         transition={{ duration: 0.5 }}
       >
-        <h2 className="text-center text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+        <h2 className="text-center font-display text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
           Questions? Answered.
         </h2>
         <p className="mt-3 text-center text-gray-500">

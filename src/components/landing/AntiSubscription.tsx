@@ -4,9 +4,6 @@ import { X, Check, Download, CreditCard, FileX } from 'lucide-react';
 interface ComparisonCard {
   title: string;
   icon: typeof Download;
-  iconColor: string;
-  iconBg: string;
-  topAccent: string;
   problem: string;
   solution: string;
 }
@@ -15,9 +12,6 @@ const cards: ComparisonCard[] = [
   {
     title: 'The Download Trap',
     icon: Download,
-    iconColor: 'text-blue-500',
-    iconBg: 'bg-blue-50',
-    topAccent: 'bg-blue-400',
     problem:
       'You spend 2 hours building your resume. You click Download. Paywall.',
     solution:
@@ -26,9 +20,6 @@ const cards: ComparisonCard[] = [
   {
     title: 'The Subscription Trap',
     icon: CreditCard,
-    iconColor: 'text-amber-500',
-    iconBg: 'bg-amber-50',
-    topAccent: 'bg-amber-400',
     problem:
       '$2.95 trial becomes $30/month. No warning. No cancel button. Check your bank statement.',
     solution:
@@ -37,9 +28,6 @@ const cards: ComparisonCard[] = [
   {
     title: 'The ATS Trap',
     icon: FileX,
-    iconColor: 'text-purple-500',
-    iconBg: 'bg-purple-50',
-    topAccent: 'bg-purple-400',
     problem:
       'Beautiful templates that ATS software can\'t read. Your resume gets auto-rejected. You never hear back.',
     solution:
@@ -61,7 +49,7 @@ const cardVariants: Variants = {
   visible: {
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.45, ease: 'easeOut' },
+    transition: { duration: 0.5, ease: [0.21, 0.47, 0.32, 0.98] },
   },
 };
 
@@ -70,9 +58,9 @@ export default function AntiSubscription() {
     <section id="anti-subscription" className="grain relative overflow-hidden bg-gradient-to-b from-white to-stone-50/80">
       <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
         {/* Header — varied treatment */}
-        <h2 className="text-center font-display text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+        <h2 className="text-center font-display text-3xl font-semibold tracking-tight text-gray-900 sm:text-4xl">
           Tired of resume builders that{' '}
-          <span className="text-red-500/80">waste your time</span>?
+          <span className="text-gray-400/80">waste your time</span>?
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-center text-gray-500">
           We built Resumello because we were tired of it too.
@@ -91,16 +79,13 @@ export default function AntiSubscription() {
             return (
               <motion.div
                 key={card.title}
-                className="group relative overflow-hidden rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-950/5 transition-shadow duration-300 hover:shadow-md"
+                className="group relative overflow-hidden rounded-2xl border-[0.8px] border-gray-200/60 bg-white p-8 shadow-sm transition-shadow duration-300 hover:shadow-md"
                 variants={cardVariants}
               >
-                {/* Unique top accent line per card */}
-                <div className={`absolute inset-x-0 top-0 h-1 ${card.topAccent}`} />
-
                 {/* Icon + Title */}
                 <div className="flex items-center gap-3">
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${card.iconBg}`}>
-                    <Icon className={`h-4 w-4 ${card.iconColor}`} />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100">
+                    <Icon className="h-4 w-4 text-gray-500" />
                   </div>
                   <h3 className="text-lg font-bold text-gray-900">
                     {card.title}

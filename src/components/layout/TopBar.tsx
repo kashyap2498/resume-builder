@@ -214,7 +214,7 @@ export default function TopBar() {
       <div className="flex items-center gap-3 min-w-0">
         {/* Back button */}
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/dashboard')}
           className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-600 transition-colors shrink-0"
           title="Back to dashboard"
         >
@@ -416,6 +416,7 @@ export default function TopBar() {
         open={showImportModal}
         onClose={() => setShowImportModal(false)}
       />
+
     </header>
   )
 }

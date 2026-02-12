@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
+import { useCheckout } from '@/hooks/useCheckout';
 
 const monthlyFeatures = [
   'All templates (18+ and growing)',
@@ -45,14 +46,16 @@ const cardVariants = {
 };
 
 export default function PricingSection() {
+  const { openCheckout } = useCheckout();
+
   return (
     <section id="pricing" className="bg-stone-50 bg-dot-grid">
       <div className="mx-auto max-w-5xl px-6 py-20 sm:py-28">
         {/* Header */}
-        <p className="text-center text-xs font-semibold uppercase tracking-widest text-blue-600">
+        <p className="text-center text-xs font-semibold uppercase tracking-widest text-gray-400">
           Pricing
         </p>
-        <h2 className="mt-3 text-center font-display text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+        <h2 className="mt-3 text-center font-display text-3xl font-semibold tracking-tight text-gray-900 sm:text-4xl">
           Simple pricing. No surprises.
         </h2>
         <p className="mt-4 text-center text-gray-500">
@@ -60,15 +63,15 @@ export default function PricingSection() {
         </p>
 
         {/* Early bird banner */}
-        <div className="mx-auto mt-8 max-w-2xl rounded-xl border border-amber-200/80 bg-amber-50/80 p-4 text-center">
+        <div className="mx-auto mt-8 max-w-2xl rounded-xl border border-gray-200 bg-white p-4 text-center">
           <p>
-            <span className="font-medium text-gray-700">
+            <span className="font-medium text-gray-600">
               Early bird pricing:{' '}
             </span>
-            <span className="font-bold text-amber-700">
+            <span className="font-bold text-gray-900">
               $29 for lifetime access
             </span>
-            <span className="text-gray-500">
+            <span className="text-gray-400">
               {' '}
               — 147 of 200 spots remaining
             </span>
@@ -80,7 +83,7 @@ export default function PricingSection() {
 
         {/* Pricing cards */}
         <div className="mx-auto mt-12 grid max-w-3xl grid-cols-1 gap-8 md:grid-cols-2">
-          {/* Monthly card — intentionally plain to anchor value toward lifetime */}
+          {/* Month pass card — intentionally plain to anchor value toward lifetime */}
           <motion.div
             className="rounded-2xl border border-gray-200 bg-white p-8 opacity-90"
             variants={cardVariants}
@@ -88,7 +91,7 @@ export default function PricingSection() {
             whileInView="visible"
             viewport={{ once: true, margin: '-50px' }}
           >
-            <p className="text-lg font-semibold text-gray-700">Monthly</p>
+            <p className="text-lg font-semibold text-gray-700">Month Pass</p>
             <div className="mt-4">
               <span className="text-4xl font-bold text-gray-700">$12.99</span>
               <span className="text-base text-gray-400">/month</span>
@@ -107,11 +110,14 @@ export default function PricingSection() {
                 </li>
               ))}
             </ul>
-            <button className="mt-8 w-full rounded-xl border border-gray-200 py-3 text-center font-medium text-gray-500 transition-colors hover:bg-gray-50">
-              Get Monthly
+            <button
+              onClick={() => openCheckout('monthly')}
+              className="mt-8 w-full rounded-xl border border-gray-200 py-3 text-center font-medium text-gray-500 transition-colors hover:bg-gray-50"
+            >
+              Get Month Pass
             </button>
             <p className="mt-4 text-center text-xs text-gray-400">
-              3 months = $38.97 — or get lifetime for $29
+              3 month passes = $38.97 — or get lifetime for $29
             </p>
           </motion.div>
 
@@ -145,12 +151,15 @@ export default function PricingSection() {
                   key={feature}
                   className="flex items-center gap-3 text-sm text-gray-600"
                 >
-                  <Check className="h-4 w-4 shrink-0 text-emerald-500" />
+                  <Check className="h-4 w-4 shrink-0 text-blue-600" />
                   {feature}
                 </li>
               ))}
             </ul>
-            <button className="mt-8 w-full cursor-pointer rounded-xl bg-blue-600 py-3.5 text-center text-lg font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:translate-y-0.5">
+            <button
+              onClick={() => openCheckout('lifetime')}
+              className="mt-8 w-full cursor-pointer rounded-xl bg-blue-600 py-3.5 text-center text-lg font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:translate-y-0.5"
+            >
               Get Lifetime Access — $29
             </button>
           </motion.div>
@@ -176,7 +185,7 @@ export default function PricingSection() {
                   <span className="text-center font-medium text-gray-900">
                     {c.year1}
                   </span>
-                  <span className="text-center font-medium text-red-600/80">
+                  <span className="text-center font-medium text-gray-900">
                     {c.year2}
                   </span>
                 </div>

@@ -37,73 +37,73 @@ const features: Feature[] = [
   },
   {
     icon: Download,
-    iconBg: 'bg-emerald-50',
-    iconColor: 'text-emerald-600',
+    iconBg: 'bg-blue-50',
+    iconColor: 'text-blue-600',
     title: 'PDF + Word Export',
     description:
       'Download in both formats. Real text-based PDFs — not images — so ATS systems can actually read them.',
     span: 'lg:col-span-1',
-    accent: 'bg-emerald-500',
+    accent: 'bg-blue-600',
   },
   {
     icon: Upload,
-    iconBg: 'bg-purple-50',
-    iconColor: 'text-purple-600',
+    iconBg: 'bg-blue-50',
+    iconColor: 'text-blue-600',
     title: 'Import Existing Resume',
     description:
       "Upload a PDF or Word doc. We'll parse it automatically so you don't start from scratch.",
     span: 'lg:col-span-1',
-    accent: 'bg-purple-500',
+    accent: 'bg-blue-600',
   },
   {
     icon: GripVertical,
-    iconBg: 'bg-amber-50',
-    iconColor: 'text-amber-600',
+    iconBg: 'bg-blue-50',
+    iconColor: 'text-blue-600',
     title: 'Drag-and-Drop Sections',
     description:
       'Reorder, rename, show or hide any section. 16 built-in section types plus custom sections.',
     span: 'lg:col-span-1',
-    accent: 'bg-amber-500',
+    accent: 'bg-blue-600',
   },
   {
     icon: Cloud,
-    iconBg: 'bg-sky-50',
-    iconColor: 'text-sky-600',
+    iconBg: 'bg-blue-50',
+    iconColor: 'text-blue-600',
     title: 'Cloud Sync',
     description:
       'Your resumes are saved securely. Switch devices, clear your browser — your work is always there.',
     span: 'lg:col-span-1',
-    accent: 'bg-sky-500',
+    accent: 'bg-blue-600',
   },
   {
     icon: History,
-    iconBg: 'bg-indigo-50',
-    iconColor: 'text-indigo-600',
+    iconBg: 'bg-blue-50',
+    iconColor: 'text-blue-600',
     title: 'Version History',
     description:
       "Save named snapshots. 'Marketing v2' and 'Engineering v3' — switch between them instantly.",
     span: 'sm:col-span-2 lg:col-span-1',
-    accent: 'bg-indigo-500',
+    accent: 'bg-blue-600',
   },
   {
     icon: Briefcase,
-    iconBg: 'bg-orange-50',
-    iconColor: 'text-orange-600',
+    iconBg: 'bg-blue-50',
+    iconColor: 'text-blue-600',
     title: 'Job Tracker',
     description:
       'Track where you applied, when, and what happened. Everything organized alongside your resumes.',
     span: 'lg:col-span-1',
-    accent: 'bg-orange-500',
+    accent: 'bg-blue-600',
   },
   {
     icon: Sparkles,
-    iconBg: 'bg-pink-50',
-    iconColor: 'text-pink-600',
+    iconBg: 'bg-blue-50',
+    iconColor: 'text-blue-600',
     title: 'AI Coming Soon',
     description:
       'AI-powered suggestions arriving in V2. Included in your lifetime purchase at no extra cost.',
     span: 'sm:col-span-2 lg:col-span-2',
-    accent: 'bg-pink-500',
+    accent: 'bg-blue-600',
   },
 ];
 
@@ -121,20 +121,19 @@ const itemVariants: Variants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, ease: 'easeOut' },
+    transition: { duration: 0.5, ease: [0.21, 0.47, 0.32, 0.98] },
   },
 };
 
 export default function FeatureGrid() {
   return (
     <section id="features" className="grain relative overflow-hidden bg-white">
-      {/* Organic gradient blobs — breaks the flat AI look */}
-      <div className="pointer-events-none absolute -right-40 top-20 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-blue-50 to-purple-50/60 blur-3xl" />
-      <div className="pointer-events-none absolute -left-40 bottom-20 h-[400px] w-[400px] rounded-full bg-gradient-to-tr from-emerald-50/50 to-sky-50/40 blur-3xl" />
+      {/* Subtle background gradient */}
+      <div className="pointer-events-none absolute -right-40 top-20 h-[500px] w-[500px] rounded-full bg-blue-50/40 blur-3xl" />
 
       <div className="relative mx-auto max-w-6xl px-6 py-24 sm:py-32">
         {/* Header — larger, accent color for emphasis */}
-        <h2 className="mx-auto max-w-3xl text-center font-display text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+        <h2 className="mx-auto max-w-3xl text-center font-display text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
           Everything you need.{' '}
           <span className="text-blue-600">Nothing you don't.</span>
         </h2>
@@ -156,7 +155,7 @@ export default function FeatureGrid() {
             return (
               <motion.div
                 key={feature.title}
-                className={`group relative overflow-hidden rounded-2xl border border-gray-100 bg-stone-50/50 p-6 transition-all duration-300 hover:border-gray-200 hover:shadow-lg ${feature.span} ${isHero ? 'flex flex-col justify-between' : ''}`}
+                className={`group relative overflow-hidden rounded-2xl border-[0.8px] border-gray-200/60 bg-stone-50/50 p-6 transition-all duration-300 hover:border-gray-300 hover:shadow-lg ${feature.span} ${isHero ? 'flex flex-col justify-between' : ''}`}
                 variants={itemVariants}
               >
                 {/* Accent bar at top */}

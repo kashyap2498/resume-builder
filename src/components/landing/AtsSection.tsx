@@ -110,9 +110,12 @@ export default function AtsSection() {
   return (
     <section
       id="ats"
-      className="grain-dark relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900"
+      className="grain-dark relative overflow-hidden bg-gradient-to-b from-slate-900 via-slate-900 to-blue-950"
     >
-      <div className="mx-auto max-w-6xl px-6 py-20 sm:py-24 lg:grid lg:grid-cols-2 lg:items-center lg:gap-16">
+      {/* Ambient radial glow — Raycast-style */}
+      <div className="pointer-events-none absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(60%_50%_at_80%_40%,rgba(59,130,246,0.1)_0%,rgba(59,130,246,0.04)_50%,transparent_100%)]" />
+
+      <div className="relative mx-auto max-w-6xl px-6 py-20 sm:py-24 lg:grid lg:grid-cols-2 lg:items-center lg:gap-16">
         {/* Left column — text */}
         <motion.div
           initial={{ opacity: 0, x: -40 }}
@@ -126,7 +129,7 @@ export default function AtsSection() {
           </p>
 
           {/* Headline */}
-          <h2 className="mt-4 font-display text-3xl font-bold leading-tight text-white sm:text-4xl">
+          <h2 className="mt-4 font-display text-3xl font-semibold leading-tight text-white sm:text-4xl">
             75% of resumes are rejected before a human sees them.
           </h2>
 
@@ -154,7 +157,7 @@ export default function AtsSection() {
                   key={item}
                   className="flex items-start gap-3 text-gray-200"
                 >
-                  <Check className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
+                  <Check className="mt-0.5 h-5 w-5 shrink-0 text-blue-400" />
                   <span>{item}</span>
                 </li>
               ))}
@@ -169,7 +172,7 @@ export default function AtsSection() {
             onClick={() => scrollTo('pricing')}
             className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-blue-600/25 transition-all duration-200 hover:bg-blue-500 active:translate-y-0.5"
           >
-            Get Resumello — $29
+            Get Resumello
             <ArrowRight className="h-5 w-5" />
           </button>
         </motion.div>

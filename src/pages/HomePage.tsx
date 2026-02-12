@@ -405,7 +405,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-6 py-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-              Resume Builder
+              Resumello
             </h1>
             <p className="text-sm text-gray-500 mt-0.5">
               {resumes.length === 0

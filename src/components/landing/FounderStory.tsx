@@ -13,25 +13,25 @@ interface StatItem {
 const stats: StatItem[] = [
   {
     icon: Code2,
-    iconColor: 'text-blue-600',
+    iconColor: 'text-blue-600/60',
     value: '1',
     label: 'Solo developer',
   },
   {
     icon: Layout,
-    iconColor: 'text-emerald-600',
+    iconColor: 'text-blue-600/60',
     value: '18+',
     label: 'Templates included',
   },
   {
     icon: Zap,
-    iconColor: 'text-amber-500',
+    iconColor: 'text-blue-600/60',
     value: 'Weekly',
     label: 'Updates shipped',
   },
   {
     icon: Heart,
-    iconColor: 'text-red-500',
+    iconColor: 'text-blue-600/60',
     value: '$0',
     label: 'VC funding taken',
   },
@@ -69,10 +69,10 @@ export default function FounderStory() {
             whileInView="visible"
             viewport={{ once: true, margin: '-80px' }}
           >
-            <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">
+            <p className="text-sm font-semibold uppercase tracking-wider text-blue-600/70">
               Why I built this
             </p>
-            <h2 className="mt-4 font-display text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+            <h2 className="mt-4 font-display text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
               Built by a person, not a corporation.
             </h2>
             <div className="mt-6 space-y-4 leading-relaxed text-gray-600">
@@ -95,7 +95,7 @@ export default function FounderStory() {
             </div>
             <div className="mt-6">
               <p className="font-semibold text-gray-900">
-                — Rushi, maker of Resumello
+                — Kashyap, maker of Resumello
               </p>
               <p className="mt-1 text-sm text-gray-500">
                 Software engineer. Built this because I was tired of getting ripped off.

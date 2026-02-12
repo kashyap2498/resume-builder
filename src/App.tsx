@@ -1,11 +1,13 @@
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
-import { useCallback, lazy, Suspense } from 'react'
+import { useCallback, useEffect, lazy, Suspense } from 'react'
 import { useConvexAuth } from 'convex/react'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import LandingPage from './pages/LandingPage'
+import CheckoutPage from './pages/CheckoutPage'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ToastContainer } from '@/components/ui/Toast'
+import { usePurchase } from '@/hooks/usePurchase'
 
 const EditorPage = lazy(() => import('./pages/EditorPage'))
 
@@ -27,18 +29,36 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   return children
 }
 
+function PurchaseGuard({ children }: { children: React.ReactNode }) {
+  const { isActive, isLoading } = usePurchase()
+  if (isLoading) return <LoadingScreen />
+  if (!isActive) return <Navigate to="/checkout" replace />
+  return children
+}
+
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { isLoading, isAuthenticated } = useConvexAuth()
   if (isLoading) return <LoadingScreen />
-  if (isAuthenticated) return <Navigate to="/" replace />
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />
   return children
+}
+
+function SmartHome() {
+  const { isLoading, isAuthenticated } = useConvexAuth()
+  if (isLoading) return <LoadingScreen />
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />
+  return <LandingPage />
 }
 
 export default function App() {
   const navigate = useNavigate()
 
+  useEffect(() => {
+    window.createLemonSqueezy?.()
+  }, [])
+
   const handleReset = useCallback(() => {
-    navigate('/')
+    navigate('/dashboard')
   }, [navigate])
 
   return (
@@ -55,26 +75,40 @@ export default function App() {
           />
           <Route
             path="/"
+            element={<SmartHome />}
+          />
+          <Route
+            path="/checkout"
             element={
               <AuthGuard>
-                <HomePage />
+                <CheckoutPage />
               </AuthGuard>
             }
           />
           <Route
-            path="/landing"
-            element={<LandingPage />}
+            path="/dashboard"
+            element={
+              <AuthGuard>
+                <PurchaseGuard>
+                  <HomePage />
+                </PurchaseGuard>
+              </AuthGuard>
+            }
           />
           <Route
             path="/editor/:resumeId"
             element={
               <AuthGuard>
-                <Suspense fallback={<LoadingScreen />}>
-                  <EditorPage />
-                </Suspense>
+                <PurchaseGuard>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <EditorPage />
+                  </Suspense>
+                </PurchaseGuard>
               </AuthGuard>
             }
           />
+          {/* Catch-all — send unknown routes to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ErrorBoundary>
       <ToastContainer />

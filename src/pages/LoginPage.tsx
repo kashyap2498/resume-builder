@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuthActions } from '@convex-dev/auth/react'
+import { FileText } from 'lucide-react'
 
 export default function LoginPage() {
   const { signIn } = useAuthActions()
@@ -30,8 +32,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
       <div className="w-full max-w-sm px-4">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Resume Builder</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <Link to="/" className="inline-flex items-center gap-2 mb-4">
+            <FileText className="h-6 w-6 text-blue-600" />
+            <span className="text-lg font-bold tracking-tight text-gray-900">Resumello</span>
+          </Link>
+          <p className="text-sm text-gray-500">
             {flow === 'signIn' ? 'Sign in to your account' : 'Create a new account'}
           </p>
         </div>

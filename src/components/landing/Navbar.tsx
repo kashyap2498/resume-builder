@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, Menu, X } from 'lucide-react';
 
@@ -14,6 +15,7 @@ const scrollTo = (id: string) => {
 };
 
 export default function Navbar() {
+  const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -76,10 +78,18 @@ export default function Navbar() {
               </button>
             ))}
             <button
+              onClick={() => navigate('/login')}
+              className={`cursor-pointer text-sm font-medium transition-colors duration-300 hover:opacity-80 ${
+                scrolled ? 'text-gray-600' : 'text-gray-300'
+              }`}
+            >
+              Log in
+            </button>
+            <button
               onClick={() => handleNavClick('pricing')}
               className="cursor-pointer rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-blue-500"
             >
-              Get Resumello — $29
+              Get Resumello
             </button>
           </div>
 
@@ -123,10 +133,20 @@ export default function Navbar() {
                 </button>
               ))}
               <button
+                onClick={() => { setMobileOpen(false); navigate('/login'); }}
+                className={`block w-full cursor-pointer rounded-lg px-4 py-3 text-left text-sm font-medium transition-colors duration-200 ${
+                  scrolled
+                    ? 'text-gray-600 hover:bg-gray-100'
+                    : 'text-gray-300 hover:bg-white/10'
+                }`}
+              >
+                Log in
+              </button>
+              <button
                 onClick={() => handleNavClick('pricing')}
                 className="mt-3 w-full cursor-pointer rounded-lg bg-blue-600 px-5 py-3 text-center text-sm font-semibold text-white transition-all duration-200 hover:bg-blue-500"
               >
-                Get Resumello — $29
+                Get Resumello
               </button>
             </div>
           </motion.div>
