@@ -169,13 +169,23 @@ function extractExperience(content: string): ExperienceEntry[] {
   }
 
   // No paragraph breaks — detect entry boundaries by scanning lines
-  // for date ranges, which typically mark new entries.
+  // for date ranges. A date-range line only starts a NEW entry if the
+  // current block already contains a date range (meaning we've already
+  // seen the previous job's dates). Otherwise the date belongs to the
+  // current entry's header.
   const entryBlocks: string[][] = [];
   let currentBlock: string[] = [];
 
+  const blockHasDateRange = (block: string[]): boolean =>
+    block.some((l) => {
+      DATE_RANGE_REGEX.lastIndex = 0;
+      const has = DATE_RANGE_REGEX.test(l);
+      DATE_RANGE_REGEX.lastIndex = 0;
+      return has;
+    });
+
   for (const line of allLines) {
     if (!line) {
-      // blank line could be a separator
       if (currentBlock.length > 0) {
         entryBlocks.push(currentBlock);
         currentBlock = [];
@@ -183,19 +193,31 @@ function extractExperience(content: string): ExperienceEntry[] {
       continue;
     }
 
-    // Check if this line looks like the start of a new entry:
-    // - Contains a date range
-    // - Is NOT a bullet point
     const isBullet = /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014]/.test(line);
+    DATE_RANGE_REGEX.lastIndex = 0;
     const hasDateRange = DATE_RANGE_REGEX.test(line);
-
-    // Reset regex lastIndex since we use 'g' flag
     DATE_RANGE_REGEX.lastIndex = 0;
 
-    if (hasDateRange && !isBullet && currentBlock.length > 0) {
-      // This line starts a new entry — save the current one
-      entryBlocks.push(currentBlock);
-      currentBlock = [line];
+    if (hasDateRange && !isBullet && currentBlock.length > 0 && blockHasDateRange(currentBlock)) {
+      // Current block already has a date range — this date starts a new entry.
+      // Check if the last line in the current block is a job title that
+      // belongs with this new date line (e.g. "Developer at ACME" followed
+      // by "Jan 2020 - Present").
+      const lastLine = currentBlock[currentBlock.length - 1];
+      const lastIsBullet = /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014]/.test(lastLine);
+      DATE_RANGE_REGEX.lastIndex = 0;
+      const lastHasDate = DATE_RANGE_REGEX.test(lastLine);
+      DATE_RANGE_REGEX.lastIndex = 0;
+
+      if (!lastIsBullet && !lastHasDate && lastLine.length < 80) {
+        // Move the title from the old block to the new one
+        currentBlock.pop();
+        if (currentBlock.length > 0) entryBlocks.push(currentBlock);
+        currentBlock = [lastLine, line];
+      } else {
+        entryBlocks.push(currentBlock);
+        currentBlock = [line];
+      }
     } else {
       currentBlock.push(line);
     }
@@ -291,8 +313,8 @@ function parseExperienceBlock(blockText: string): ExperienceEntry | null {
     if (isBullet) {
       doneWithHeaders = true;
       highlights.push(line.replace(/^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014\u25BA\u25B8\u25B6\u2023\u27A4\u2192>\u2605\u2606\u203A\u276F]\s*/, ''));
-    } else if (!doneWithHeaders && headerLines.length < 3) {
-      // First few non-bullet lines are headers
+    } else if (!doneWithHeaders && headerLines.length < 3 && line.length < 80) {
+      // First few short non-bullet lines are headers (titles, company, dates)
       headerLines.push(line);
     } else {
       // Non-bullet line after headers or after bullets started — treat as highlight
@@ -569,11 +591,42 @@ function extractSkills(content: string): SkillCategory[] {
 function extractCertifications(content: string): CertificationEntry[] {
   const entries: CertificationEntry[] = [];
 
-  // Split on paragraph breaks or individual lines
+  // Split on paragraph breaks; if none, group consecutive lines into
+  // certification entries using date boundaries.
   const blocks = content.split(/\n\s*\n/).filter((b) => b.trim());
-  const items = blocks.length > 1
-    ? blocks
-    : content.split('\n').map((l) => l.trim()).filter(Boolean);
+  let items: string[];
+  if (blocks.length > 1) {
+    items = blocks;
+  } else {
+    // Group lines: a new certification starts after we've seen a date line
+    const allLines = content.split('\n').map((l) => l.trim()).filter(Boolean);
+    const grouped: string[][] = [];
+    let current: string[] = [];
+    let seenDate = false;
+
+    for (const line of allLines) {
+      const cleanLine = line.replace(/^[-*\u2022\u25CF\u25CB\u25AA\u25AB]\s*/, '');
+      DATE_REGEX.lastIndex = 0;
+      const stripped = cleanLine.replace(DATE_REGEX, '').trim();
+      DATE_REGEX.lastIndex = 0;
+      const isDateLine = stripped.length < 5 && DATE_REGEX.test(cleanLine);
+      DATE_REGEX.lastIndex = 0;
+      const isCredLine = /(?:credential\s*(?:id)?|id)[:\s]/i.test(cleanLine);
+      const isUrlLine = URL_REGEX.test(cleanLine);
+
+      if (seenDate && !isDateLine && !isCredLine && !isUrlLine && current.length > 0) {
+        grouped.push(current);
+        current = [line];
+        seenDate = false;
+      } else {
+        current.push(line);
+        if (isDateLine) seenDate = true;
+      }
+    }
+    if (current.length > 0) grouped.push(current);
+
+    items = grouped.map((g) => g.join('\n'));
+  }
 
   for (const item of items) {
     const lines = item.split('\n').map((l) => l.trim()).filter(Boolean);
