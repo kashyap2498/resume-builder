@@ -29,11 +29,47 @@ const YEARS = (() => {
   return opts
 })()
 
+const MONTH_ABBRS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const MONTH_FULL: Record<string, string> = {
+  january:'Jan',february:'Feb',march:'Mar',april:'Apr',may:'May',june:'Jun',
+  july:'Jul',august:'Aug',september:'Sep',october:'Oct',november:'Nov',december:'Dec',
+}
+
 function parseMonthYear(value: string): { month: string; year: string } {
   if (!value) return { month: '', year: '' }
-  const parts = value.trim().split(/\s+/)
-  if (parts.length === 2 && MONTHS.some(m => m.value === parts[0]))
-    return { month: parts[0], year: parts[1] }
+  const v = value.trim()
+
+  // "Jan 2023" or "January 2023"
+  const parts = v.split(/\s+/)
+  if (parts.length === 2) {
+    const mAbbr = MONTH_ABBRS.find(m => m === parts[0])
+      ?? MONTH_FULL[parts[0].toLowerCase()]
+    const yMatch = parts[1].match(/^(\d{4})$/)
+    if (mAbbr && yMatch) return { month: mAbbr, year: yMatch[1] }
+    // "2023 Jan" reversed
+    const yFirst = parts[0].match(/^(\d{4})$/)
+    const mSecond = MONTH_ABBRS.find(m => m === parts[1]) ?? MONTH_FULL[parts[1].toLowerCase()]
+    if (yFirst && mSecond) return { month: mSecond, year: yFirst[1] }
+  }
+
+  // "2023-03" or "2023-3"
+  const isoMatch = v.match(/^(\d{4})-(\d{1,2})$/)
+  if (isoMatch) {
+    const mi = parseInt(isoMatch[2], 10)
+    return { month: mi >= 1 && mi <= 12 ? MONTH_ABBRS[mi - 1] : '', year: isoMatch[1] }
+  }
+
+  // "03/2023" or "3/2023"
+  const slashMatch = v.match(/^(\d{1,2})\/(\d{4})$/)
+  if (slashMatch) {
+    const mi = parseInt(slashMatch[1], 10)
+    return { month: mi >= 1 && mi <= 12 ? MONTH_ABBRS[mi - 1] : '', year: slashMatch[2] }
+  }
+
+  // Year only: "2023"
+  const yearOnly = v.match(/^(\d{4})$/)
+  if (yearOnly) return { month: '', year: yearOnly[1] }
+
   return { month: '', year: '' }
 }
 
