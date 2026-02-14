@@ -120,7 +120,7 @@ export function SkillsEditor() {
                   <div className="px-4 pb-4 pt-2 border-t border-gray-100 space-y-4">
                     <Input
                       label="Category Name"
-                      placeholder="Programming Languages"
+                      placeholder="Category (optional)"
                       value={cat.category}
                       onChange={(e) =>
                         handleUpdateCategoryName(cat.id, e.target.value)

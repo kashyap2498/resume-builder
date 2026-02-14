@@ -133,9 +133,9 @@ const MinimalLinesPreview: React.FC<TemplateProps> = ({ resume }) => {
             <SectionHeading title={section.title} font={font} colors={colors} variant="capitalize" />
             {data.skills.map((category) => (
               <div key={category.id} style={{ marginBottom: '4px' }}>
-                <span style={{ fontWeight: 600, fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: colors.text }}>
+                {category.category ? <><span style={{ fontWeight: 600, fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: colors.text }}>
                   {category.category}:
-                </span>{' '}
+                </span>{' '}</> : null}
                 <span style={{ fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: colors.text }}>
                   {category.items.join(', ')}
                 </span>

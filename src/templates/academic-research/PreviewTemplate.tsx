@@ -66,7 +66,7 @@ const AcademicResearchPreview: React.FC<TemplateProps> = ({ resume }) => {
 
       case 'skills':
         if (data.skills.length === 0) return null;
-        return (<div key={section.id} style={{ marginBottom: `${layout.sectionSpacing}px` }}><h2 style={sectionTitleStyle}>{section.title}</h2>{data.skills.map((category) => (<div key={category.id} style={{ marginBottom: '4px' }}><span style={{ fontWeight: 700, fontSize: `${font.sizes.normal}px`, color: colors.text }}>{category.category}: </span><span style={{ fontSize: `${font.sizes.normal}px`, color: colors.text }}>{category.items.join(', ')}</span></div>))}</div>);
+        return (<div key={section.id} style={{ marginBottom: `${layout.sectionSpacing}px` }}><h2 style={sectionTitleStyle}>{section.title}</h2>{data.skills.map((category) => (<div key={category.id} style={{ marginBottom: '4px' }}>{category.category ? <span style={{ fontWeight: 700, fontSize: `${font.sizes.normal}px`, color: colors.text }}>{category.category}: </span> : null}<span style={{ fontSize: `${font.sizes.normal}px`, color: colors.text }}>{category.items.join(', ')}</span></div>))}</div>);
 
       case 'projects':
         if (data.projects.length === 0) return null;

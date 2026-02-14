@@ -58,9 +58,9 @@ const DeveloperStackPreview: React.FC<TemplateProps> = ({ resume }) => {
             <h2 style={sidebarTitleStyle}>{'// '}{section.title}</h2>
             {data.skills.map((category) => (
               <div key={category.id} style={{ marginBottom: '8px' }}>
-                <div style={{ fontWeight: 700, fontSize: `${font.sizes.small}px`, fontFamily: '"Courier New", monospace', color: '#e06c75', marginBottom: '3px' }}>
+                {category.category ? <div style={{ fontWeight: 700, fontSize: `${font.sizes.small}px`, fontFamily: '"Courier New", monospace', color: '#e06c75', marginBottom: '3px' }}>
                   {category.category}
-                </div>
+                </div> : null}
                 {category.items.map((s) => (
                   <div key={s} style={{ fontSize: `${font.sizes.small}px`, fontFamily: '"Courier New", monospace', color: '#abb2bf', marginBottom: '1px', paddingLeft: '8px' }}>
                     {'- '}{s}

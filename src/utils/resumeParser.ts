@@ -153,125 +153,75 @@ function extractContact(text: string): Partial<ContactData> {
 // -- Experience Extraction ----------------------------------------------------
 
 function extractExperience(content: string): ExperienceEntry[] {
-  const entries: ExperienceEntry[] = [];
-  const allLines = content.split('\n').map((l) => l.trim());
-
-  // First, try splitting by double newlines (paragraph breaks)
+  // 1. Try paragraph-break split first
   const blocks = content.split(/\n\s*\n/).filter((b) => b.trim());
-
-  // If we got multiple blocks, process each as a potential entry
   if (blocks.length > 1) {
-    for (const block of blocks) {
-      const entry = parseExperienceBlock(block);
-      if (entry) entries.push(entry);
-    }
-    return entries;
+    return blocks
+      .map((b) => parseExperienceBlock(b))
+      .filter((e): e is ExperienceEntry => e !== null);
   }
 
-  // No paragraph breaks — detect entry boundaries by scanning lines
-  // for date ranges. A date-range line only starts a NEW entry if the
-  // current block already contains a date range (meaning we've already
-  // seen the previous job's dates). Otherwise the date belongs to the
-  // current entry's header.
+  // 2. No paragraph breaks — date-anchored splitting
+  const lines = content.split('\n').map((l) => l.trim()).filter(Boolean);
+
+  // Find non-bullet lines with date ranges (anchors)
+  const BULLET_RE = /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014\u25BA\u25B8\u25B6\u2023\u27A4\u2192>\u2605\u2606\u203A\u276F]/;
+  const anchors: number[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (BULLET_RE.test(lines[i])) continue;
+    DATE_RANGE_REGEX.lastIndex = 0;
+    if (DATE_RANGE_REGEX.test(lines[i])) anchors.push(i);
+    DATE_RANGE_REGEX.lastIndex = 0;
+  }
+
+  if (anchors.length <= 1) {
+    const entry = parseExperienceBlock(content);
+    return entry ? [entry] : [];
+  }
+
+  // Determine entry start for each anchor
+  const entryStarts: number[] = [];
+  for (let a = 0; a < anchors.length; a++) {
+    const anchorIdx = anchors[a];
+    let startIdx = anchorIdx;
+
+    // Does this line have title text alongside the date?
+    DATE_RANGE_REGEX.lastIndex = 0;
+    const withoutDate = lines[anchorIdx].replace(DATE_RANGE_REGEX, '').trim();
+    DATE_RANGE_REGEX.lastIndex = 0;
+    const isDateOnly = withoutDate.length < 5;
+
+    // Look back 1-2 lines for title/company headers
+    const minBound = a > 0 ? anchors[a - 1] + 1 : 0;
+    const maxLookBack = isDateOnly ? 2 : 1;
+
+    for (let back = 1; back <= maxLookBack; back++) {
+      const prevIdx = anchorIdx - back;
+      if (prevIdx < minBound) break;
+      const prevLine = lines[prevIdx];
+      if (BULLET_RE.test(prevLine)) break;
+      DATE_RANGE_REGEX.lastIndex = 0;
+      const prevHasDate = DATE_RANGE_REGEX.test(prevLine);
+      DATE_RANGE_REGEX.lastIndex = 0;
+      if (prevHasDate) break;
+      if (prevLine.length >= 50 || prevLine.endsWith('.')) break;
+      startIdx = prevIdx;
+    }
+
+    entryStarts.push(startIdx);
+  }
+
+  // Split lines into blocks
   const entryBlocks: string[][] = [];
-  let currentBlock: string[] = [];
-
-  const blockHasDateRange = (block: string[]): boolean =>
-    block.some((l) => {
-      DATE_RANGE_REGEX.lastIndex = 0;
-      const has = DATE_RANGE_REGEX.test(l);
-      DATE_RANGE_REGEX.lastIndex = 0;
-      return has;
-    });
-
-  for (const line of allLines) {
-    if (!line) {
-      if (currentBlock.length > 0) {
-        entryBlocks.push(currentBlock);
-        currentBlock = [];
-      }
-      continue;
-    }
-
-    const isBullet = /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014]/.test(line);
-    DATE_RANGE_REGEX.lastIndex = 0;
-    const hasDateRange = DATE_RANGE_REGEX.test(line);
-    DATE_RANGE_REGEX.lastIndex = 0;
-
-    if (hasDateRange && !isBullet && currentBlock.length > 0 && blockHasDateRange(currentBlock)) {
-      // Current block already has a date range — this date starts a new entry.
-      // Check if the last line in the current block is a job title that
-      // belongs with this new date line (e.g. "Developer at ACME" followed
-      // by "Jan 2020 - Present").
-      const lastLine = currentBlock[currentBlock.length - 1];
-      const lastIsBullet = /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014]/.test(lastLine);
-      DATE_RANGE_REGEX.lastIndex = 0;
-      const lastHasDate = DATE_RANGE_REGEX.test(lastLine);
-      DATE_RANGE_REGEX.lastIndex = 0;
-
-      if (!lastIsBullet && !lastHasDate && lastLine.length < 80) {
-        // Move the title from the old block to the new one
-        currentBlock.pop();
-        if (currentBlock.length > 0) entryBlocks.push(currentBlock);
-        currentBlock = [lastLine, line];
-      } else {
-        entryBlocks.push(currentBlock);
-        currentBlock = [line];
-      }
-    } else {
-      currentBlock.push(line);
-    }
-  }
-  if (currentBlock.length > 0) {
-    entryBlocks.push(currentBlock);
+  for (let i = 0; i < entryStarts.length; i++) {
+    const start = i === 0 ? 0 : entryStarts[i];
+    const end = i + 1 < entryStarts.length ? entryStarts[i + 1] : lines.length;
+    entryBlocks.push(lines.slice(start, end));
   }
 
-  // If we still got just one big block, try splitting on non-bullet
-  // lines that are short (look like titles/positions)
-  if (entryBlocks.length === 1 && allLines.filter(Boolean).length > 3) {
-    const lines = allLines.filter(Boolean);
-    const subBlocks: string[][] = [];
-    let sub: string[] = [];
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const isBullet = /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014]/.test(line);
-      const prevIsBullet = i > 0 && /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014]/.test(lines[i - 1]);
-
-      // If we transition from bullet to non-bullet and the line looks like
-      // a new entry header (contains a date range or has a second non-bullet
-      // line following it that does), split here.
-      DATE_RANGE_REGEX.lastIndex = 0;
-      const lineHasDate = DATE_RANGE_REGEX.test(line);
-      DATE_RANGE_REGEX.lastIndex = 0;
-      const nextLine = i + 1 < lines.length ? lines[i + 1] : '';
-      const nextHasDate = DATE_RANGE_REGEX.test(nextLine);
-      DATE_RANGE_REGEX.lastIndex = 0;
-      if (!isBullet && prevIsBullet && line.length < 80 && sub.length > 0 && (lineHasDate || nextHasDate)) {
-        subBlocks.push(sub);
-        sub = [line];
-      } else {
-        sub.push(line);
-      }
-    }
-    if (sub.length > 0) subBlocks.push(sub);
-
-    if (subBlocks.length > 1) {
-      for (const block of subBlocks) {
-        const entry = parseExperienceBlock(block.join('\n'));
-        if (entry) entries.push(entry);
-      }
-      return entries;
-    }
-  }
-
-  // Process each detected block
-  for (const block of entryBlocks) {
-    const entry = parseExperienceBlock(block.join('\n'));
-    if (entry) entries.push(entry);
-  }
-
-  return entries;
+  return entryBlocks
+    .map((block) => parseExperienceBlock(block.join('\n')))
+    .filter((e): e is ExperienceEntry => e !== null);
 }
 
 function parseExperienceBlock(blockText: string): ExperienceEntry | null {
@@ -279,13 +229,21 @@ function parseExperienceBlock(blockText: string): ExperienceEntry | null {
   if (lines.length === 0) return null;
 
   const entry: Partial<ExperienceEntry> = {};
-  const fullText = lines.join(' ');
+  const BULLET_RE = /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014\u25BA\u25B8\u25B6\u2023\u27A4\u2192>\u2605\u2606\u203A\u276F]/;
 
-  // Reset global regex
-  DATE_RANGE_REGEX.lastIndex = 0;
-  const dateRangeMatch = fullText.match(DATE_RANGE_REGEX);
+  // Find the first date-range line — divides headers from content
+  let dateLineIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    DATE_RANGE_REGEX.lastIndex = 0;
+    if (DATE_RANGE_REGEX.test(lines[i])) { dateLineIdx = i; break; }
+    DATE_RANGE_REGEX.lastIndex = 0;
+  }
 
   // Extract dates
+  const fullText = lines.join(' ');
+  DATE_RANGE_REGEX.lastIndex = 0;
+  const dateRangeMatch = fullText.match(DATE_RANGE_REGEX);
+  DATE_RANGE_REGEX.lastIndex = 0;
   if (dateRangeMatch) {
     const dateParts = dateRangeMatch[0].split(/[-–—]|to/i).map((d) => d.trim()).filter(Boolean);
     if (dateParts.length >= 2) {
@@ -300,68 +258,65 @@ function parseExperienceBlock(blockText: string): ExperienceEntry | null {
     }
   }
 
-  // Separate header lines (position, company, dates) from content lines (highlights)
-  // Header lines are the first few short non-bullet lines; everything else is a highlight.
-  const BULLET_RE = /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014\u25BA\u25B8\u25B6\u2023\u27A4\u2192>\u2605\u2606\u203A\u276F]/;
-  const headerLines: string[] = [];
-  const highlights: string[] = [];
-  let doneWithHeaders = false;
+  // Split into headers (up to date line) and content (after date line)
+  let headerEnd = dateLineIdx >= 0 ? dateLineIdx + 1 : Math.min(2, lines.length);
+  const headerLines = lines.slice(0, headerEnd);
+  let contentLines = lines.slice(headerEnd);
 
-  for (const line of lines) {
-    const isBullet = BULLET_RE.test(line);
+  // Clean date ranges from headers
+  const cleanHeaders = headerLines
+    .map((l) => { DATE_RANGE_REGEX.lastIndex = 0; const c = l.replace(DATE_RANGE_REGEX, '').trim(); DATE_RANGE_REGEX.lastIndex = 0; return c; })
+    .filter((l) => l.length > 0);
 
-    if (isBullet) {
-      doneWithHeaders = true;
-      highlights.push(line.replace(/^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014\u25BA\u25B8\u25B6\u2023\u27A4\u2192>\u2605\u2606\u203A\u276F]\s*/, ''));
-    } else if (!doneWithHeaders && headerLines.length < 3 && line.length < 80) {
-      // First few short non-bullet lines are headers (titles, company, dates)
-      headerLines.push(line);
-    } else {
-      // Non-bullet line after headers or after bullets started — treat as highlight
-      // (many resumes use plain text descriptions without bullets)
-      doneWithHeaders = true;
-      if (line.length > 15) {
-        highlights.push(line);
-      }
-    }
-  }
-
-  // Parse header lines for position and company
-  if (headerLines.length >= 1) {
-    const firstLine = headerLines[0];
-
-    // Remove date range from the line for cleaner extraction
-    DATE_RANGE_REGEX.lastIndex = 0;
-    const cleanFirst = firstLine.replace(DATE_RANGE_REGEX, '').trim();
-
-    // "Position at Company" pattern
-    const atMatch = cleanFirst.match(/^(.+?)\s+at\s+(.+?)$/i);
-    // "Position | Company" or "Position - Company" pattern
-    const separatorMatch = cleanFirst.match(/^(.+?)\s*[|–—]\s*(.+?)$/);
-
+  // Parse position and company from headers
+  if (cleanHeaders.length >= 1) {
+    const first = cleanHeaders[0];
+    const atMatch = first.match(/^(.+?)\s+at\s+(.+?)$/i);
+    const sepMatch = first.match(/^(.+?)\s*[|–—]\s*(.+?)$/);
     if (atMatch) {
       entry.position = atMatch[1].trim();
       entry.company = atMatch[2].trim();
-    } else if (separatorMatch) {
-      entry.position = separatorMatch[1].trim();
-      entry.company = separatorMatch[2].trim();
+    } else if (sepMatch) {
+      entry.position = sepMatch[1].trim();
+      entry.company = sepMatch[2].trim();
     } else {
-      entry.position = cleanFirst;
-
-      if (headerLines.length >= 2) {
-        DATE_RANGE_REGEX.lastIndex = 0;
-        entry.company = headerLines[1].replace(DATE_RANGE_REGEX, '').trim();
+      entry.position = first;
+      if (cleanHeaders.length >= 2) {
+        const second = cleanHeaders[1];
+        const compSep = second.match(/^(.+?)\s*[|,]\s*(.+?)$/);
+        if (compSep) {
+          entry.company = compSep[1].trim();
+          entry.location = compSep[2].trim();
+        } else {
+          entry.company = second;
+        }
       }
     }
   }
 
-  entry.highlights = highlights;
-
-  // Only create an entry if we found meaningful content
-  if (!entry.company && !entry.position && highlights.length === 0) {
-    return null;
+  // If company not found in headers, check first content line for "Company | Location"
+  if (!entry.company && contentLines.length > 0) {
+    const firstContent = contentLines[0];
+    if (!BULLET_RE.test(firstContent) && firstContent.length < 60) {
+      const compSep = firstContent.match(/^(.+?)\s*[|]\s*(.+?)$/);
+      if (compSep) {
+        entry.company = compSep[1].trim();
+        entry.location = compSep[2].trim();
+        contentLines = contentLines.slice(1);
+      }
+    }
   }
 
+  // Parse highlights from remaining content
+  const BULLET_PREFIX = /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014\u25BA\u25B8\u25B6\u2023\u27A4\u2192>\u2605\u2606\u203A\u276F]\s*/;
+  const highlights: string[] = [];
+  for (const line of contentLines) {
+    const cleaned = line.replace(BULLET_PREFIX, '').trim();
+    if (cleaned.length > 0) highlights.push(cleaned);
+  }
+  entry.highlights = highlights;
+
+  if (!entry.company && !entry.position && highlights.length === 0) return null;
   return buildExperienceEntry(entry);
 }
 

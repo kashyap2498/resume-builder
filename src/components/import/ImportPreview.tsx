@@ -6,8 +6,9 @@
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { Button, Input, TextArea } from '@/components/ui';
+import { Button, Input, TextArea, RichTextEditor } from '@/components/ui';
 import type { ResumeData, CertificationEntry } from '@/types/resume';
+import { toEditorHtml, fromEditorHtml } from '@/utils/richTextConvert';
 
 interface ImportPreviewProps {
   parsedData: Partial<ResumeData>;
@@ -250,42 +251,21 @@ export function ImportPreview({
                     }
                   />
                 </div>
-                {exp.highlights.length > 0 && (
-                  <div className="mt-3">
-                    <label className="text-xs font-medium text-gray-600">
-                      Highlights
-                    </label>
-                    <ul className="mt-1 space-y-1">
-                      {exp.highlights.map((highlight, hIdx) => (
-                        <li key={hIdx} className="flex items-start gap-2">
-                          <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-gray-400" />
-                          <input
-                            type="text"
-                            value={highlight}
-                            onChange={(e) =>
-                              setExperience((prev) =>
-                                prev.map((item, i) =>
-                                  i === expIdx
-                                    ? {
-                                        ...item,
-                                        highlights: item.highlights.map(
-                                          (h, hi) =>
-                                            hi === hIdx
-                                              ? e.target.value
-                                              : h
-                                        ),
-                                      }
-                                    : item
-                                )
-                              )
-                            }
-                            className="w-full rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-200"
-                          />
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                <div className="mt-3">
+                  <RichTextEditor
+                    label="Description & Highlights"
+                    content={toEditorHtml(exp.description ?? '', exp.highlights)}
+                    onChange={(html) => {
+                      const { description, highlights } = fromEditorHtml(html);
+                      setExperience((prev) =>
+                        prev.map((item, i) =>
+                          i === expIdx ? { ...item, description, highlights } : item
+                        )
+                      );
+                    }}
+                    placeholder="Describe your role and key achievements..."
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -402,57 +382,17 @@ export function ImportPreview({
                   }
                   wrapperClassName="mb-2"
                 />
-                <div className="flex flex-wrap gap-2">
-                  {cat.items.map((skill, skillIdx) => (
-                    <div
-                      key={skillIdx}
-                      className="flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs border border-gray-200"
-                    >
-                      <input
-                        type="text"
-                        value={skill.name}
-                        onChange={(e) =>
-                          setSkills((prev) =>
-                            prev.map((c, ci) =>
-                              ci === catIdx
-                                ? {
-                                    ...c,
-                                    items: c.items.map((s, si) =>
-                                      si === skillIdx
-                                        ? { ...s, name: e.target.value }
-                                        : s
-                                    ),
-                                  }
-                                : c
-                            )
-                          )
-                        }
-                        className="w-20 border-none bg-transparent text-xs text-gray-700 focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSkills((prev) =>
-                            prev.map((c, ci) =>
-                              ci === catIdx
-                                ? {
-                                    ...c,
-                                    items: c.items.filter(
-                                      (_, si) => si !== skillIdx
-                                    ),
-                                  }
-                                : c
-                            )
-                          )
-                        }
-                        className="text-gray-500 hover:text-red-500"
-                        aria-label="Remove skill"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                <Input
+                  label={cat.category || 'Skills'}
+                  value={cat.items.join(', ')}
+                  onChange={(e) => {
+                    const items = e.target.value.split(',').map((s) => s.trim()).filter(Boolean);
+                    setSkills((prev) =>
+                      prev.map((c, i) => (i === catIdx ? { ...c, items } : c))
+                    );
+                  }}
+                  hint="Separate skills with commas"
+                />
               </div>
             ))}
           </div>

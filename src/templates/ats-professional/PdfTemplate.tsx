@@ -212,7 +212,7 @@ const AtsProfessionalPdf: React.FC<TemplateProps> = ({ resume }) => {
             <Text style={styles.sectionTitle}>{section.title}</Text>
             {data.skills.map((category) => (
               <Text key={category.id} style={styles.skillLine}>
-                <Text style={styles.skillCategory}>{category.category}: </Text>
+                {category.category ? <Text style={styles.skillCategory}>{category.category}: </Text> : null}
                 {category.items.join(', ')}
               </Text>
             ))}

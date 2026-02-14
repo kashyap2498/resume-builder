@@ -84,9 +84,9 @@ describe('Zod Schemas', () => {
       expect(result.success).toBe(true)
     })
 
-    it('rejects empty category name', () => {
+    it('accepts empty category name', () => {
       const result = skillCategorySchema.safeParse({ ...mockResumeData.skills[0], category: '' })
-      expect(result.success).toBe(false)
+      expect(result.success).toBe(true)
     })
   })
 

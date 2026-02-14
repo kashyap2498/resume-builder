@@ -152,9 +152,9 @@ const ExecutiveSuitePreview: React.FC<TemplateProps> = ({ resume }) => {
             <h2 style={sectionTitleStyle}>{section.title}</h2>
             {data.skills.map((category) => (
               <div key={category.id} style={{ marginBottom: '6px' }}>
-                <span style={{ fontWeight: 600, fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: accentColor }}>
+                {category.category ? <><span style={{ fontWeight: 600, fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: accentColor }}>
                   {category.category}:
-                </span>{' '}
+                </span>{' '}</> : null}
                 <span style={{ fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: colors.text }}>
                   {category.items.join(', ')}
                 </span>

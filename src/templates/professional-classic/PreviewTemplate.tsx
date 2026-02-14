@@ -159,9 +159,9 @@ const ProfessionalClassicPreview: React.FC<TemplateProps> = ({ resume }) => {
             <div style={{ marginTop: '6px' }}>
               {data.skills.map((category) => (
                 <div key={category.id} style={{ marginBottom: '4px' }}>
-                  <span style={{ fontWeight: 700, fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: colors.primary }}>
+                  {category.category ? <><span style={{ fontWeight: 700, fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: colors.primary }}>
                     {category.category}:
-                  </span>{' '}
+                  </span>{' '}</> : null}
                   <span style={{ fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: colors.text }}>
                     {category.items.join(', ')}
                   </span>

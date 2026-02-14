@@ -866,4 +866,32 @@ State University
       expect(result.hobbies!.items.length).toBeGreaterThanOrEqual(2)
     })
   })
+
+  // ---------------------------------------------------------------------------
+  // Experience — date-anchored splitting (parser bug fix)
+  // ---------------------------------------------------------------------------
+
+  describe('experience - date-anchored splitting', () => {
+    it('should split entries when title and date share a line (no bullets)', () => {
+      const text = `John Doe\njohn@example.com\n\nExperience
+Front Desk Receptionist
+Medrehab, Brampton
+Jun 2025 – Present
+Welcomed patients and served as the first point of contact
+Managed scheduling, check-ins, and patient inquiries
+Front Desk Receptionist/Physiotherapist Assistant Aug 2024 – Feb 2025
+A Balanced Body Health Services | Kitchener, ON
+Supported physiotherapists in implementing exercise programs
+Handled patient intake, phone calls, and scheduling`
+      const result = parseResumeText(text)
+      expect(result.experience!.length).toBe(2)
+      expect(result.experience![0].position).toMatch(/Front Desk Receptionist/)
+      expect(result.experience![0].company).toMatch(/Medrehab/)
+      expect(result.experience![0].highlights.length).toBe(2)
+      expect(result.experience![1].position).toMatch(/Physiotherapist Assistant/)
+      expect(result.experience![1].company).toMatch(/Balanced Body/)
+      expect(result.experience![1].location).toMatch(/Kitchener/)
+      expect(result.experience![1].highlights.length).toBe(2)
+    })
+  })
 })

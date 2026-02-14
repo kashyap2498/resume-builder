@@ -55,7 +55,7 @@ const ElegantColumnsPreview: React.FC<TemplateProps> = ({ resume }) => {
             <h2 style={sidebarTitleStyle}>{section.title}</h2>
             {data.skills.map((category) => (
               <div key={category.id} style={{ marginBottom: '8px' }}>
-                <div style={{ fontWeight: 600, fontSize: `${font.sizes.small}px`, color: accentColor, marginBottom: '2px' }}>{category.category}</div>
+                {category.category ? <div style={{ fontWeight: 600, fontSize: `${font.sizes.small}px`, color: accentColor, marginBottom: '2px' }}>{category.category}</div> : null}
                 <div style={{ fontSize: `${font.sizes.small}px`, color: colors.text }}>{category.items.join(', ')}</div>
               </div>
             ))}

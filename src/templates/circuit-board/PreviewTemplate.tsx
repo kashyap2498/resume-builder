@@ -63,9 +63,9 @@ const CircuitBoardPreview: React.FC<TemplateProps> = ({ resume }) => {
             <h2 style={sidebarTitleStyle}>{section.title}</h2>
             {data.skills.map((category) => (
               <div key={category.id} style={{ marginBottom: '8px' }}>
-                <div style={{ fontWeight: 700, fontSize: `${font.sizes.small}px`, fontFamily: '"Courier New", monospace', color: accentColor, marginBottom: '2px' }}>
+                {category.category ? <div style={{ fontWeight: 700, fontSize: `${font.sizes.small}px`, fontFamily: '"Courier New", monospace', color: accentColor, marginBottom: '2px' }}>
                   {'> '}{category.category}
-                </div>
+                </div> : null}
                 <div style={{ fontSize: `${font.sizes.small}px`, fontFamily: font.family, color: colors.lightText }}>
                   {category.items.join(', ')}
                 </div>

@@ -105,9 +105,9 @@ const TechnicalBlueprintPreview: React.FC<TemplateProps> = ({ resume }) => {
             <h2 style={sectionTitleStyle}>{section.title}</h2>
             {data.skills.map((category) => (
               <div key={category.id} style={{ marginBottom: '6px' }}>
-                <span style={{ fontWeight: 700, fontSize: `${font.sizes.normal}px`, fontFamily: '"Courier New", Courier, monospace', color: steelBlue }}>
+                {category.category ? <><span style={{ fontWeight: 700, fontSize: `${font.sizes.normal}px`, fontFamily: '"Courier New", Courier, monospace', color: steelBlue }}>
                   {category.category}:
-                </span>{' '}
+                </span>{' '}</> : null}
                 <span style={{ fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: colors.text }}>
                   {category.items.join(' | ')}
                 </span>

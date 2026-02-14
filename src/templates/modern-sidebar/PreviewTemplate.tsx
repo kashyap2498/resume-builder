@@ -93,9 +93,9 @@ const ModernSidebarPreview: React.FC<TemplateProps> = ({ resume }) => {
             <h2 style={sidebarTitleStyle}>{section.title}</h2>
             {data.skills.map((category) => (
               <div key={category.id} style={{ marginBottom: '8px' }}>
-                <div style={{ fontWeight: 600, fontSize: `${font.sizes.small}px`, fontFamily: font.family, color: 'rgba(255,255,255,0.9)', marginBottom: '2px' }}>
+                {category.category ? <div style={{ fontWeight: 600, fontSize: `${font.sizes.small}px`, fontFamily: font.family, color: 'rgba(255,255,255,0.9)', marginBottom: '2px' }}>
                   {category.category}
-                </div>
+                </div> : null}
                 <div style={{ fontSize: `${font.sizes.small}px`, fontFamily: font.family, color: 'rgba(255,255,255,0.75)' }}>
                   {category.items.join(', ')}
                 </div>
