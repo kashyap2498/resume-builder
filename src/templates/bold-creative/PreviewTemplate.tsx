@@ -67,7 +67,7 @@ const BoldCreativePreview: React.FC<TemplateProps> = ({ resume }) => {
             {data.skills.map((category) => (
               <div key={category.id} style={{ marginBottom: '8px' }}>
                 <span style={{ fontWeight: 800, fontSize: `${font.sizes.normal}px`, color: accentColor }}>{category.category}: </span>
-                <span style={{ fontSize: `${font.sizes.normal}px`, color: colors.text }}>{category.items.map((s) => s.name).join(' / ')}</span>
+                <span style={{ fontSize: `${font.sizes.normal}px`, color: colors.text }}>{category.items.join(' / ')}</span>
               </div>
             ))}
           </div>

@@ -4,23 +4,17 @@
 
 import React from 'react';
 import type { FontStyling, ColorStyling } from '@/types/styling';
-import type { SkillProficiency } from '@/types/resume';
 
 export interface SkillBadgeProps {
   name: string;
-  proficiency?: SkillProficiency;
   font: FontStyling;
   colors: ColorStyling;
-  /** Whether to show the proficiency dots indicator */
-  showProficiency?: boolean;
 }
 
 const SkillBadge: React.FC<SkillBadgeProps> = ({
   name,
-  proficiency,
   font,
   colors,
-  showProficiency = false,
 }) => {
   return (
     <span
@@ -38,23 +32,6 @@ const SkillBadge: React.FC<SkillBadgeProps> = ({
       }}
     >
       {name}
-      {showProficiency && proficiency && (
-        <span style={{ display: 'inline-flex', gap: '2px', marginLeft: '2px' }}>
-          {[1, 2, 3, 4, 5].map((level) => (
-            <span
-              key={level}
-              style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                backgroundColor:
-                  level <= proficiency ? colors.primary : colors.divider,
-                display: 'inline-block',
-              }}
-            />
-          ))}
-        </span>
-      )}
     </span>
   );
 };

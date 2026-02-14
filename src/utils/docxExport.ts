@@ -109,7 +109,7 @@ export async function exportResumeAsDocx(resume: Resume): Promise<void> {
         if (data.skills.length > 0) {
           addSectionHeader(section.title)
           for (const cat of data.skills) {
-            const skillNames = cat.items.map(s => s.name).join(', ')
+            const skillNames = cat.items.join(', ')
             sections.push(new Paragraph({
               children: [
                 new TextRun({ text: `${cat.category}: `, bold: true, size: 20 }),

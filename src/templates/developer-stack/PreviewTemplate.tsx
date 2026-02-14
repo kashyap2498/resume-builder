@@ -62,8 +62,8 @@ const DeveloperStackPreview: React.FC<TemplateProps> = ({ resume }) => {
                   {category.category}
                 </div>
                 {category.items.map((s) => (
-                  <div key={s.name} style={{ fontSize: `${font.sizes.small}px`, fontFamily: '"Courier New", monospace', color: '#abb2bf', marginBottom: '1px', paddingLeft: '8px' }}>
-                    {'- '}{s.name}
+                  <div key={s} style={{ fontSize: `${font.sizes.small}px`, fontFamily: '"Courier New", monospace', color: '#abb2bf', marginBottom: '1px', paddingLeft: '8px' }}>
+                    {'- '}{s}
                   </div>
                 ))}
               </div>

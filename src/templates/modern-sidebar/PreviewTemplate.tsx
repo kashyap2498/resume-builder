@@ -97,7 +97,7 @@ const ModernSidebarPreview: React.FC<TemplateProps> = ({ resume }) => {
                   {category.category}
                 </div>
                 <div style={{ fontSize: `${font.sizes.small}px`, fontFamily: font.family, color: 'rgba(255,255,255,0.75)' }}>
-                  {category.items.map((s) => s.name).join(', ')}
+                  {category.items.join(', ')}
                 </div>
               </div>
             ))}

@@ -109,7 +109,7 @@ function getResumeFullText(data: ResumeData): string {
   // Skills
   for (const cat of data.skills) {
     parts.push(cat.category);
-    parts.push(...cat.items.map((s) => s.name));
+    parts.push(...cat.items);
   }
 
   // Projects

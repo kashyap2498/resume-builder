@@ -544,7 +544,7 @@ function extractSkills(content: string): SkillCategory[] {
       categories.push({
         id: generateId(),
         category: categoryName,
-        items: skillNames.map((name) => ({ name, proficiency: 3 as const })),
+        items: skillNames,
       });
     } else {
       // Treat as comma-separated list or bullet points
@@ -564,7 +564,7 @@ function extractSkills(content: string): SkillCategory[] {
           };
         }
         for (const skill of skills) {
-          currentCategory.items.push({ name: skill, proficiency: 3 as const });
+          currentCategory.items.push(skill);
         }
       } else if (skills.length === 1 && skills[0]) {
         if (!currentCategory) {
@@ -574,7 +574,7 @@ function extractSkills(content: string): SkillCategory[] {
             items: [],
           };
         }
-        currentCategory.items.push({ name: skills[0], proficiency: 3 as const });
+        currentCategory.items.push(skills[0]);
       }
     }
   }

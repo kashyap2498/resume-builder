@@ -58,7 +58,7 @@ const ElegantColumnsPdf: React.FC<TemplateProps> = ({ resume }) => {
         return (<View key={section.id} style={styles.sidebarSection}><Text style={styles.name}>{data.contact.firstName}{'\n'}{data.contact.lastName}</Text>{data.contact.title ? <Text style={styles.jobTitle}>{data.contact.title}</Text> : null}<View style={styles.accentLine} />{contactItems.map((item, i) => (<Text key={i} style={styles.contactItem}>{item}</Text>))}</View>);
       case 'skills':
         if (data.skills.length === 0) return null;
-        return (<View key={section.id} style={styles.sidebarSection}><Text style={styles.sidebarSectionTitle}>{section.title}</Text>{data.skills.map((category) => (<View key={category.id} style={{ marginBottom: 6 }}><Text style={styles.sidebarCategoryName}>{category.category}</Text><Text style={styles.sidebarText}>{category.items.map((s) => s.name).join(', ')}</Text></View>))}</View>);
+        return (<View key={section.id} style={styles.sidebarSection}><Text style={styles.sidebarSectionTitle}>{section.title}</Text>{data.skills.map((category) => (<View key={category.id} style={{ marginBottom: 6 }}><Text style={styles.sidebarCategoryName}>{category.category}</Text><Text style={styles.sidebarText}>{category.items.join(', ')}</Text></View>))}</View>);
       case 'languages':
         if (data.languages.length === 0) return null;
         return (<View key={section.id} style={styles.sidebarSection}><Text style={styles.sidebarSectionTitle}>{section.title}</Text>{data.languages.map((lang) => (<Text key={lang.id} style={styles.sidebarText}>{lang.name} ({lang.proficiency})</Text>))}</View>);

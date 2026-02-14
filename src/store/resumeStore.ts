@@ -11,7 +11,6 @@ import type {
   ExperienceEntry,
   EducationEntry,
   SkillCategory,
-  SkillItem,
   ProjectEntry,
   CertificationEntry,
   LanguageEntry,

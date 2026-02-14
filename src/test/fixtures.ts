@@ -95,19 +95,12 @@ export const mockResumeData: ResumeData = {
     {
       id: 'skill-1',
       category: 'Programming Languages',
-      items: [
-        { name: 'TypeScript', proficiency: 5 },
-        { name: 'Python', proficiency: 4 },
-        { name: 'Go', proficiency: 3 },
-      ],
+      items: ['TypeScript', 'Python', 'Go'],
     },
     {
       id: 'skill-2',
       category: 'Frameworks',
-      items: [
-        { name: 'React', proficiency: 5 },
-        { name: 'Node.js', proficiency: 4 },
-      ],
+      items: ['React', 'Node.js'],
     },
   ],
   projects: [

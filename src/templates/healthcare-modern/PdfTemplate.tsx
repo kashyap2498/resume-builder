@@ -57,7 +57,7 @@ const HealthcareModernPdf: React.FC<TemplateProps> = ({ resume }) => {
         return (<View key={section.id} style={styles.sidebarSection}><Text style={styles.name}>{data.contact.firstName} {data.contact.lastName}</Text>{data.contact.title ? <Text style={styles.jobTitle}>{data.contact.title}</Text> : null}{contactItems.map((item, i) => (<Text key={i} style={styles.contactItem}>{item}</Text>))}</View>);
       case 'skills':
         if (data.skills.length === 0) return null;
-        return (<View key={section.id} style={styles.sidebarSection}><Text style={styles.sidebarSectionTitle}>{section.title}</Text>{data.skills.map((category) => (<View key={category.id} style={{ marginBottom: 6 }}><Text style={styles.sidebarCategoryName}>{category.category}</Text><Text style={styles.sidebarText}>{category.items.map((s) => s.name).join(', ')}</Text></View>))}</View>);
+        return (<View key={section.id} style={styles.sidebarSection}><Text style={styles.sidebarSectionTitle}>{section.title}</Text>{data.skills.map((category) => (<View key={category.id} style={{ marginBottom: 6 }}><Text style={styles.sidebarCategoryName}>{category.category}</Text><Text style={styles.sidebarText}>{category.items.join(', ')}</Text></View>))}</View>);
       case 'certifications':
         if (data.certifications.length === 0) return null;
         return (<View key={section.id} style={styles.sidebarSection}><Text style={styles.sidebarSectionTitle}>{section.title}</Text>{data.certifications.map((entry) => (<View key={entry.id} style={{ marginBottom: 6 }}><Text style={styles.sidebarEntryTitle}>{entry.name}</Text><Text style={styles.sidebarEntrySubtitle}>{entry.issuer}</Text>{entry.date ? <Text style={styles.sidebarEntrySubtitle}>{entry.date}</Text> : null}</View>))}</View>);

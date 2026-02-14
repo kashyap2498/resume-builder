@@ -126,7 +126,7 @@ const AtsStandardPreview: React.FC<TemplateProps> = ({ resume }) => {
                   {category.category}:
                 </span>{' '}
                 <span style={{ fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: colors.text }}>
-                  {category.items.map((s) => s.name).join(', ')}
+                  {category.items.join(', ')}
                 </span>
               </div>
             ))}

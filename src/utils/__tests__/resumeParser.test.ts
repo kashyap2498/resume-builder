@@ -552,7 +552,7 @@ Bachelor of Science in CS
     it('should extract all skill items from comma-separated list', () => {
       const result = parseResumeText(FULL_RESUME_TEXT)
       const allSkills = result.skills!.flatMap((c) =>
-        c.items.map((i) => i.name.toLowerCase())
+        c.items.map((i) => i.toLowerCase())
       )
       expect(allSkills).toEqual(
         expect.arrayContaining(['javascript', 'typescript', 'python'])
@@ -574,7 +574,7 @@ CI/CD, Docker, Self-motivated, Problem-solving`
       const result = parseResumeText(text)
 
       const allSkills = result.skills!.flatMap((c) =>
-        c.items.map((i) => i.name)
+        c.items
       )
       // These should appear as individual skills, not be split weirdly
       expect(allSkills).toEqual(expect.arrayContaining(['CI/CD', 'Docker']))
@@ -592,7 +592,7 @@ CI/CD, Docker, Self-motivated, Problem-solving`
 - AWS`
       const result = parseResumeText(text)
       const allSkills = result.skills!.flatMap((c) =>
-        c.items.map((i) => i.name)
+        c.items
       )
       expect(allSkills).toEqual(
         expect.arrayContaining(['JavaScript', 'Python', 'Docker', 'AWS'])
@@ -610,7 +610,7 @@ Docker, Kubernetes, AWS`
       expect(names).toContain('Languages')
 
       const allSkills = result.skills!.flatMap((c) =>
-        c.items.map((i) => i.name)
+        c.items
       )
       expect(allSkills).toEqual(
         expect.arrayContaining(['Python', 'Docker', 'Kubernetes'])
@@ -625,7 +625,7 @@ Languages: Python, Java`
       const result = parseResumeText(text)
 
       const allSkills = result.skills!.flatMap((c) =>
-        c.items.map((i) => i.name)
+        c.items
       )
       expect(allSkills).toEqual(
         expect.arrayContaining(['Docker', 'Kubernetes', 'Python', 'Java'])
@@ -636,7 +636,7 @@ Languages: Python, Java`
       const text = `John Doe\njohn@example.com\n\nSkills\nJavaScript | Python | Go | Rust`
       const result = parseResumeText(text)
       const allSkills = result.skills!.flatMap((c) =>
-        c.items.map((i) => i.name)
+        c.items
       )
       expect(allSkills.length).toBe(4)
       expect(allSkills).toContain('JavaScript')
@@ -647,7 +647,7 @@ Languages: Python, Java`
       const text = `John Doe\njohn@example.com\n\nSkills\nJavaScript; Python; Go`
       const result = parseResumeText(text)
       const allSkills = result.skills!.flatMap((c) =>
-        c.items.map((i) => i.name)
+        c.items
       )
       expect(allSkills.length).toBe(3)
     })

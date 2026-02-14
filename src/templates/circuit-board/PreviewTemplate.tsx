@@ -67,7 +67,7 @@ const CircuitBoardPreview: React.FC<TemplateProps> = ({ resume }) => {
                   {'> '}{category.category}
                 </div>
                 <div style={{ fontSize: `${font.sizes.small}px`, fontFamily: font.family, color: colors.lightText }}>
-                  {category.items.map((s) => s.name).join(', ')}
+                  {category.items.join(', ')}
                 </div>
               </div>
             ))}

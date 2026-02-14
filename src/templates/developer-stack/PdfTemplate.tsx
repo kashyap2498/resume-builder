@@ -191,7 +191,7 @@ const DeveloperStackPdf: React.FC<TemplateProps> = ({ resume }) => {
               <View key={category.id} style={{ marginBottom: 6 }}>
                 <Text style={styles.sidebarCategoryName}>{category.category}</Text>
                 {category.items.map((s, i) => (
-                  <Text key={i} style={styles.sidebarSkillItem}>{'- '}{s.name}</Text>
+                  <Text key={i} style={styles.sidebarSkillItem}>{'- '}{s}</Text>
                 ))}
               </View>
             ))}

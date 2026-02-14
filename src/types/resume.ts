@@ -84,17 +84,10 @@ export interface EducationEntry {
 
 // -- Skills -------------------------------------------------------------------
 
-export type SkillProficiency = 1 | 2 | 3 | 4 | 5;
-
-export interface SkillItem {
-  name: string;
-  proficiency: SkillProficiency;
-}
-
 export interface SkillCategory {
   id: string;
   category: string;
-  items: SkillItem[];
+  items: string[];
 }
 
 // -- Projects -----------------------------------------------------------------

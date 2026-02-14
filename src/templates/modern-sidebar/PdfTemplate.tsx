@@ -192,7 +192,7 @@ const ModernSidebarPdf: React.FC<TemplateProps> = ({ resume }) => {
             {data.skills.map((category) => (
               <View key={category.id} style={{ marginBottom: 6 }}>
                 <Text style={styles.sidebarCategoryName}>{category.category}</Text>
-                <Text style={styles.sidebarText}>{category.items.map((s) => s.name).join(', ')}</Text>
+                <Text style={styles.sidebarText}>{category.items.join(', ')}</Text>
               </View>
             ))}
           </View>

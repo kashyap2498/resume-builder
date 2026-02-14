@@ -55,7 +55,7 @@ const HealthcareModernPreview: React.FC<TemplateProps> = ({ resume }) => {
             {data.skills.map((category) => (
               <div key={category.id} style={{ marginBottom: '8px' }}>
                 <div style={{ fontWeight: 600, fontSize: `${font.sizes.small}px`, color: 'rgba(255,255,255,0.9)', marginBottom: '2px' }}>{category.category}</div>
-                <div style={{ fontSize: `${font.sizes.small}px`, color: 'rgba(255,255,255,0.7)' }}>{category.items.map((s) => s.name).join(', ')}</div>
+                <div style={{ fontSize: `${font.sizes.small}px`, color: 'rgba(255,255,255,0.7)' }}>{category.items.join(', ')}</div>
               </div>
             ))}
           </div>

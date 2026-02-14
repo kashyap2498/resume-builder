@@ -95,7 +95,7 @@ const ClinicalProfessionalPreview: React.FC<TemplateProps> = ({ resume }) => {
             {data.skills.map((category) => (
               <div key={category.id} style={{ marginBottom: '6px' }}>
                 <span style={{ fontWeight: 700, fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: medBlue }}>{category.category}: </span>
-                <span style={{ fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: colors.text }}>{category.items.map((s) => s.name).join(', ')}</span>
+                <span style={{ fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: colors.text }}>{category.items.join(', ')}</span>
               </div>
             ))}
           </div>

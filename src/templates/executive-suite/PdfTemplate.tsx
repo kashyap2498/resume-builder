@@ -226,7 +226,7 @@ const ExecutiveSuitePdf: React.FC<TemplateProps> = ({ resume }) => {
             {data.skills.map((category) => (
               <Text key={category.id} style={styles.skillLine}>
                 <Text style={styles.skillCategory}>{category.category}: </Text>
-                {category.items.map((s) => s.name).join(', ')}
+                {category.items.join(', ')}
               </Text>
             ))}
           </View>
