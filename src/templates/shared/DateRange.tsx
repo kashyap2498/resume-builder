@@ -38,9 +38,12 @@ export function formatDateRange(
   current?: boolean
 ): string {
   const start = formatDate(startDate);
-  if (current) return `${start} - Present`;
-  if (endDate) return `${start} - ${formatDate(endDate)}`;
-  return start;
+  const end = endDate ? formatDate(endDate) : '';
+  if (current) return start ? `${start} - Present` : 'Present';
+  if (start && end && start !== end) return `${start} - ${end}`;
+  if (start) return start;
+  if (end) return end;
+  return '';
 }
 
 const DateRange: React.FC<DateRangeProps> = ({

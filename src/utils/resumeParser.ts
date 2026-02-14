@@ -216,9 +216,16 @@ function extractExperience(content: string): ExperienceEntry[] {
       const isBullet = /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014]/.test(line);
       const prevIsBullet = i > 0 && /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014]/.test(lines[i - 1]);
 
-      // If we transition from bullet to non-bullet and the line is short,
-      // it's probably a new entry header
-      if (!isBullet && prevIsBullet && line.length < 80 && sub.length > 0) {
+      // If we transition from bullet to non-bullet and the line looks like
+      // a new entry header (contains a date range or has a second non-bullet
+      // line following it that does), split here.
+      DATE_RANGE_REGEX.lastIndex = 0;
+      const lineHasDate = DATE_RANGE_REGEX.test(line);
+      DATE_RANGE_REGEX.lastIndex = 0;
+      const nextLine = i + 1 < lines.length ? lines[i + 1] : '';
+      const nextHasDate = DATE_RANGE_REGEX.test(nextLine);
+      DATE_RANGE_REGEX.lastIndex = 0;
+      if (!isBullet && prevIsBullet && line.length < 80 && sub.length > 0 && (lineHasDate || nextHasDate)) {
         subBlocks.push(sub);
         sub = [line];
       } else {
@@ -418,6 +425,9 @@ function extractEducation(content: string): EducationEntry[] {
       DATE_REGEX.lastIndex = 0;
       const singleDate = blockText.match(DATE_REGEX);
       if (singleDate) {
+        // Single date (e.g. graduation year) — use as endDate but also
+        // set startDate so formatDateRange doesn't produce "- Aug 2022"
+        entry.startDate = singleDate[0];
         entry.endDate = singleDate[0];
       }
     }
@@ -490,13 +500,20 @@ function extractSkills(content: string): SkillCategory[] {
 
   for (const line of lines) {
     // Check for "Category: skill1, skill2, skill3" format
-    const categoryMatch = line.match(/^(.+?)[:\-–]\s*(.+)$/);
+    // Only match on colon separator (not bare hyphens which appear in skill names)
+    const categoryMatch = line.match(/^(.+?):\s*(.+)$/);
     if (categoryMatch) {
       const categoryName = categoryMatch[1].trim();
       const skillNames = categoryMatch[2]
         .split(/[,;|]/)
         .map((s) => s.trim())
         .filter(Boolean);
+
+      // Save any accumulated general skills before starting a new category
+      if (currentCategory && currentCategory.items.length > 0) {
+        categories.push(currentCategory);
+        currentCategory = null;
+      }
 
       categories.push({
         id: generateId(),
