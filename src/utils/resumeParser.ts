@@ -378,11 +378,15 @@ function extractEducation(content: string): EducationEntry[] {
       const isBullet = /^[-*\u2022\u25CF\u25CB\u25AA\u25AB]/.test(line);
 
       // Start new block if this non-bullet line has degree/institution keywords
-      // and we already have content
+      // and the current block already looks like a complete education entry
+      // (has both degree/institution keywords AND a date).
       if (!isBullet && current.length > 0 && degreePattern.test(line)) {
-        // Check if current block already has institution/degree content
         const currentText = current.join(' ');
-        if (degreePattern.test(currentText)) {
+        DATE_REGEX.lastIndex = 0;
+        const currentHasDate = DATE_REGEX.test(currentText) || DATE_RANGE_REGEX.test(currentText);
+        DATE_REGEX.lastIndex = 0;
+        DATE_RANGE_REGEX.lastIndex = 0;
+        if (degreePattern.test(currentText) && currentHasDate) {
           subBlocks.push(current);
           current = [line];
           continue;
