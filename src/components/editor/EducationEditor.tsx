@@ -2,7 +2,7 @@
 // Resume Builder - Education Editor
 // =============================================================================
 
-import { Plus, X, GraduationCap } from 'lucide-react';
+import { Plus, GraduationCap } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -19,8 +19,9 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { useResumeStore } from '@/store/resumeStore';
-import { Input, TextArea, Button, EmptyState, MonthYearPicker } from '@/components/ui';
+import { Input, Button, EmptyState, MonthYearPicker, RichTextEditor } from '@/components/ui';
 import { SortableEntryCard } from './SortableEntryCard';
+import { toEditorHtml, fromEditorHtml } from '@/utils/richTextConvert';
 
 export function EducationEditor() {
   const education = useResumeStore((s) => s.currentResume?.data.education) ?? [];
@@ -58,31 +59,6 @@ export function EducationEditor() {
       gpa: '',
       description: '',
       highlights: [],
-    });
-  };
-
-  const handleAddHighlight = (id: string, highlights: string[]) => {
-    updateEducation(id, { highlights: [...highlights, ''] });
-  };
-
-  const handleUpdateHighlight = (
-    id: string,
-    highlights: string[],
-    index: number,
-    value: string
-  ) => {
-    const updated = [...highlights];
-    updated[index] = value;
-    updateEducation(id, { highlights: updated });
-  };
-
-  const handleRemoveHighlight = (
-    id: string,
-    highlights: string[],
-    index: number
-  ) => {
-    updateEducation(id, {
-      highlights: highlights.filter((_, i) => i !== index),
     });
   };
 
@@ -198,60 +174,16 @@ export function EducationEditor() {
                   wrapperClassName="sm:w-1/2"
                 />
 
-                {/* Description */}
-                <TextArea
-                  label="Description"
-                  placeholder="Relevant coursework, thesis, or additional details..."
-                  rows={3}
-                  value={entry.description}
-                  onChange={(e) =>
-                    updateEducation(entry.id, { description: e.target.value })
-                  }
+                {/* Description & Highlights */}
+                <RichTextEditor
+                  label="Description & Highlights"
+                  content={toEditorHtml(entry.description, entry.highlights)}
+                  onChange={(html) => {
+                    const { description, highlights } = fromEditorHtml(html);
+                    updateEducation(entry.id, { description, highlights });
+                  }}
+                  placeholder="Relevant coursework, thesis, achievements..."
                 />
-
-                {/* Highlights */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Highlights
-                  </label>
-                  {entry.highlights.map((highlight, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <Input
-                        placeholder="Dean's List, Cum Laude, etc."
-                        value={highlight}
-                        onChange={(e) =>
-                          handleUpdateHighlight(
-                            entry.id,
-                            entry.highlights,
-                            idx,
-                            e.target.value
-                          )
-                        }
-                        wrapperClassName="flex-1"
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleRemoveHighlight(entry.id, entry.highlights, idx)
-                        }
-                        className="shrink-0 p-1.5 text-gray-500 hover:text-red-500 transition-colors"
-                        aria-label="Remove highlight"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={<Plus className="h-3.5 w-3.5" />}
-                    onClick={() =>
-                      handleAddHighlight(entry.id, entry.highlights)
-                    }
-                  >
-                    Add Highlight
-                  </Button>
-                </div>
               </div>
             </SortableEntryCard>
           ))}

@@ -2,10 +2,11 @@
 // Resume Builder - Volunteer Experience Editor
 // =============================================================================
 
-import { Plus, X, Heart } from 'lucide-react';
+import { Plus, Heart } from 'lucide-react';
 import { useResumeStore } from '@/store/resumeStore';
-import { Input, TextArea, Button, EmptyState, MonthYearPicker } from '@/components/ui';
+import { Input, Button, EmptyState, MonthYearPicker, RichTextEditor } from '@/components/ui';
 import { EntryCard } from './EntryCard';
+import { toEditorHtml, fromEditorHtml } from '@/utils/richTextConvert';
 
 export function VolunteerEditor() {
   const volunteer =
@@ -22,31 +23,6 @@ export function VolunteerEditor() {
       endDate: '',
       description: '',
       highlights: [],
-    });
-  };
-
-  const handleAddHighlight = (id: string, highlights: string[]) => {
-    updateVolunteer(id, { highlights: [...highlights, ''] });
-  };
-
-  const handleUpdateHighlight = (
-    id: string,
-    highlights: string[],
-    index: number,
-    value: string
-  ) => {
-    const updated = [...highlights];
-    updated[index] = value;
-    updateVolunteer(id, { highlights: updated });
-  };
-
-  const handleRemoveHighlight = (
-    id: string,
-    highlights: string[],
-    index: number
-  ) => {
-    updateVolunteer(id, {
-      highlights: highlights.filter((_, i) => i !== index),
     });
   };
 
@@ -132,60 +108,16 @@ export function VolunteerEditor() {
                   />
                 </div>
 
-                {/* Description */}
-                <TextArea
-                  label="Description"
-                  placeholder="Describe your volunteer work and impact..."
-                  rows={3}
-                  value={entry.description}
-                  onChange={(e) =>
-                    updateVolunteer(entry.id, { description: e.target.value })
-                  }
+                {/* Description & Highlights */}
+                <RichTextEditor
+                  label="Description & Highlights"
+                  content={toEditorHtml(entry.description, entry.highlights)}
+                  onChange={(html) => {
+                    const { description, highlights } = fromEditorHtml(html);
+                    updateVolunteer(entry.id, { description, highlights });
+                  }}
+                  placeholder="Describe your volunteer work and add bullet points for impact..."
                 />
-
-                {/* Highlights */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Highlights
-                  </label>
-                  {entry.highlights.map((highlight, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <Input
-                        placeholder="Led a team of 20 volunteers..."
-                        value={highlight}
-                        onChange={(e) =>
-                          handleUpdateHighlight(
-                            entry.id,
-                            entry.highlights,
-                            idx,
-                            e.target.value
-                          )
-                        }
-                        wrapperClassName="flex-1"
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleRemoveHighlight(entry.id, entry.highlights, idx)
-                        }
-                        className="shrink-0 p-1.5 text-gray-500 hover:text-red-500 transition-colors"
-                        aria-label="Remove highlight"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={<Plus className="h-3.5 w-3.5" />}
-                    onClick={() =>
-                      handleAddHighlight(entry.id, entry.highlights)
-                    }
-                  >
-                    Add Highlight
-                  </Button>
-                </div>
               </div>
             </EntryCard>
           ))}

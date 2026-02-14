@@ -33,6 +33,7 @@ export default defineConfig({
           'dnd-kit': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
           'framer': ['framer-motion'],
           'docx': ['docx'],
+          'tiptap': ['@tiptap/react', '@tiptap/starter-kit', '@tiptap/extension-placeholder'],
         },
       },
     },

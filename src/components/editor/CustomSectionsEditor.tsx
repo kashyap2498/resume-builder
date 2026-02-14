@@ -5,7 +5,6 @@
 import { useState } from 'react';
 import {
   Plus,
-  X,
   LayoutList,
   ChevronDown,
   ChevronRight,
@@ -13,7 +12,8 @@ import {
 } from 'lucide-react';
 import { nanoid } from 'nanoid';
 import { useResumeStore } from '@/store/resumeStore';
-import { Input, TextArea, Button, IconButton, EmptyState } from '@/components/ui';
+import { Input, Button, IconButton, EmptyState, RichTextEditor } from '@/components/ui';
+import { toEditorHtml, fromEditorHtml } from '@/utils/richTextConvert';
 import type { CustomSectionEntry } from '@/types/resume';
 
 export function CustomSectionsEditor() {
@@ -51,8 +51,6 @@ export function CustomSectionsEditor() {
   const handleAddSection = () => {
     const newId = nanoid();
     addCustomSection({ title: '', entries: [] });
-    // The store generates the id, so we can't predict it to auto-expand.
-    // We rely on the user expanding it manually.
   };
 
   const handleAddEntry = (sectionId: string, entries: CustomSectionEntry[]) => {
@@ -90,42 +88,6 @@ export function CustomSectionsEditor() {
   ) => {
     updateCustomSection(sectionId, {
       entries: entries.filter((e) => e.id !== entryId),
-    });
-  };
-
-  const handleAddHighlight = (
-    sectionId: string,
-    entries: CustomSectionEntry[],
-    entryId: string,
-    highlights: string[]
-  ) => {
-    handleUpdateEntry(sectionId, entries, entryId, {
-      highlights: [...highlights, ''],
-    });
-  };
-
-  const handleUpdateHighlight = (
-    sectionId: string,
-    entries: CustomSectionEntry[],
-    entryId: string,
-    highlights: string[],
-    index: number,
-    value: string
-  ) => {
-    const updated = [...highlights];
-    updated[index] = value;
-    handleUpdateEntry(sectionId, entries, entryId, { highlights: updated });
-  };
-
-  const handleRemoveHighlight = (
-    sectionId: string,
-    entries: CustomSectionEntry[],
-    entryId: string,
-    highlights: string[],
-    index: number
-  ) => {
-    handleUpdateEntry(sectionId, entries, entryId, {
-      highlights: highlights.filter((_, i) => i !== index),
     });
   };
 
@@ -331,81 +293,21 @@ export function CustomSectionsEditor() {
                                   wrapperClassName="sm:w-1/2"
                                 />
 
-                                {/* Description */}
-                                <TextArea
-                                  label="Description"
-                                  placeholder="Describe this entry..."
-                                  rows={2}
-                                  value={entry.description}
-                                  onChange={(e) =>
+                                {/* Description & Highlights */}
+                                <RichTextEditor
+                                  label="Description & Highlights"
+                                  content={toEditorHtml(entry.description, entry.highlights)}
+                                  onChange={(html) => {
+                                    const { description, highlights } = fromEditorHtml(html);
                                     handleUpdateEntry(
                                       section.id,
                                       section.entries,
                                       entry.id,
-                                      { description: e.target.value }
-                                    )
-                                  }
+                                      { description, highlights }
+                                    );
+                                  }}
+                                  placeholder="Describe this entry and add bullet points..."
                                 />
-
-                                {/* Highlights */}
-                                <div className="space-y-2">
-                                  <label className="text-xs font-medium text-gray-600">
-                                    Highlights
-                                  </label>
-                                  {entry.highlights.map((hl, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="flex items-center gap-2"
-                                    >
-                                      <Input
-                                        placeholder="Highlight detail..."
-                                        value={hl}
-                                        onChange={(e) =>
-                                          handleUpdateHighlight(
-                                            section.id,
-                                            section.entries,
-                                            entry.id,
-                                            entry.highlights,
-                                            idx,
-                                            e.target.value
-                                          )
-                                        }
-                                        wrapperClassName="flex-1"
-                                      />
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          handleRemoveHighlight(
-                                            section.id,
-                                            section.entries,
-                                            entry.id,
-                                            entry.highlights,
-                                            idx
-                                          )
-                                        }
-                                        className="shrink-0 p-1 text-gray-500 hover:text-red-500 transition-colors"
-                                        aria-label="Remove highlight"
-                                      >
-                                        <X className="h-3.5 w-3.5" />
-                                      </button>
-                                    </div>
-                                  ))}
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    icon={<Plus className="h-3 w-3" />}
-                                    onClick={() =>
-                                      handleAddHighlight(
-                                        section.id,
-                                        section.entries,
-                                        entry.id,
-                                        entry.highlights
-                                      )
-                                    }
-                                  >
-                                    Add Highlight
-                                  </Button>
-                                </div>
                               </div>
                             )}
                           </div>

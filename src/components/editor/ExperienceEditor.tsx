@@ -2,7 +2,7 @@
 // Resume Builder - Work Experience Editor
 // =============================================================================
 
-import { Plus, X, Briefcase } from 'lucide-react';
+import { Plus, Briefcase } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -19,10 +19,11 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { useResumeStore } from '@/store/resumeStore';
-import { Input, TextArea, Toggle, Button, EmptyState, MonthYearPicker } from '@/components/ui';
+import { Input, Toggle, Button, EmptyState, MonthYearPicker, RichTextEditor } from '@/components/ui';
 import { SortableEntryCard } from './SortableEntryCard';
 import { experienceEntrySchema } from '@/schemas/experience';
 import { useFieldValidation } from '@/hooks/useFieldValidation';
+import { toEditorHtml, fromEditorHtml } from '@/utils/richTextConvert';
 import type { ExperienceEntry } from '@/types/resume';
 
 export function ExperienceEditor() {
@@ -61,31 +62,6 @@ export function ExperienceEditor() {
       current: false,
       description: '',
       highlights: [],
-    });
-  };
-
-  const handleAddHighlight = (id: string, highlights: string[]) => {
-    updateExperience(id, { highlights: [...highlights, ''] });
-  };
-
-  const handleUpdateHighlight = (
-    id: string,
-    highlights: string[],
-    index: number,
-    value: string
-  ) => {
-    const updated = [...highlights];
-    updated[index] = value;
-    updateExperience(id, { highlights: updated });
-  };
-
-  const handleRemoveHighlight = (
-    id: string,
-    highlights: string[],
-    index: number
-  ) => {
-    updateExperience(id, {
-      highlights: highlights.filter((_, i) => i !== index),
     });
   };
 
@@ -143,9 +119,6 @@ export function ExperienceEditor() {
               <ExperienceEntryForm
                 entry={entry}
                 onUpdate={(fields) => updateExperience(entry.id, fields)}
-                onAddHighlight={() => handleAddHighlight(entry.id, entry.highlights)}
-                onUpdateHighlight={(idx, value) => handleUpdateHighlight(entry.id, entry.highlights, idx, value)}
-                onRemoveHighlight={(idx) => handleRemoveHighlight(entry.id, entry.highlights, idx)}
               />
             </SortableEntryCard>
           ))}
@@ -162,15 +135,9 @@ export function ExperienceEditor() {
 function ExperienceEntryForm({
   entry,
   onUpdate,
-  onAddHighlight,
-  onUpdateHighlight,
-  onRemoveHighlight,
 }: {
   entry: ExperienceEntry;
   onUpdate: (fields: Partial<ExperienceEntry>) => void;
-  onAddHighlight: () => void;
-  onUpdateHighlight: (idx: number, value: string) => void;
-  onRemoveHighlight: (idx: number) => void;
 }) {
   const { onBlur, getError } = useFieldValidation(experienceEntrySchema, entry as unknown as Record<string, unknown>);
 
@@ -230,47 +197,16 @@ function ExperienceEntryForm({
         size="sm"
       />
 
-      {/* Description */}
-      <TextArea
-        label="Description"
-        placeholder="Describe your role, responsibilities, and impact..."
-        rows={3}
-        value={entry.description}
-        onChange={(e) => onUpdate({ description: e.target.value })}
+      {/* Description & Highlights */}
+      <RichTextEditor
+        label="Description & Highlights"
+        content={toEditorHtml(entry.description, entry.highlights)}
+        onChange={(html) => {
+          const { description, highlights } = fromEditorHtml(html);
+          onUpdate({ description, highlights });
+        }}
+        placeholder="Describe your role and add bullet points for key achievements..."
       />
-
-      {/* Highlights */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">
-          Key Highlights
-        </label>
-        {entry.highlights.map((highlight, idx) => (
-          <div key={idx} className="flex items-center gap-2">
-            <Input
-              placeholder="Achieved 30% improvement in..."
-              value={highlight}
-              onChange={(e) => onUpdateHighlight(idx, e.target.value)}
-              wrapperClassName="flex-1"
-            />
-            <button
-              type="button"
-              onClick={() => onRemoveHighlight(idx)}
-              className="shrink-0 p-1.5 text-gray-500 hover:text-red-500 transition-colors"
-              aria-label="Remove highlight"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ))}
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<Plus className="h-3.5 w-3.5" />}
-          onClick={onAddHighlight}
-        >
-          Add Highlight
-        </Button>
-      </div>
     </div>
   );
 }

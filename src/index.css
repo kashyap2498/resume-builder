@@ -58,6 +58,33 @@ body {
   background-size: 24px 24px;
 }
 
+/* Tiptap editor styles */
+.tiptap-editor .tiptap {
+  outline: none;
+  min-height: 60px;
+}
+.tiptap-editor .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
+.tiptap-editor .tiptap ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin: 0.25rem 0;
+}
+.tiptap-editor .tiptap ul li {
+  margin: 0.125rem 0;
+}
+.tiptap-editor .tiptap ul li p {
+  margin: 0;
+}
+.tiptap-editor .tiptap p {
+  margin: 0.125rem 0;
+}
+
 /* Print styles */
 @media print {
   @page {

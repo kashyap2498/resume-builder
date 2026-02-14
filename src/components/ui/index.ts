@@ -42,3 +42,6 @@ export type { DividerProps } from './Divider';
 
 export { MonthYearPicker } from './MonthYearPicker';
 export type { MonthYearPickerProps } from './MonthYearPicker';
+
+export { RichTextEditor } from './RichTextEditor';
+export type { RichTextEditorProps } from './RichTextEditor';
