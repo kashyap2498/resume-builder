@@ -104,31 +104,17 @@ export const SAMPLE_RESUME: Resume = {
       {
         id: 'sk-1',
         category: 'Design',
-        items: [
-          { name: 'Figma', proficiency: 5 },
-          { name: 'Sketch', proficiency: 4 },
-          { name: 'Adobe XD', proficiency: 4 },
-          { name: 'Prototyping', proficiency: 5 },
-        ],
+        items: ['Figma', 'Sketch', 'Adobe XD', 'Prototyping'],
       },
       {
         id: 'sk-2',
         category: 'Technical',
-        items: [
-          { name: 'HTML/CSS', proficiency: 4 },
-          { name: 'React', proficiency: 3 },
-          { name: 'Design Systems', proficiency: 5 },
-          { name: 'Accessibility (WCAG)', proficiency: 4 },
-        ],
+        items: ['HTML/CSS', 'React', 'Design Systems', 'Accessibility (WCAG)'],
       },
       {
         id: 'sk-3',
         category: 'Research',
-        items: [
-          { name: 'User Interviews', proficiency: 5 },
-          { name: 'A/B Testing', proficiency: 4 },
-          { name: 'Usability Testing', proficiency: 5 },
-        ],
+        items: ['User Interviews', 'A/B Testing', 'Usability Testing'],
       },
     ],
     projects: [],
