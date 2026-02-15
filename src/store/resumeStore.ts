@@ -146,7 +146,26 @@ export const useResumeStore = create<ResumeStore>((set) => ({
 
   // -- Resume-level -----------------------------------------------------------
 
-  setResume: (resume) => set({ currentResume: resume }),
+  setResume: (resume) => {
+    // Normalize old {name, proficiency} skill objects to plain strings
+    if (resume?.data?.skills) {
+      resume = {
+        ...resume,
+        data: {
+          ...resume.data,
+          skills: resume.data.skills.map((cat) => ({
+            ...cat,
+            items: cat.items.map((item: unknown) =>
+              typeof item === 'object' && item !== null && 'name' in item
+                ? String((item as { name: string }).name)
+                : String(item),
+            ),
+          })),
+        },
+      };
+    }
+    set({ currentResume: resume });
+  },
 
   setTemplateId: (templateId) =>
     mutate(set, (r) => ({ ...r, templateId })),
