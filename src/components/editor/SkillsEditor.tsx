@@ -24,6 +24,10 @@ function SkillItemsInput({
 }) {
   const [local, setLocal] = useState(items.join(', '));
   const committedRef = useRef(items);
+  const localRef = useRef(local);
+  localRef.current = local;
+  const onCommitRef = useRef(onCommit);
+  onCommitRef.current = onCommit;
 
   // Sync from store when items change externally (undo, import)
   useEffect(() => {
@@ -32,6 +36,17 @@ function SkillItemsInput({
       committedRef.current = items;
     }
   }, [items]);
+
+  // Commit unsaved local state on unmount (e.g. accordion collapse before blur)
+  useEffect(() => {
+    return () => {
+      const current = localRef.current;
+      const parsed = current.split(',').map((s) => s.trim()).filter(Boolean);
+      if (JSON.stringify(parsed) !== JSON.stringify(committedRef.current)) {
+        onCommitRef.current(parsed);
+      }
+    };
+  }, []);
 
   return (
     <Input

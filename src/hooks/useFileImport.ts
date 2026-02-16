@@ -5,7 +5,7 @@
 // (PDF or DOCX), and routes to the appropriate parser. Returns parsed data
 // for the user to review before finalizing the import.
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { extractTextFromPdf } from '@/utils/pdfParser';
 import { extractTextFromDocx } from '@/utils/docxParser';
 import { parseResumeText } from '@/utils/resumeParser';
@@ -59,6 +59,13 @@ export function useFileImport(): UseFileImportReturn {
   const [result, setResult] = useState<FileImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Abort any in-progress import on unmount
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   const reset = useCallback(() => {
     abortRef.current?.abort();
