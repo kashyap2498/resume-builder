@@ -20,6 +20,10 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   // Track whether the content prop changed externally (not from editor typing)
   const isExternalUpdate = useRef(false);
+  // Track the last HTML the editor itself produced, so we can distinguish
+  // "content prop changed because of our own onUpdate" from "content prop
+  // changed externally (undo, reset, import)".
+  const lastEditorHtml = useRef(content);
 
   const editor = useEditor({
     extensions: [
@@ -36,7 +40,9 @@ export function RichTextEditor({
     content,
     onUpdate: ({ editor: ed }) => {
       if (isExternalUpdate.current) return;
-      onChange(ed.getHTML());
+      const html = ed.getHTML();
+      lastEditorHtml.current = html;
+      onChange(html);
     },
     editorProps: {
       handlePaste: (_view, event) => {
@@ -46,11 +52,13 @@ export function RichTextEditor({
         // If the clipboard has HTML, let Tiptap handle it natively
         if (html) return false;
 
-        // For plain text, detect bullet-prefixed lines and convert
+        // For plain text, detect bullets and convert to list
         if (text) {
           const lines = text.split('\n');
           const bulletPattern = /^[\s]*[-*•]\s+/;
           const hasBullets = lines.some((l) => bulletPattern.test(l));
+          // Also detect inline bullet separators (e.g. "sentence one. • sentence two.")
+          const hasInlineBullets = !hasBullets && /[^•]•\s/.test(text);
 
           if (hasBullets) {
             event.preventDefault();
@@ -82,6 +90,14 @@ export function RichTextEditor({
             editor?.commands.insertContent(insertHtml);
             return true;
           }
+
+          if (hasInlineBullets) {
+            event.preventDefault();
+            const parts = text.split(/\s*•\s*/).map((s) => s.trim()).filter(Boolean);
+            const insertHtml = `<ul>${parts.map((b) => `<li><p>${escapeHtml(b)}</p></li>`).join('')}</ul>`;
+            editor?.commands.insertContent(insertHtml);
+            return true;
+          }
         }
 
         return false;
@@ -89,15 +105,16 @@ export function RichTextEditor({
     },
   });
 
-  // Sync external content changes (e.g. undo, reset) without fighting editor state
+  // Sync external content changes (e.g. undo, reset) without fighting editor state.
+  // Skip if the content change originated from the editor itself (round-tripped
+  // through parent state) — this prevents cursor jumping on every keystroke.
   useEffect(() => {
     if (!editor) return;
-    const currentHtml = editor.getHTML();
-    if (content !== currentHtml) {
-      isExternalUpdate.current = true;
-      editor.commands.setContent(content, { emitUpdate: false });
-      isExternalUpdate.current = false;
-    }
+    if (content === lastEditorHtml.current) return;
+    isExternalUpdate.current = true;
+    editor.commands.setContent(content, { emitUpdate: false });
+    isExternalUpdate.current = false;
+    lastEditorHtml.current = content;
   }, [content, editor]);
 
   if (!editor) return null;
