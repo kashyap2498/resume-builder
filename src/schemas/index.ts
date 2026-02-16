@@ -15,6 +15,7 @@ import { hobbiesSchema } from './hobbies'
 import { affiliationsSchema } from './affiliations'
 import { coursesSchema } from './courses'
 import { customSectionsSchema } from './customSections'
+import { coverLetterSchema } from './coverLetter'
 
 export * from './contact'
 export * from './summary'
@@ -32,6 +33,7 @@ export * from './hobbies'
 export * from './affiliations'
 export * from './courses'
 export * from './customSections'
+export * from './coverLetter'
 
 export const resumeDataSchema = z.object({
   contact: contactSchema,
@@ -105,4 +107,5 @@ export const resumeSchema = z.object({
   sections: z.array(sectionConfigSchema),
   data: resumeDataSchema,
   styling: resumeStylingSchema,
+  coverLetter: coverLetterSchema.optional(),
 })

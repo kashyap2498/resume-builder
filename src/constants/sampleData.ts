@@ -66,22 +66,12 @@ export const sampleResumeData: ResumeData = {
     {
       id: 'sample-skill-1',
       category: 'Languages',
-      items: [
-        { name: 'TypeScript', proficiency: 5 as const },
-        { name: 'Python', proficiency: 4 as const },
-        { name: 'Go', proficiency: 3 as const },
-        { name: 'SQL', proficiency: 4 as const },
-      ],
+      items: ['TypeScript', 'Python', 'Go', 'SQL'],
     },
     {
       id: 'sample-skill-2',
       category: 'Frameworks & Tools',
-      items: [
-        { name: 'React', proficiency: 5 as const },
-        { name: 'Node.js', proficiency: 5 as const },
-        { name: 'Docker', proficiency: 4 as const },
-        { name: 'AWS', proficiency: 4 as const },
-      ],
+      items: ['React', 'Node.js', 'Docker', 'AWS'],
     },
   ],
   projects: [],

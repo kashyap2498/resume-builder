@@ -868,6 +868,68 @@ State University
   })
 
   // ---------------------------------------------------------------------------
+  // Regex consistency — no lastIndex leaks across calls
+  // ---------------------------------------------------------------------------
+
+  describe('regex consistency across multiple calls', () => {
+    it('should produce identical results when called multiple times in succession', () => {
+      const text = `John Doe\njohn@example.com\n\nExperience\nSenior Developer at Tech Corp\nJan 2020 - Present\n- Led team of 8\n- Built dashboards\n\nEducation\nMIT\nBachelor of Science in CS\n2013 - 2017\n\nSkills\nLanguages: JavaScript, Python`
+
+      const result1 = parseResumeText(text)
+      const result2 = parseResumeText(text)
+      const result3 = parseResumeText(text)
+
+      // All three calls should produce the same structure
+      expect(result1.experience!.length).toBe(result2.experience!.length)
+      expect(result2.experience!.length).toBe(result3.experience!.length)
+      expect(result1.education!.length).toBe(result2.education!.length)
+      expect(result2.education!.length).toBe(result3.education!.length)
+      expect(result1.skills!.length).toBe(result2.skills!.length)
+
+      // Verify dates are consistently extracted
+      expect(result1.experience![0].startDate).toBe(result2.experience![0].startDate)
+      expect(result2.experience![0].startDate).toBe(result3.experience![0].startDate)
+      expect(result1.education![0].startDate).toBe(result2.education![0].startDate)
+    })
+
+    it('should extract dates correctly after parsing a resume with many date ranges', () => {
+      const manyDatesText = `John Doe\njohn@example.com\n\nExperience
+Engineer at A\nJan 2023 - Present\n- Work
+Dev at B\nMar 2021 - Dec 2022\n- Work
+Dev at C\nJun 2019 - Feb 2021\n- Work
+Intern at D\nJan 2018 - May 2019\n- Work`
+
+      // Parse a resume with many dates first
+      const result1 = parseResumeText(manyDatesText)
+      expect(result1.experience!.length).toBe(4)
+
+      // Now parse a different resume — should not be affected by prior parse
+      const simpleText = `Jane Smith\njane@test.com\n\nExperience\nDev at X\nFeb 2022 - Present\n- Built things`
+      const result2 = parseResumeText(simpleText)
+
+      expect(result2.experience!.length).toBe(1)
+      expect(result2.experience![0].startDate).toMatch(/Feb/)
+      expect(result2.experience![0].company).toMatch(/X/)
+    })
+
+    it('should handle alternating calls with different resume formats', () => {
+      const textA = `Alice\nalice@test.com\n\nExperience\nManager at Corp\nJan 2020 - Present\n- Managed team`
+      const textB = `Bob\nbob@test.com\n\nEducation\nStanford\nMaster of Science in AI\n2019 - 2021`
+
+      // Alternate parsing
+      const a1 = parseResumeText(textA)
+      const b1 = parseResumeText(textB)
+      const a2 = parseResumeText(textA)
+      const b2 = parseResumeText(textB)
+
+      expect(a1.experience!.length).toBe(a2.experience!.length)
+      expect(a1.experience![0].startDate).toBe(a2.experience![0].startDate)
+      expect(b1.education!.length).toBe(b2.education!.length)
+      expect(b1.education![0].startDate).toBe(b2.education![0].startDate)
+    })
+  })
+
+  // ---------------------------------------------------------------------------
   // Experience — date-anchored splitting (parser bug fix)
   // ---------------------------------------------------------------------------
 

@@ -349,6 +349,32 @@ export function ImportPreview({
                       )
                     }
                   />
+                  <Input
+                    label="Start Date"
+                    value={edu.startDate}
+                    onChange={(e) =>
+                      setEducation((prev) =>
+                        prev.map((item, i) =>
+                          i === eduIdx
+                            ? { ...item, startDate: e.target.value }
+                            : item
+                        )
+                      )
+                    }
+                  />
+                  <Input
+                    label="End Date"
+                    value={edu.endDate}
+                    onChange={(e) =>
+                      setEducation((prev) =>
+                        prev.map((item, i) =>
+                          i === eduIdx
+                            ? { ...item, endDate: e.target.value }
+                            : item
+                        )
+                      )
+                    }
+                  />
                 </div>
               </div>
             ))}

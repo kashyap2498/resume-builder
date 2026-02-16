@@ -68,7 +68,11 @@ export function loadResumeFromJsonFile(file: File): Promise<Resume> {
 
         // Sanitize the imported data
         const sanitized = sanitizeImportedResume(data);
-        resolve((sanitized ?? data) as Resume);
+        if (!sanitized) {
+          reject(new Error('The resume file contains invalid data that could not be validated.'));
+          return;
+        }
+        resolve(sanitized);
       } catch (error) {
         reject(
           new Error(

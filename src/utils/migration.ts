@@ -19,10 +19,14 @@ export async function migrateLocalStorageToIndexedDB(): Promise<void> {
       }
     }
 
-    // Migrate individual resumes
+    // Migrate individual resumes — snapshot keys before iterating
+    const keys: string[] = []
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
-      if (key && key.startsWith('resume-') && key !== 'resume-builder-list') {
+      if (key) keys.push(key)
+    }
+    for (const key of keys) {
+      if (key.startsWith('resume-') && key !== 'resume-builder-list') {
         try {
           const raw = localStorage.getItem(key)
           if (raw) {

@@ -27,9 +27,9 @@ const GITHUB_REGEX =
 const URL_REGEX =
   /https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)*/i;
 const DATE_REGEX =
-  /(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{4}|\d{1,2}\/\d{4}|\d{4})/gi;
+  /(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{4}|\d{1,2}\/\d{4}|\d{4})/i;
 const DATE_RANGE_REGEX =
-  /(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{4}|\d{1,2}\/\d{4}|\d{4})\s*[-–—to]+\s*(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{4}|\d{1,2}\/\d{4}|\d{4}|[Pp]resent|[Cc]urrent)/gi;
+  /(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{4}|\d{1,2}\/\d{4}|\d{4})\s*[-–—to]+\s*(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{4}|\d{1,2}\/\d{4}|\d{4}|[Pp]resent|[Cc]urrent)/i;
 
 // -- Section Heading Detection ------------------------------------------------
 
@@ -169,9 +169,7 @@ function extractExperience(content: string): ExperienceEntry[] {
   const anchors: number[] = [];
   for (let i = 0; i < lines.length; i++) {
     if (BULLET_RE.test(lines[i])) continue;
-    DATE_RANGE_REGEX.lastIndex = 0;
     if (DATE_RANGE_REGEX.test(lines[i])) anchors.push(i);
-    DATE_RANGE_REGEX.lastIndex = 0;
   }
 
   if (anchors.length <= 1) {
@@ -186,9 +184,7 @@ function extractExperience(content: string): ExperienceEntry[] {
     let startIdx = anchorIdx;
 
     // Does this line have title text alongside the date?
-    DATE_RANGE_REGEX.lastIndex = 0;
     const withoutDate = lines[anchorIdx].replace(DATE_RANGE_REGEX, '').trim();
-    DATE_RANGE_REGEX.lastIndex = 0;
     const isDateOnly = withoutDate.length < 5;
 
     // Look back 1-2 lines for title/company headers
@@ -200,9 +196,7 @@ function extractExperience(content: string): ExperienceEntry[] {
       if (prevIdx < minBound) break;
       const prevLine = lines[prevIdx];
       if (BULLET_RE.test(prevLine)) break;
-      DATE_RANGE_REGEX.lastIndex = 0;
       const prevHasDate = DATE_RANGE_REGEX.test(prevLine);
-      DATE_RANGE_REGEX.lastIndex = 0;
       if (prevHasDate) break;
       if (prevLine.length >= 50 || prevLine.endsWith('.')) break;
       startIdx = prevIdx;
@@ -234,16 +228,12 @@ function parseExperienceBlock(blockText: string): ExperienceEntry | null {
   // Find the first date-range line — divides headers from content
   let dateLineIdx = -1;
   for (let i = 0; i < lines.length; i++) {
-    DATE_RANGE_REGEX.lastIndex = 0;
     if (DATE_RANGE_REGEX.test(lines[i])) { dateLineIdx = i; break; }
-    DATE_RANGE_REGEX.lastIndex = 0;
   }
 
   // Extract dates
   const fullText = lines.join(' ');
-  DATE_RANGE_REGEX.lastIndex = 0;
   const dateRangeMatch = fullText.match(DATE_RANGE_REGEX);
-  DATE_RANGE_REGEX.lastIndex = 0;
   if (dateRangeMatch) {
     const dateParts = dateRangeMatch[0].split(/[-–—]|to/i).map((d) => d.trim()).filter(Boolean);
     if (dateParts.length >= 2) {
@@ -265,7 +255,7 @@ function parseExperienceBlock(blockText: string): ExperienceEntry | null {
 
   // Clean date ranges from headers
   const cleanHeaders = headerLines
-    .map((l) => { DATE_RANGE_REGEX.lastIndex = 0; const c = l.replace(DATE_RANGE_REGEX, '').trim(); DATE_RANGE_REGEX.lastIndex = 0; return c; })
+    .map((l) => l.replace(DATE_RANGE_REGEX, '').trim())
     .filter((l) => l.length > 0);
 
   // Parse position and company from headers
@@ -359,10 +349,7 @@ function extractEducation(content: string): EducationEntry[] {
       // (has both degree/institution keywords AND a date).
       if (!isBullet && current.length > 0 && degreePattern.test(line)) {
         const currentText = current.join(' ');
-        DATE_REGEX.lastIndex = 0;
         const currentHasDate = DATE_REGEX.test(currentText) || DATE_RANGE_REGEX.test(currentText);
-        DATE_REGEX.lastIndex = 0;
-        DATE_RANGE_REGEX.lastIndex = 0;
         if (degreePattern.test(currentText) && currentHasDate) {
           subBlocks.push(current);
           current = [line];
@@ -394,7 +381,6 @@ function extractEducation(content: string): EducationEntry[] {
     }
 
     // Try to extract dates
-    DATE_RANGE_REGEX.lastIndex = 0;
     const dateRangeMatch = blockText.match(DATE_RANGE_REGEX);
     if (dateRangeMatch) {
       const dateParts = dateRangeMatch[0].split(/[-–—]|to/i).map((d) => d.trim()).filter(Boolean);
@@ -403,7 +389,6 @@ function extractEducation(content: string): EducationEntry[] {
         entry.endDate = dateParts[dateParts.length - 1];
       }
     } else {
-      DATE_REGEX.lastIndex = 0;
       const singleDate = blockText.match(DATE_REGEX);
       if (singleDate) {
         // Single date (e.g. graduation year) — use as endDate but also
@@ -424,7 +409,6 @@ function extractEducation(content: string): EducationEntry[] {
       entry.institution = lines[0];
     } else if (lines.length >= 1) {
       // If we found the degree inline, first line is probably the institution
-      DATE_RANGE_REGEX.lastIndex = 0;
       entry.institution = lines[0]
         .replace(degreeMatch?.[0] || '', '')
         .replace(DATE_RANGE_REGEX, '')
@@ -561,11 +545,8 @@ function extractCertifications(content: string): CertificationEntry[] {
 
     for (const line of allLines) {
       const cleanLine = line.replace(/^[-*\u2022\u25CF\u25CB\u25AA\u25AB]\s*/, '');
-      DATE_REGEX.lastIndex = 0;
       const stripped = cleanLine.replace(DATE_REGEX, '').trim();
-      DATE_REGEX.lastIndex = 0;
       const isDateLine = stripped.length < 5 && DATE_REGEX.test(cleanLine);
-      DATE_REGEX.lastIndex = 0;
       const isCredLine = /(?:credential\s*(?:id)?|id)[:\s]/i.test(cleanLine);
       const isUrlLine = URL_REGEX.test(cleanLine);
 
@@ -607,7 +588,6 @@ function extractCertifications(content: string): CertificationEntry[] {
     }
 
     // Extract date
-    DATE_REGEX.lastIndex = 0;
     const blockText = lines.join(' ');
     const dateMatch = blockText.match(DATE_REGEX);
     if (dateMatch) {

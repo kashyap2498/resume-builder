@@ -35,5 +35,5 @@ export function sanitizeImportedResume(data: unknown): Resume | null {
     return result.data as Resume
   }
   console.warn('Resume validation failed after sanitization:', result.error)
-  return sanitized as Resume
+  return null
 }

@@ -226,7 +226,7 @@ export const useResumeStore = create<ResumeStore>((set) => ({
       ...r,
       data: {
         ...r.data,
-        experience: ids.map((id) => r.data.experience.find((e) => e.id === id)!),
+        experience: ids.map((id) => r.data.experience.find((e) => e.id === id)).filter(Boolean) as ExperienceEntry[],
       },
     })),
 
@@ -266,7 +266,7 @@ export const useResumeStore = create<ResumeStore>((set) => ({
       ...r,
       data: {
         ...r.data,
-        education: ids.map((id) => r.data.education.find((e) => e.id === id)!),
+        education: ids.map((id) => r.data.education.find((e) => e.id === id)).filter(Boolean) as EducationEntry[],
       },
     })),
 
@@ -314,7 +314,7 @@ export const useResumeStore = create<ResumeStore>((set) => ({
       ...r,
       data: {
         ...r.data,
-        projects: ids.map((id) => r.data.projects.find((e) => e.id === id)!),
+        projects: ids.map((id) => r.data.projects.find((e) => e.id === id)).filter(Boolean) as ProjectEntry[],
       },
     })),
 
@@ -354,7 +354,7 @@ export const useResumeStore = create<ResumeStore>((set) => ({
       ...r,
       data: {
         ...r.data,
-        certifications: ids.map((id) => r.data.certifications.find((e) => e.id === id)!),
+        certifications: ids.map((id) => r.data.certifications.find((e) => e.id === id)).filter(Boolean) as CertificationEntry[],
       },
     })),
 
@@ -622,7 +622,7 @@ export const useResumeStore = create<ResumeStore>((set) => ({
   updateCoverLetter: (coverLetter) =>
     mutate(set, (r) => ({
       ...r,
-      coverLetter: { ...r.coverLetter!, ...coverLetter },
+      coverLetter: { ...(r.coverLetter ?? {}), ...coverLetter } as CoverLetterData,
     })),
 
   clearCoverLetter: () =>

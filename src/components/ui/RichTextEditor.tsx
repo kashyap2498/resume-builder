@@ -3,6 +3,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { useRef, useEffect } from 'react';
 import { Bold, Italic, List } from 'lucide-react';
+import { escapeHtml } from '@/utils/richTextConvert';
 
 export interface RichTextEditorProps {
   content: string;
@@ -34,6 +35,7 @@ export function RichTextEditor({
     ],
     content,
     onUpdate: ({ editor: ed }) => {
+      if (isExternalUpdate.current) return;
       onChange(ed.getHTML());
     },
     editorProps: {
@@ -71,10 +73,10 @@ export function RichTextEditor({
 
             let insertHtml = '';
             if (nonBullets.length > 0) {
-              insertHtml += nonBullets.map((l) => `<p>${l}</p>`).join('');
+              insertHtml += nonBullets.map((l) => `<p>${escapeHtml(l)}</p>`).join('');
             }
             if (bullets.length > 0) {
-              insertHtml += `<ul>${bullets.map((b) => `<li><p>${b}</p></li>`).join('')}</ul>`;
+              insertHtml += `<ul>${bullets.map((b) => `<li><p>${escapeHtml(b)}</p></li>`).join('')}</ul>`;
             }
 
             editor?.commands.insertContent(insertHtml);
@@ -93,7 +95,7 @@ export function RichTextEditor({
     const currentHtml = editor.getHTML();
     if (content !== currentHtml) {
       isExternalUpdate.current = true;
-      editor.commands.setContent(content, false);
+      editor.commands.setContent(content, { emitUpdate: false });
       isExternalUpdate.current = false;
     }
   }, [content, editor]);

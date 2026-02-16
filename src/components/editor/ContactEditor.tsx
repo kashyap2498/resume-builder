@@ -22,7 +22,7 @@ export function ContactEditor() {
   const contact = useResumeStore((s) => s.currentResume?.data.contact);
   const updateContact = useResumeStore((s) => s.updateContact);
 
-  const { onBlur, getError } = useFieldValidation(contactSchema, contact ?? {} as Record<string, unknown>);
+  const { onBlur, getError } = useFieldValidation(contactSchema, (contact ?? {}) as Record<string, unknown>);
 
   if (!contact) return null;
 

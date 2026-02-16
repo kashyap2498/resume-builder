@@ -228,7 +228,7 @@ describe('resumeStore', () => {
     it('should replace the skills array', () => {
       useResumeStore.getState().setResume(freshResume());
       const newSkills: SkillCategory[] = [
-        { id: 'sk-1', category: 'DevOps', items: [{ name: 'Docker', proficiency: 4 }] },
+        { id: 'sk-1', category: 'DevOps', items: ['Docker'] },
       ];
       useResumeStore.getState().updateSkills(newSkills);
       expect(useResumeStore.getState().currentResume!.data.skills).toEqual(newSkills);

@@ -72,25 +72,15 @@ export async function deleteResumeListItem(id: string): Promise<void> {
 export async function saveHistorySnapshot(resumeId: string, snapshot: Resume): Promise<void> {
   const db = await getDB()
   await db.add('history', { resumeId, snapshot, timestamp: Date.now() })
+
   // Keep max 50 per resume
   const tx = db.transaction('history', 'readwrite')
   const index = tx.store.index('resumeId')
-  const all = await index.getAll(resumeId)
+  const all = await index.getAllKeys(resumeId)
   if (all.length > 50) {
     const toDelete = all.slice(0, all.length - 50)
-    for (const item of toDelete) {
-      const cursor = await tx.store.openCursor()
-      if (cursor) {
-        // Find and delete the oldest entries
-        let c = await tx.store.openCursor()
-        while (c && toDelete.length > 0) {
-          if (c.value.resumeId === resumeId) {
-            await c.delete()
-            toDelete.shift()
-          }
-          c = await c.continue()
-        }
-      }
+    for (const key of toDelete) {
+      await tx.store.delete(key)
     }
   }
   await tx.done
