@@ -18,12 +18,12 @@ export function RichTextEditor({
   placeholder = 'Start typing...',
   label,
 }: RichTextEditorProps) {
-  // Track whether the content prop changed externally (not from editor typing)
+  // Track whether we're programmatically setting content (to suppress onUpdate)
   const isExternalUpdate = useRef(false);
-  // Track the last HTML the editor itself produced, so we can distinguish
-  // "content prop changed because of our own onUpdate" from "content prop
-  // changed externally (undo, reset, import)".
-  const lastEditorHtml = useRef(content);
+  // Flag set synchronously in onUpdate before React processes state.
+  // When the useEffect fires from the resulting re-render, this flag tells us
+  // the content change originated from the editor itself — skip setContent.
+  const editorDidChange = useRef(false);
 
   const editor = useEditor({
     extensions: [
@@ -40,9 +40,8 @@ export function RichTextEditor({
     content,
     onUpdate: ({ editor: ed }) => {
       if (isExternalUpdate.current) return;
-      const html = ed.getHTML();
-      lastEditorHtml.current = html;
-      onChange(html);
+      editorDidChange.current = true;
+      onChange(ed.getHTML());
     },
     editorProps: {
       handlePaste: (_view, event) => {
@@ -105,16 +104,18 @@ export function RichTextEditor({
     },
   });
 
-  // Sync external content changes (e.g. undo, reset) without fighting editor state.
-  // Skip if the content change originated from the editor itself (round-tripped
-  // through parent state) — this prevents cursor jumping on every keystroke.
+  // Sync external content changes (e.g. undo, reset) into the editor.
+  // If the editor itself caused this content change (editorDidChange flag),
+  // skip — calling setContent would destroy cursor position and formatting.
   useEffect(() => {
     if (!editor) return;
-    if (content === lastEditorHtml.current) return;
+    if (editorDidChange.current) {
+      editorDidChange.current = false;
+      return;
+    }
     isExternalUpdate.current = true;
     editor.commands.setContent(content, { emitUpdate: false });
     isExternalUpdate.current = false;
-    lastEditorHtml.current = content;
   }, [content, editor]);
 
   if (!editor) return null;

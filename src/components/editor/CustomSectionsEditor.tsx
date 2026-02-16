@@ -2,7 +2,7 @@
 // Resume Builder - Custom Sections Editor
 // =============================================================================
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Plus,
   LayoutList,
@@ -30,6 +30,17 @@ export function CustomSectionsEditor() {
     new Set()
   );
 
+  const prevLengthRef = useRef(customSections.length);
+
+  // Auto-expand newly added section
+  useEffect(() => {
+    if (customSections.length > prevLengthRef.current && customSections.length > 0) {
+      const lastSection = customSections[customSections.length - 1];
+      setExpandedSections((prev) => new Set(prev).add(lastSection.id));
+    }
+    prevLengthRef.current = customSections.length;
+  }, [customSections]);
+
   const toggleSection = (id: string) => {
     setExpandedSections((prev) => {
       const next = new Set(prev);
@@ -49,7 +60,6 @@ export function CustomSectionsEditor() {
   };
 
   const handleAddSection = () => {
-    const newId = nanoid();
     addCustomSection({ title: '', entries: [] });
   };
 

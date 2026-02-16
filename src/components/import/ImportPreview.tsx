@@ -4,11 +4,48 @@
 // After parsing a PDF/DOCX file, shows the extracted data in a preview form.
 // The user can review and edit the parsed fields before confirming the import.
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { Button, Input, TextArea, RichTextEditor } from '@/components/ui';
 import type { ResumeData, CertificationEntry } from '@/types/resume';
 import { toEditorHtml, fromEditorHtml } from '@/utils/richTextConvert';
+
+/** Local string state wrapper for comma-separated inputs — normalizes on blur. */
+function CommaSeparatedInput({
+  items,
+  onCommit,
+  label,
+  hint,
+}: {
+  items: string[];
+  onCommit: (items: string[]) => void;
+  label?: string;
+  hint?: string;
+}) {
+  const [local, setLocal] = useState(items.join(', '));
+  const committedRef = useRef(items);
+
+  useEffect(() => {
+    if (items !== committedRef.current) {
+      setLocal(items.join(', '));
+      committedRef.current = items;
+    }
+  }, [items]);
+
+  return (
+    <Input
+      label={label}
+      value={local}
+      onChange={(e) => setLocal(e.target.value)}
+      onBlur={() => {
+        const parsed = local.split(',').map((s) => s.trim()).filter(Boolean);
+        committedRef.current = parsed;
+        onCommit(parsed);
+      }}
+      hint={hint}
+    />
+  );
+}
 
 interface ImportPreviewProps {
   parsedData: Partial<ResumeData>;
@@ -408,15 +445,14 @@ export function ImportPreview({
                   }
                   wrapperClassName="mb-2"
                 />
-                <Input
+                <CommaSeparatedInput
                   label={cat.category || 'Skills'}
-                  value={cat.items.join(', ')}
-                  onChange={(e) => {
-                    const items = e.target.value.split(',').map((s) => s.trim()).filter(Boolean);
+                  items={cat.items}
+                  onCommit={(items) =>
                     setSkills((prev) =>
                       prev.map((c, i) => (i === catIdx ? { ...c, items } : c))
-                    );
-                  }}
+                    )
+                  }
                   hint="Separate skills with commas"
                 />
               </div>

@@ -47,7 +47,7 @@ export function Toggle({
         type="button"
         aria-checked={checked}
         disabled={disabled}
-        onClick={() => onChange(!checked)}
+        onClick={(e) => { e.stopPropagation(); onChange(!checked); }}
         className={cn(
           'relative inline-flex shrink-0 items-center rounded-full p-1',
           'transition-colors duration-200 ease-in-out',

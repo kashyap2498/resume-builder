@@ -54,7 +54,20 @@ export function Modal({
   closeOnEscape = true,
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<Element | null>(null);
   const titleId = useId();
+
+  // Save the previously focused element when modal opens; restore on close
+  useEffect(() => {
+    if (open) {
+      previousFocusRef.current = document.activeElement;
+    } else if (previousFocusRef.current) {
+      const el = previousFocusRef.current as HTMLElement;
+      previousFocusRef.current = null;
+      // Restore after a microtask so the modal has time to unmount
+      requestAnimationFrame(() => el?.focus?.());
+    }
+  }, [open]);
 
   // Focus trap and Escape key handling
   useEffect(() => {

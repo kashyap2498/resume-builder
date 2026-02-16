@@ -5,7 +5,7 @@
 // (PDF or DOCX), and routes to the appropriate parser. Returns parsed data
 // for the user to review before finalizing the import.
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { extractTextFromPdf } from '@/utils/pdfParser';
 import { extractTextFromDocx } from '@/utils/docxParser';
 import { parseResumeText } from '@/utils/resumeParser';
@@ -58,14 +58,23 @@ export function useFileImport(): UseFileImportReturn {
   const [status, setStatus] = useState<ImportStatus>('idle');
   const [result, setResult] = useState<FileImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const reset = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
     setStatus('idle');
     setResult(null);
     setError(null);
   }, []);
 
   const importFile = useCallback(async (file: File) => {
+    // Abort any in-flight import so stale results don't overwrite UI
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const { signal } = controller;
+
     setStatus('reading');
     setResult(null);
     setError(null);
@@ -73,16 +82,19 @@ export function useFileImport(): UseFileImportReturn {
     const fileType = detectFileType(file);
 
     if (fileType === 'unknown') {
-      setStatus('error');
-      setError(
-        'Unsupported file type. Please upload a PDF or DOCX file.'
-      );
+      if (!signal.aborted) {
+        setStatus('error');
+        setError(
+          'Unsupported file type. Please upload a PDF or DOCX file.'
+        );
+      }
       return;
     }
 
     try {
       // Step 1: Read the file
       const buffer = await readFileAsArrayBuffer(file);
+      if (signal.aborted) return;
 
       // Step 2: Extract text
       setStatus('parsing');
@@ -93,17 +105,21 @@ export function useFileImport(): UseFileImportReturn {
       } else {
         rawText = await extractTextFromDocx(buffer);
       }
+      if (signal.aborted) return;
 
       if (!rawText.trim()) {
-        setStatus('error');
-        setError(
-          'Could not extract any text from the file. The file may be image-based or empty.'
-        );
+        if (!signal.aborted) {
+          setStatus('error');
+          setError(
+            'Could not extract any text from the file. The file may be image-based or empty.'
+          );
+        }
         return;
       }
 
       // Step 3: Parse text into structured resume data
       const parsedData = sanitizeResumeData(parseResumeText(rawText));
+      if (signal.aborted) return;
 
       setResult({
         rawText,
@@ -113,10 +129,12 @@ export function useFileImport(): UseFileImportReturn {
       });
       setStatus('done');
     } catch (err) {
-      setStatus('error');
-      setError(
-        err instanceof Error ? err.message : 'An unexpected error occurred during import.'
-      );
+      if (!signal.aborted) {
+        setStatus('error');
+        setError(
+          err instanceof Error ? err.message : 'An unexpected error occurred during import.'
+        );
+      }
     }
   }, []);
 

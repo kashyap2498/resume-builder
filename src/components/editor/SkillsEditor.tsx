@@ -3,10 +3,51 @@
 // =============================================================================
 
 import { Plus, Wrench, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { nanoid } from 'nanoid';
 import { useResumeStore } from '@/store/resumeStore';
 import { Input, Button, IconButton, EmptyState } from '@/components/ui';
+
+/** Holds local string state so comma-separated input doesn't jump cursor on every keystroke. */
+function SkillItemsInput({
+  items,
+  onCommit,
+  label,
+  placeholder,
+  hint,
+}: {
+  items: string[];
+  onCommit: (items: string[]) => void;
+  label?: string;
+  placeholder?: string;
+  hint?: string;
+}) {
+  const [local, setLocal] = useState(items.join(', '));
+  const committedRef = useRef(items);
+
+  // Sync from store when items change externally (undo, import)
+  useEffect(() => {
+    if (items !== committedRef.current) {
+      setLocal(items.join(', '));
+      committedRef.current = items;
+    }
+  }, [items]);
+
+  return (
+    <Input
+      label={label}
+      placeholder={placeholder}
+      value={local}
+      onChange={(e) => setLocal(e.target.value)}
+      onBlur={() => {
+        const parsed = local.split(',').map((s) => s.trim()).filter(Boolean);
+        committedRef.current = parsed;
+        onCommit(parsed);
+      }}
+      hint={hint}
+    />
+  );
+}
 
 export function SkillsEditor() {
   const skills = useResumeStore((s) => s.currentResume?.data.skills) ?? [];
@@ -34,14 +75,6 @@ export function SkillsEditor() {
 
   const handleUpdateCategoryName = (id: string, category: string) => {
     updateSkills(skills.map((c) => (c.id === id ? { ...c, category } : c)));
-  };
-
-  const handleUpdateItems = (id: string, value: string) => {
-    const items = value
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    updateSkills(skills.map((c) => (c.id === id ? { ...c, items } : c)));
   };
 
   return (
@@ -126,13 +159,13 @@ export function SkillsEditor() {
                         handleUpdateCategoryName(cat.id, e.target.value)
                       }
                     />
-                    <Input
+                    <SkillItemsInput
+                      items={cat.items}
+                      onCommit={(items) =>
+                        updateSkills(skills.map((c) => (c.id === cat.id ? { ...c, items } : c)))
+                      }
                       label="Skills"
                       placeholder="JavaScript, TypeScript, Python, Go"
-                      value={cat.items.join(', ')}
-                      onChange={(e) =>
-                        handleUpdateItems(cat.id, e.target.value)
-                      }
                       hint="Separate skills with commas"
                     />
                   </div>

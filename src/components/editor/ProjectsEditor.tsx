@@ -3,10 +3,45 @@
 // =============================================================================
 
 import { Plus, FolderKanban } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { useResumeStore } from '@/store/resumeStore';
 import { Input, Button, EmptyState, RichTextEditor } from '@/components/ui';
 import { EntryCard } from './EntryCard';
 import { toEditorHtml, fromEditorHtml } from '@/utils/richTextConvert';
+
+/** Local string state wrapper — normalizes on blur to avoid cursor jumping. */
+function TechInput({
+  items,
+  onCommit,
+}: {
+  items: string[];
+  onCommit: (items: string[]) => void;
+}) {
+  const [local, setLocal] = useState(items.join(', '));
+  const committedRef = useRef(items);
+
+  useEffect(() => {
+    if (items !== committedRef.current) {
+      setLocal(items.join(', '));
+      committedRef.current = items;
+    }
+  }, [items]);
+
+  return (
+    <Input
+      label="Technologies"
+      placeholder="React, TypeScript, Node.js"
+      value={local}
+      onChange={(e) => setLocal(e.target.value)}
+      onBlur={() => {
+        const parsed = local.split(',').map((s) => s.trim()).filter(Boolean);
+        committedRef.current = parsed;
+        onCommit(parsed);
+      }}
+      hint="Separate technologies with commas"
+    />
+  );
+}
 
 export function ProjectsEditor() {
   const projects = useResumeStore((s) => s.currentResume?.data.projects) ?? [];
@@ -24,14 +59,6 @@ export function ProjectsEditor() {
       endDate: '',
       highlights: [],
     });
-  };
-
-  const handleTechnologiesChange = (id: string, value: string) => {
-    const techs = value
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean);
-    updateProject(id, { technologies: techs });
   };
 
   return (
@@ -115,14 +142,9 @@ export function ProjectsEditor() {
                 </div>
 
                 {/* Technologies */}
-                <Input
-                  label="Technologies"
-                  placeholder="React, TypeScript, Node.js"
-                  value={entry.technologies.join(', ')}
-                  onChange={(e) =>
-                    handleTechnologiesChange(entry.id, e.target.value)
-                  }
-                  hint="Separate technologies with commas"
+                <TechInput
+                  items={entry.technologies}
+                  onCommit={(techs) => updateProject(entry.id, { technologies: techs })}
                 />
 
                 {/* Description & Highlights */}
