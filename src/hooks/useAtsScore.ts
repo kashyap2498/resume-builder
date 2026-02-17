@@ -2,7 +2,7 @@
 // Resume Builder - ATS Score Hook
 // =============================================================================
 // Takes resume data and an optional job description, computes an ATS
-// compatibility score (0-100) across five categories, and returns a
+// compatibility score (0-100) across ten categories, and returns a
 // detailed breakdown including matched and missing keywords.
 
 import { useState, useEffect, useMemo } from 'react';
@@ -10,7 +10,10 @@ import { useDebounce } from '@/hooks/useDebounce';
 import {
   computeAtsScore,
   type AtsScoreResult,
+  type KeywordMatchDetail,
+  type PrioritizedAction,
 } from '@/utils/atsScorer';
+import type { ParsedJobDescription } from '@/utils/jdParser';
 import type { ResumeData } from '@/types/resume';
 import type { IndustryId } from '@/constants/atsKeywords';
 
@@ -19,6 +22,11 @@ export interface UseAtsScoreReturn {
   breakdown: AtsScoreResult['breakdown'];
   keywords: AtsScoreResult['keywords'];
   isCalculating: boolean;
+  passLikelihood: string;
+  prioritizedActions: PrioritizedAction[];
+  parsedJd: ParsedJobDescription | null;
+  confidence: 'high' | 'medium' | 'low';
+  requirements: AtsScoreResult['requirements'];
 }
 
 export function useAtsScore(
@@ -50,14 +58,24 @@ export function useAtsScore(
   const emptyResult: UseAtsScoreReturn = {
     score: 0,
     breakdown: {
-      keywordMatch: { score: 0, maxScore: 40, suggestions: [] },
-      formatting: { score: 0, maxScore: 20, suggestions: [] },
-      contentQuality: { score: 0, maxScore: 20, suggestions: [] },
-      sectionCompleteness: { score: 0, maxScore: 10, suggestions: [] },
-      readability: { score: 0, maxScore: 10, suggestions: [] },
+      hardSkillMatch: { score: 0, maxScore: 25, suggestions: [] },
+      softSkillMatch: { score: 0, maxScore: 5, suggestions: [] },
+      experienceAlignment: { score: 0, maxScore: 15, suggestions: [] },
+      educationFit: { score: 0, maxScore: 5, suggestions: [] },
+      keywordOptimization: { score: 0, maxScore: 10, suggestions: [] },
+      contentImpact: { score: 0, maxScore: 15, suggestions: [] },
+      atsParseability: { score: 0, maxScore: 10, suggestions: [] },
+      sectionStructure: { score: 0, maxScore: 5, suggestions: [] },
+      readability: { score: 0, maxScore: 5, suggestions: [] },
+      tailoringSignals: { score: 0, maxScore: 5, suggestions: [] },
     },
-    keywords: { matched: [], missing: [] },
+    keywords: { matched: [], missing: [], partial: [], matchDetails: [] },
     isCalculating,
+    passLikelihood: 'Unlikely to pass',
+    prioritizedActions: [],
+    parsedJd: null,
+    confidence: 'low',
+    requirements: { yearsRequired: null, yearsOnResume: 0, degreeRequired: null, degreeOnResume: null },
   };
 
   if (!result) return emptyResult;
@@ -67,5 +85,10 @@ export function useAtsScore(
     breakdown: result.breakdown,
     keywords: result.keywords,
     isCalculating,
+    passLikelihood: result.passLikelihood,
+    prioritizedActions: result.prioritizedActions,
+    parsedJd: result.parsedJd,
+    confidence: result.confidence,
+    requirements: result.requirements,
   };
 }

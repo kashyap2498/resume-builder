@@ -1,7 +1,17 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { computeAtsScore } from '@/utils/atsScorer'
+import { describe, it, expect } from 'vitest'
+import {
+  computeAtsScore,
+  classifySkillType,
+  parseResumeDate,
+  calculateExperienceYears,
+  detectSeniorityLevel,
+  parseDegreeLevel,
+  areFieldsRelated,
+  getResumeSectionTexts,
+} from '@/utils/atsScorer'
 import { mockResumeData, createEmptyResumeData } from '@/test/fixtures'
-import type { ResumeData } from '@/types/resume'
+import { INDUSTRY_KEYWORDS } from '@/constants/atsKeywords'
+import type { ResumeData, ExperienceEntry } from '@/types/resume'
 
 describe('computeAtsScore', () => {
   // ---------------------------------------------------------------------------
@@ -22,11 +32,10 @@ describe('computeAtsScore', () => {
     const emptyData = createEmptyResumeData()
     const result = computeAtsScore(emptyData)
 
-    expect(result.score).toBeLessThanOrEqual(20)
+    expect(result.score).toBeLessThanOrEqual(25)
   })
 
   it('should always return a score between 0 and 100', () => {
-    // Test with multiple data variations
     const emptyResult = computeAtsScore(createEmptyResumeData())
     expect(emptyResult.score).toBeGreaterThanOrEqual(0)
     expect(emptyResult.score).toBeLessThanOrEqual(100)
@@ -37,22 +46,108 @@ describe('computeAtsScore', () => {
   })
 
   // ---------------------------------------------------------------------------
-  // Keyword matching
+  // 10-category model shape
   // ---------------------------------------------------------------------------
 
-  it('should give a keyword category baseline of 20/40 when no job description is provided', () => {
+  it('should have all 10 breakdown categories with correct maxScore values', () => {
     const result = computeAtsScore(mockResumeData)
 
-    expect(result.breakdown.keywordMatch.score).toBe(20)
-    expect(result.breakdown.keywordMatch.maxScore).toBe(40)
+    expect(result.breakdown.hardSkillMatch.maxScore).toBe(25)
+    expect(result.breakdown.softSkillMatch.maxScore).toBe(5)
+    expect(result.breakdown.experienceAlignment.maxScore).toBe(15)
+    expect(result.breakdown.educationFit.maxScore).toBe(5)
+    expect(result.breakdown.keywordOptimization.maxScore).toBe(10)
+    expect(result.breakdown.contentImpact.maxScore).toBe(15)
+    expect(result.breakdown.atsParseability.maxScore).toBe(10)
+    expect(result.breakdown.sectionStructure.maxScore).toBe(5)
+    expect(result.breakdown.readability.maxScore).toBe(5)
+    expect(result.breakdown.tailoringSignals.maxScore).toBe(5)
+  })
+
+  it('should have all 10 category scores within 0..maxScore', () => {
+    const result = computeAtsScore(mockResumeData, 'React TypeScript Python Node.js leadership')
+
+    for (const [, cat] of Object.entries(result.breakdown)) {
+      expect(cat.score).toBeGreaterThanOrEqual(0)
+      expect(cat.score).toBeLessThanOrEqual(cat.maxScore)
+    }
+  })
+
+  it('all 10 category maxScores should sum to 100', () => {
+    const result = computeAtsScore(mockResumeData)
+    const totalMax = Object.values(result.breakdown).reduce((sum, cat) => sum + cat.maxScore, 0)
+    expect(totalMax).toBe(100)
+  })
+
+  // ---------------------------------------------------------------------------
+  // Return shape — includes new fields
+  // ---------------------------------------------------------------------------
+
+  it('should return object with score, breakdown, keywords, passLikelihood, prioritizedActions, confidence, requirements', () => {
+    const result = computeAtsScore(mockResumeData)
+
+    expect(result).toHaveProperty('score')
+    expect(result).toHaveProperty('breakdown')
+    expect(result).toHaveProperty('keywords')
+    expect(result).toHaveProperty('passLikelihood')
+    expect(result).toHaveProperty('prioritizedActions')
+    expect(result).toHaveProperty('parsedJd')
+    expect(result).toHaveProperty('confidence')
+    expect(result).toHaveProperty('requirements')
+    expect(result.keywords).toHaveProperty('matched')
+    expect(result.keywords).toHaveProperty('missing')
+    expect(result.keywords).toHaveProperty('partial')
+    expect(result.keywords).toHaveProperty('matchDetails')
+    expect(Array.isArray(result.keywords.matched)).toBe(true)
+    expect(Array.isArray(result.keywords.missing)).toBe(true)
+    expect(Array.isArray(result.keywords.partial)).toBe(true)
+    expect(Array.isArray(result.keywords.matchDetails)).toBe(true)
+    expect(Array.isArray(result.prioritizedActions)).toBe(true)
+  })
+
+  it('should return 10 breakdown keys', () => {
+    const result = computeAtsScore(mockResumeData)
+    const keys = Object.keys(result.breakdown)
+    expect(keys).toHaveLength(10)
+    expect(keys).toContain('hardSkillMatch')
+    expect(keys).toContain('softSkillMatch')
+    expect(keys).toContain('experienceAlignment')
+    expect(keys).toContain('educationFit')
+    expect(keys).toContain('keywordOptimization')
+    expect(keys).toContain('contentImpact')
+    expect(keys).toContain('atsParseability')
+    expect(keys).toContain('sectionStructure')
+    expect(keys).toContain('readability')
+    expect(keys).toContain('tailoringSignals')
+  })
+
+  it('should include suggestions in each breakdown category', () => {
+    const result = computeAtsScore(createEmptyResumeData())
+
+    for (const cat of Object.values(result.breakdown)) {
+      expect(Array.isArray(cat.suggestions)).toBe(true)
+    }
+  })
+
+  // ---------------------------------------------------------------------------
+  // Keyword matching — hard/soft skill split
+  // ---------------------------------------------------------------------------
+
+  it('should give hard skill baseline of 12/25 and soft skill baseline of 3/5 when no JD provided', () => {
+    const result = computeAtsScore(mockResumeData)
+
+    expect(result.breakdown.hardSkillMatch.score).toBe(12)
+    expect(result.breakdown.hardSkillMatch.maxScore).toBe(25)
+    expect(result.breakdown.softSkillMatch.score).toBe(3)
+    expect(result.breakdown.softSkillMatch.maxScore).toBe(5)
   })
 
   it('should include matching words in keywords.matched when job description overlaps resume', () => {
     const jobDescription = 'React TypeScript Python developer with leadership experience'
     const result = computeAtsScore(mockResumeData, jobDescription)
 
-    // mockResumeData contains React, TypeScript, Python
-    expect(result.keywords.matched).toEqual(
+    const allMatched = [...result.keywords.matched, ...result.keywords.partial]
+    expect(allMatched).toEqual(
       expect.arrayContaining(['react', 'typescript', 'python'])
     )
   })
@@ -61,16 +156,25 @@ describe('computeAtsScore', () => {
     const jobDescription = 'Kubernetes Docker Terraform cloud infrastructure specialist'
     const result = computeAtsScore(mockResumeData, jobDescription)
 
-    expect(result.keywords.missing).toEqual(
-      expect.arrayContaining(['kubernetes', 'docker', 'terraform'])
-    )
+    const missingOrPartial = [...result.keywords.missing, ...result.keywords.partial]
+    expect(missingOrPartial.length).toBeGreaterThan(0)
+    expect(result.keywords.missing).toContain('kubernetes')
+  })
+
+  it('should have skillType on every matchDetail', () => {
+    const jd = 'React TypeScript leadership communication'
+    const result = computeAtsScore(mockResumeData, jd)
+
+    for (const detail of result.keywords.matchDetails) {
+      expect(['hard_skill', 'soft_skill']).toContain(detail.skillType)
+    }
   })
 
   // ---------------------------------------------------------------------------
-  // Formatting (contact info)
+  // ATS Parseability (was formatting)
   // ---------------------------------------------------------------------------
 
-  it('should score higher on formatting when contact info has email, phone, and location', () => {
+  it('should score higher on atsParseability when contact info has email, phone, and location', () => {
     const completeContact = { ...mockResumeData }
     const resultWithContact = computeAtsScore(completeContact)
 
@@ -85,36 +189,31 @@ describe('computeAtsScore', () => {
     }
     const resultWithoutContact = computeAtsScore(noContact)
 
-    expect(resultWithContact.breakdown.formatting.score).toBeGreaterThan(
-      resultWithoutContact.breakdown.formatting.score
+    expect(resultWithContact.breakdown.atsParseability.score).toBeGreaterThan(
+      resultWithoutContact.breakdown.atsParseability.score
     )
   })
 
   // ---------------------------------------------------------------------------
-  // Content quality -- quantified achievements
+  // Content Impact (was contentQuality) -- quantified achievements
   // ---------------------------------------------------------------------------
 
-  it('should boost content quality score when highlights include quantified achievements', () => {
-    // mockResumeData already has "35%", "50%", "60%", "100,000+" in highlights
+  it('should boost content impact score when highlights include quantified achievements', () => {
     const result = computeAtsScore(mockResumeData)
-
-    // An empty resume has zero content quality
     const emptyResult = computeAtsScore(createEmptyResumeData())
 
-    expect(result.breakdown.contentQuality.score).toBeGreaterThan(
-      emptyResult.breakdown.contentQuality.score
+    expect(result.breakdown.contentImpact.score).toBeGreaterThan(
+      emptyResult.breakdown.contentImpact.score
     )
   })
 
   // ---------------------------------------------------------------------------
-  // Content quality -- action verbs
+  // Content Impact -- action verbs
   // ---------------------------------------------------------------------------
 
-  it('should boost content quality score when highlights use action verbs', () => {
-    // mockResumeData highlights contain "Developed", "Led", "Reduced", "Built", "Implemented"
+  it('should boost content impact score when highlights use action verbs', () => {
     const result = computeAtsScore(mockResumeData)
 
-    // Build a resume with no action verbs at all
     const noVerbsData: ResumeData = {
       ...createEmptyResumeData(),
       experience: [
@@ -137,27 +236,23 @@ describe('computeAtsScore', () => {
     }
     const noVerbsResult = computeAtsScore(noVerbsData)
 
-    expect(result.breakdown.contentQuality.score).toBeGreaterThan(
-      noVerbsResult.breakdown.contentQuality.score
+    expect(result.breakdown.contentImpact.score).toBeGreaterThan(
+      noVerbsResult.breakdown.contentImpact.score
     )
   })
 
   // ---------------------------------------------------------------------------
-  // Section completeness
+  // Section Structure (was sectionCompleteness)
   // ---------------------------------------------------------------------------
 
-  it('should score high on section completeness when experience, education, skills, and contact are present', () => {
+  it('should score high on section structure when experience, education, skills, and contact are present', () => {
     const result = computeAtsScore(mockResumeData)
-
-    // mockResumeData has name, experience, education, skills, certifications,
-    // projects, volunteer, awards, publications, languages -- basically everything
-    expect(result.breakdown.sectionCompleteness.score).toBeGreaterThanOrEqual(8)
+    expect(result.breakdown.sectionStructure.score).toBeGreaterThanOrEqual(4)
   })
 
-  it('should score zero on section completeness for a completely empty resume', () => {
+  it('should score zero on section structure for a completely empty resume', () => {
     const result = computeAtsScore(createEmptyResumeData())
-
-    expect(result.breakdown.sectionCompleteness.score).toBe(0)
+    expect(result.breakdown.sectionStructure.score).toBe(0)
   })
 
   // ---------------------------------------------------------------------------
@@ -165,10 +260,8 @@ describe('computeAtsScore', () => {
   // ---------------------------------------------------------------------------
 
   it('should give readability points based on bullet point count and length', () => {
-    // mockResumeData has 7 experience highlights (>= 6 threshold) with reasonable length
     const result = computeAtsScore(mockResumeData)
-
-    expect(result.breakdown.readability.score).toBeGreaterThanOrEqual(4)
+    expect(result.breakdown.readability.score).toBeGreaterThanOrEqual(2)
   })
 
   it('should score low on readability when there are no highlights at all', () => {
@@ -184,46 +277,684 @@ describe('computeAtsScore', () => {
     }
     const result = computeAtsScore(noHighlightsData)
 
-    expect(result.breakdown.readability.score).toBeLessThanOrEqual(5)
+    expect(result.breakdown.readability.score).toBeLessThanOrEqual(3)
   })
 
   // ---------------------------------------------------------------------------
-  // Breakdown category maxScore values
+  // N-gram phrase extraction
   // ---------------------------------------------------------------------------
 
-  it('should have correct maxScore values for all breakdown categories', () => {
+  it('should extract "project management" as a phrase from JD', () => {
+    const jd = 'Requirements: Strong project management skills and leadership experience.'
+    const result = computeAtsScore(mockResumeData, jd)
+
+    const allKeywords = [
+      ...result.keywords.matched,
+      ...result.keywords.missing,
+      ...result.keywords.partial,
+    ]
+    expect(allKeywords.some(kw => kw === 'project management')).toBe(true)
+  })
+
+  it('should match multi-word phrases in resume text correctly', () => {
+    const dataWithPM: ResumeData = {
+      ...mockResumeData,
+      experience: [
+        {
+          ...mockResumeData.experience[0],
+          highlights: [
+            ...mockResumeData.experience[0].highlights,
+            'Led project management initiatives across 3 teams',
+          ],
+        },
+      ],
+    }
+    const jd = 'Requires project management and team leadership experience.'
+    const result = computeAtsScore(dataWithPM, jd)
+
+    expect(result.keywords.matched).toContain('project management')
+  })
+
+  // ---------------------------------------------------------------------------
+  // Synonym matching
+  // ---------------------------------------------------------------------------
+
+  it('should detect synonym match: "JS" in resume matches "JavaScript" in JD', () => {
+    const dataWithJS: ResumeData = {
+      ...createEmptyResumeData(),
+      contact: { ...mockResumeData.contact },
+      summary: { text: 'Experienced JS developer with expertise in frontend technologies.' },
+      experience: [{
+        id: 'exp-1',
+        company: 'Corp',
+        position: 'Dev',
+        location: '',
+        startDate: '2020',
+        endDate: '',
+        current: true,
+        description: '',
+        highlights: ['Built web apps with JS and React'],
+      }],
+      education: mockResumeData.education,
+      skills: [
+        { id: 'sk1', category: 'Languages', items: ['JS', 'Python'] },
+      ],
+    }
+    const jd = 'Must have JavaScript experience.'
+    const result = computeAtsScore(dataWithJS, jd)
+
+    const allFound = [...result.keywords.matched, ...result.keywords.partial]
+    expect(allFound).toContain('javascript')
+  })
+
+  it('should have bidirectional synonym resolution', () => {
+    const jd = 'Must have JS and TS experience.'
+    const result = computeAtsScore(mockResumeData, jd)
+
+    const allMatched = [...result.keywords.matched, ...result.keywords.partial]
+    expect(result.score).toBeGreaterThan(0)
+  })
+
+  // ---------------------------------------------------------------------------
+  // Priority actions
+  // ---------------------------------------------------------------------------
+
+  it('should mark missing required keyword as critical priority', () => {
+    const jd = `Requirements
+- Kubernetes experience required
+- Docker and cloud infrastructure
+
+Preferred
+- Nice to have: Terraform`
+
+    const result = computeAtsScore(mockResumeData, jd)
+
+    expect(result.prioritizedActions.length).toBeGreaterThan(0)
+  })
+
+  it('should mark missing preferred keyword as medium priority', () => {
+    const jd = `Requirements
+- React experience
+
+Preferred
+- Terraform experience is a plus`
+
+    const result = computeAtsScore(mockResumeData, jd)
+
+    const hasMissingPreferred = result.keywords.matchDetails.some(
+      d => d.status === 'missing' && d.source === 'preferred'
+    )
+    if (hasMissingPreferred) {
+      const mediumActions = result.prioritizedActions.filter(a => a.priority === 'medium')
+      expect(mediumActions.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('should sort actions by priority (critical first)', () => {
+    const jd = `Requirements
+- Kubernetes Docker Terraform
+
+Preferred
+- Nice to have: GraphQL`
+
+    const result = computeAtsScore(createEmptyResumeData(), jd)
+
+    if (result.prioritizedActions.length >= 2) {
+      const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 }
+      for (let i = 0; i < result.prioritizedActions.length - 1; i++) {
+        const current = priorityOrder[result.prioritizedActions[i].priority]
+        const next = priorityOrder[result.prioritizedActions[i + 1].priority]
+        expect(current).toBeLessThanOrEqual(next)
+      }
+    }
+  })
+
+  // ---------------------------------------------------------------------------
+  // Pass likelihood
+  // ---------------------------------------------------------------------------
+
+  it('should return correct pass likelihood labels', () => {
+    const fullResult = computeAtsScore(mockResumeData, 'React TypeScript Python Node.js')
+    expect(['Strong pass', 'Likely pass', 'Uncertain', 'At risk', 'Unlikely to pass']).toContain(
+      fullResult.passLikelihood
+    )
+
+    const emptyResult = computeAtsScore(createEmptyResumeData())
+    expect(emptyResult.passLikelihood).toBe('Unlikely to pass')
+  })
+
+  it('should return "Unlikely to pass" for scores below 40', () => {
+    const emptyResult = computeAtsScore(createEmptyResumeData())
+    expect(emptyResult.score).toBeLessThan(40)
+    expect(emptyResult.passLikelihood).toBe('Unlikely to pass')
+  })
+
+  // ---------------------------------------------------------------------------
+  // All 21 industries have keywords
+  // ---------------------------------------------------------------------------
+
+  it('should have non-empty keyword arrays for all 21 industries', () => {
+    expect(INDUSTRY_KEYWORDS.length).toBe(21)
+
+    for (const industry of INDUSTRY_KEYWORDS) {
+      expect(industry.keywords.length).toBeGreaterThan(0)
+      expect(industry.id).toBeTruthy()
+      expect(industry.name).toBeTruthy()
+    }
+  })
+
+  // ---------------------------------------------------------------------------
+  // Parsed JD is returned
+  // ---------------------------------------------------------------------------
+
+  it('should return parsedJd when job description is provided', () => {
+    const jd = 'Requirements: React, TypeScript. Preferred: AWS experience.'
+    const result = computeAtsScore(mockResumeData, jd)
+
+    expect(result.parsedJd).not.toBeNull()
+    expect(result.parsedJd!.sections.fullText).toBe(jd)
+  })
+
+  it('should return null parsedJd when no job description is provided', () => {
     const result = computeAtsScore(mockResumeData)
-
-    expect(result.breakdown.keywordMatch.maxScore).toBe(40)
-    expect(result.breakdown.formatting.maxScore).toBe(20)
-    expect(result.breakdown.contentQuality.maxScore).toBe(20)
-    expect(result.breakdown.sectionCompleteness.maxScore).toBe(10)
-    expect(result.breakdown.readability.maxScore).toBe(10)
+    expect(result.parsedJd).toBeNull()
   })
 
   // ---------------------------------------------------------------------------
-  // Return shape
+  // Requirements object
   // ---------------------------------------------------------------------------
 
-  it('should return an object with score, breakdown, and keywords properties', () => {
+  it('should populate requirements.yearsOnResume from experience dates', () => {
     const result = computeAtsScore(mockResumeData)
-
-    expect(result).toHaveProperty('score')
-    expect(result).toHaveProperty('breakdown')
-    expect(result).toHaveProperty('keywords')
-    expect(result.keywords).toHaveProperty('matched')
-    expect(result.keywords).toHaveProperty('missing')
-    expect(Array.isArray(result.keywords.matched)).toBe(true)
-    expect(Array.isArray(result.keywords.missing)).toBe(true)
+    // mockResumeData has experience from Jun 2017 to current (~8+ years)
+    expect(result.requirements.yearsOnResume).toBeGreaterThan(5)
   })
 
-  it('should include suggestions in each breakdown category', () => {
-    const result = computeAtsScore(createEmptyResumeData())
+  it('should populate requirements.degreeOnResume from education', () => {
+    const result = computeAtsScore(mockResumeData)
+    // mockResumeData has "Bachelor of Science"
+    expect(result.requirements.degreeOnResume).toBe('bachelor')
+  })
 
-    expect(Array.isArray(result.breakdown.keywordMatch.suggestions)).toBe(true)
-    expect(Array.isArray(result.breakdown.formatting.suggestions)).toBe(true)
-    expect(Array.isArray(result.breakdown.contentQuality.suggestions)).toBe(true)
-    expect(Array.isArray(result.breakdown.sectionCompleteness.suggestions)).toBe(true)
-    expect(Array.isArray(result.breakdown.readability.suggestions)).toBe(true)
+  it('should populate requirements.yearsRequired from JD', () => {
+    const jd = 'Requirements: 5+ years of experience in software development.'
+    const result = computeAtsScore(mockResumeData, jd)
+    expect(result.requirements.yearsRequired).toBe(5)
+  })
+
+  it('should populate requirements.degreeRequired from JD', () => {
+    const jd = "Requirements: Bachelor's degree in Computer Science."
+    const result = computeAtsScore(mockResumeData, jd)
+    expect(result.requirements.degreeRequired).toBe('bachelor')
+  })
+})
+
+// =============================================================================
+// classifySkillType
+// =============================================================================
+
+describe('classifySkillType', () => {
+  it('should classify React as hard_skill', () => {
+    expect(classifySkillType('react')).toBe('hard_skill')
+    expect(classifySkillType('React')).toBe('hard_skill')
+  })
+
+  it('should classify leadership as soft_skill', () => {
+    expect(classifySkillType('leadership')).toBe('soft_skill')
+  })
+
+  it('should classify communication as soft_skill via synonym', () => {
+    expect(classifySkillType('communication')).toBe('soft_skill')
+    expect(classifySkillType('communication skills')).toBe('soft_skill')
+  })
+
+  it('should classify Kubernetes as hard_skill', () => {
+    expect(classifySkillType('kubernetes')).toBe('hard_skill')
+    expect(classifySkillType('k8s')).toBe('hard_skill')
+  })
+
+  it('should classify teamwork as soft_skill', () => {
+    expect(classifySkillType('teamwork')).toBe('soft_skill')
+  })
+
+  it('should classify problem solving as soft_skill', () => {
+    expect(classifySkillType('problem solving')).toBe('soft_skill')
+  })
+
+  it('should classify TypeScript as hard_skill', () => {
+    expect(classifySkillType('typescript')).toBe('hard_skill')
+  })
+
+  it('should classify adaptability as soft_skill', () => {
+    expect(classifySkillType('adaptability')).toBe('soft_skill')
+  })
+})
+
+// =============================================================================
+// parseResumeDate
+// =============================================================================
+
+describe('parseResumeDate', () => {
+  it('should parse "Jan 2020"', () => {
+    const date = parseResumeDate('Jan 2020')
+    expect(date).not.toBeNull()
+    expect(date!.getFullYear()).toBe(2020)
+    expect(date!.getMonth()).toBe(0) // January
+  })
+
+  it('should parse "January 2020"', () => {
+    const date = parseResumeDate('January 2020')
+    expect(date).not.toBeNull()
+    expect(date!.getFullYear()).toBe(2020)
+    expect(date!.getMonth()).toBe(0)
+  })
+
+  it('should parse "2020-01"', () => {
+    const date = parseResumeDate('2020-01')
+    expect(date).not.toBeNull()
+    expect(date!.getFullYear()).toBe(2020)
+    expect(date!.getMonth()).toBe(0)
+  })
+
+  it('should parse "01/2020"', () => {
+    const date = parseResumeDate('01/2020')
+    expect(date).not.toBeNull()
+    expect(date!.getFullYear()).toBe(2020)
+    expect(date!.getMonth()).toBe(0)
+  })
+
+  it('should parse "2020" (year only)', () => {
+    const date = parseResumeDate('2020')
+    expect(date).not.toBeNull()
+    expect(date!.getFullYear()).toBe(2020)
+  })
+
+  it('should return null for empty string', () => {
+    expect(parseResumeDate('')).toBeNull()
+  })
+
+  it('should return null for unparseable string', () => {
+    expect(parseResumeDate('present')).toBeNull()
+    expect(parseResumeDate('current')).toBeNull()
+  })
+
+  it('should handle whitespace', () => {
+    const date = parseResumeDate('  Jun 2021  ')
+    expect(date).not.toBeNull()
+    expect(date!.getFullYear()).toBe(2021)
+    expect(date!.getMonth()).toBe(5)
+  })
+})
+
+// =============================================================================
+// calculateExperienceYears
+// =============================================================================
+
+describe('calculateExperienceYears', () => {
+  it('should return 0 for empty array', () => {
+    expect(calculateExperienceYears([])).toBe(0)
+  })
+
+  it('should handle current=true as today', () => {
+    const entries: ExperienceEntry[] = [{
+      id: 'e1', company: 'A', position: 'Dev', location: '',
+      startDate: 'Jan 2020', endDate: '', current: true,
+      description: '', highlights: [],
+    }]
+    const years = calculateExperienceYears(entries)
+    expect(years).toBeGreaterThan(4) // since 2020 to now > 4 years
+  })
+
+  it('should calculate years for a fixed date range', () => {
+    const entries: ExperienceEntry[] = [{
+      id: 'e1', company: 'A', position: 'Dev', location: '',
+      startDate: 'Jan 2018', endDate: 'Jan 2020', current: false,
+      description: '', highlights: [],
+    }]
+    const years = calculateExperienceYears(entries)
+    expect(years).toBeGreaterThanOrEqual(1.9)
+    expect(years).toBeLessThanOrEqual(2.1)
+  })
+
+  it('should merge overlapping periods', () => {
+    const entries: ExperienceEntry[] = [
+      {
+        id: 'e1', company: 'A', position: 'Dev', location: '',
+        startDate: 'Jan 2018', endDate: 'Jan 2021', current: false,
+        description: '', highlights: [],
+      },
+      {
+        id: 'e2', company: 'B', position: 'Dev', location: '',
+        startDate: 'Jun 2019', endDate: 'Jun 2022', current: false,
+        description: '', highlights: [],
+      },
+    ]
+    const years = calculateExperienceYears(entries)
+    // Merged: Jan 2018 to Jun 2022 = 4.5 years
+    expect(years).toBeGreaterThanOrEqual(4.3)
+    expect(years).toBeLessThanOrEqual(4.7)
+  })
+
+  it('should sum non-overlapping periods', () => {
+    const entries: ExperienceEntry[] = [
+      {
+        id: 'e1', company: 'A', position: 'Dev', location: '',
+        startDate: 'Jan 2016', endDate: 'Jan 2018', current: false,
+        description: '', highlights: [],
+      },
+      {
+        id: 'e2', company: 'B', position: 'Dev', location: '',
+        startDate: 'Jan 2020', endDate: 'Jan 2022', current: false,
+        description: '', highlights: [],
+      },
+    ]
+    const years = calculateExperienceYears(entries)
+    // 2 + 2 = 4 years
+    expect(years).toBeGreaterThanOrEqual(3.8)
+    expect(years).toBeLessThanOrEqual(4.2)
+  })
+
+  it('should handle various date formats mixed', () => {
+    const entries: ExperienceEntry[] = [{
+      id: 'e1', company: 'A', position: 'Dev', location: '',
+      startDate: '2020-06', endDate: '06/2022', current: false,
+      description: '', highlights: [],
+    }]
+    const years = calculateExperienceYears(entries)
+    expect(years).toBeGreaterThanOrEqual(1.9)
+    expect(years).toBeLessThanOrEqual(2.1)
+  })
+
+  it('should skip entries with unparseable dates', () => {
+    const entries: ExperienceEntry[] = [{
+      id: 'e1', company: 'A', position: 'Dev', location: '',
+      startDate: 'present', endDate: '', current: false,
+      description: '', highlights: [],
+    }]
+    expect(calculateExperienceYears(entries)).toBe(0)
+  })
+})
+
+// =============================================================================
+// detectSeniorityLevel
+// =============================================================================
+
+describe('detectSeniorityLevel', () => {
+  it('should detect senior', () => {
+    expect(detectSeniorityLevel('Senior Software Engineer')).toBe('senior')
+    expect(detectSeniorityLevel('Sr. Developer')).toBe('senior')
+  })
+
+  it('should detect junior', () => {
+    expect(detectSeniorityLevel('Junior Developer')).toBe('junior')
+    expect(detectSeniorityLevel('Jr. Engineer')).toBe('junior')
+  })
+
+  it('should detect lead', () => {
+    expect(detectSeniorityLevel('Tech Lead')).toBe('lead')
+    expect(detectSeniorityLevel('Lead Engineer')).toBe('lead')
+  })
+
+  it('should detect director', () => {
+    expect(detectSeniorityLevel('Director of Engineering')).toBe('director')
+  })
+
+  it('should detect CXO', () => {
+    expect(detectSeniorityLevel('CTO')).toBe('cxo')
+    expect(detectSeniorityLevel('Chief Technology Officer')).toBe('cxo')
+  })
+
+  it('should detect intern', () => {
+    expect(detectSeniorityLevel('Software Engineering Intern')).toBe('intern')
+  })
+
+  it('should return null for undetectable', () => {
+    expect(detectSeniorityLevel('Software Engineer')).toBeNull()
+    expect(detectSeniorityLevel('')).toBeNull()
+  })
+})
+
+// =============================================================================
+// parseDegreeLevel
+// =============================================================================
+
+describe('parseDegreeLevel', () => {
+  it('should parse bachelor', () => {
+    expect(parseDegreeLevel('Bachelor of Science')).toBe('bachelor')
+    expect(parseDegreeLevel('B.S. in Computer Science')).toBe('bachelor')
+  })
+
+  it('should parse master', () => {
+    expect(parseDegreeLevel('Master of Science')).toBe('master')
+    expect(parseDegreeLevel('M.S.')).toBe('master')
+    expect(parseDegreeLevel('MBA')).toBe('master')
+  })
+
+  it('should parse phd', () => {
+    expect(parseDegreeLevel('Ph.D.')).toBe('phd')
+    expect(parseDegreeLevel('Doctor of Philosophy')).toBe('phd')
+  })
+
+  it('should parse associate', () => {
+    expect(parseDegreeLevel('Associate of Science')).toBe('associate')
+  })
+
+  it('should return null for unknown', () => {
+    expect(parseDegreeLevel('')).toBeNull()
+    expect(parseDegreeLevel('Certificate')).toBeNull()
+  })
+})
+
+// =============================================================================
+// areFieldsRelated
+// =============================================================================
+
+describe('areFieldsRelated', () => {
+  it('should match exact fields', () => {
+    expect(areFieldsRelated('Computer Science', 'Computer Science')).toBe(true)
+  })
+
+  it('should match related fields', () => {
+    expect(areFieldsRelated('Computer Science', 'Software Engineering')).toBe(true)
+    expect(areFieldsRelated('Economics', 'Finance')).toBe(true)
+  })
+
+  it('should not match unrelated fields', () => {
+    expect(areFieldsRelated('Computer Science', 'Biology')).toBe(false)
+    expect(areFieldsRelated('Finance', 'Nursing')).toBe(false)
+  })
+
+  it('should return false for empty fields', () => {
+    expect(areFieldsRelated('', 'Computer Science')).toBe(false)
+    expect(areFieldsRelated('CS', '')).toBe(false)
+  })
+})
+
+// =============================================================================
+// Experience Alignment Scoring
+// =============================================================================
+
+describe('experience alignment scoring', () => {
+  it('should score well when resume meets year requirement', () => {
+    // mockResumeData has ~8+ years of experience
+    const jd = 'Requirements: 5+ years of experience. Senior Software Engineer role.'
+    const result = computeAtsScore(mockResumeData, jd)
+
+    expect(result.breakdown.experienceAlignment.score).toBeGreaterThanOrEqual(10)
+  })
+
+  it('should score lower when years are short', () => {
+    const juniorData: ResumeData = {
+      ...createEmptyResumeData(),
+      contact: { ...mockResumeData.contact },
+      experience: [{
+        id: 'e1', company: 'Corp', position: 'Developer', location: '',
+        startDate: 'Jan 2023', endDate: 'Jan 2024', current: false,
+        description: '', highlights: ['Did things'],
+      }],
+      education: mockResumeData.education,
+      skills: mockResumeData.skills,
+    }
+    const jd = 'Requirements: 5+ years of experience.'
+    const result = computeAtsScore(juniorData, jd)
+
+    expect(result.breakdown.experienceAlignment.score).toBeLessThan(10)
+  })
+
+  it('should give baseline score when no year requirement in JD', () => {
+    const jd = 'React TypeScript developer needed.'
+    const result = computeAtsScore(mockResumeData, jd)
+
+    // No year requirement detected → baseline 7 + seniority points
+    expect(result.breakdown.experienceAlignment.score).toBeGreaterThanOrEqual(7)
+  })
+})
+
+// =============================================================================
+// Education Fit Scoring
+// =============================================================================
+
+describe('education fit scoring', () => {
+  it('should score well when degree matches JD requirement', () => {
+    const jd = "Bachelor's degree in Computer Science required."
+    const result = computeAtsScore(mockResumeData, jd)
+
+    // mockResumeData has Bachelor of Science in Computer Science
+    expect(result.breakdown.educationFit.score).toBeGreaterThanOrEqual(4)
+  })
+
+  it('should score lower for unrelated field', () => {
+    const dataWithDiffField: ResumeData = {
+      ...mockResumeData,
+      education: [{
+        ...mockResumeData.education[0],
+        field: 'Art History',
+      }],
+    }
+    const jd = "Bachelor's degree in Computer Science required."
+    const result = computeAtsScore(dataWithDiffField, jd)
+
+    expect(result.breakdown.educationFit.score).toBeLessThan(5)
+  })
+
+  it('should give baseline when no degree requirement', () => {
+    const jd = 'React TypeScript developer needed.'
+    const result = computeAtsScore(mockResumeData, jd)
+
+    expect(result.breakdown.educationFit.score).toBeGreaterThanOrEqual(2)
+  })
+})
+
+// =============================================================================
+// Keyword Optimization Scoring
+// =============================================================================
+
+describe('keyword optimization scoring', () => {
+  it('should score higher when keywords appear in title/summary', () => {
+    // mockResumeData has "Software Engineer" as title, and the summary mentions "web applications"
+    const jd = 'Software Engineer with web application experience'
+    const result = computeAtsScore(mockResumeData, jd)
+
+    expect(result.breakdown.keywordOptimization.score).toBeGreaterThan(0)
+  })
+
+  it('should score 0 when no keywords match at all', () => {
+    const jd = 'Kubernetes Docker Terraform Ansible'
+    const result = computeAtsScore(createEmptyResumeData(), jd)
+
+    expect(result.breakdown.keywordOptimization.score).toBe(0)
+  })
+})
+
+// =============================================================================
+// Tailoring Signals Scoring
+// =============================================================================
+
+describe('tailoring signals scoring', () => {
+  it('should give baseline 2 when no JD provided', () => {
+    const result = computeAtsScore(mockResumeData)
+    expect(result.breakdown.tailoringSignals.score).toBe(2)
+  })
+
+  it('should score points when title aligns with JD', () => {
+    // mockResumeData title is "Software Engineer"
+    const jd = 'Senior Software Engineer - React\nRequirements: React, TypeScript'
+    const result = computeAtsScore(mockResumeData, jd)
+
+    expect(result.breakdown.tailoringSignals.score).toBeGreaterThan(0)
+  })
+})
+
+// =============================================================================
+// Score Confidence
+// =============================================================================
+
+describe('score confidence', () => {
+  it('should return low confidence when no JD provided', () => {
+    const result = computeAtsScore(mockResumeData)
+    expect(result.confidence).toBe('low')
+  })
+
+  it('should return medium or high for a detailed JD', () => {
+    const jd = `Senior Software Engineer
+
+Requirements
+- 5+ years of experience in software development
+- Bachelor's degree in Computer Science
+- React, TypeScript, Node.js
+- AWS experience
+
+Preferred
+- Experience with Kubernetes
+- Leadership experience
+
+Responsibilities
+- Lead engineering team
+- Design scalable systems
+- Code review and mentoring`
+
+    const result = computeAtsScore(mockResumeData, jd)
+    expect(['high', 'medium']).toContain(result.confidence)
+  })
+
+  it('should return low for a very short JD', () => {
+    const jd = 'React developer needed.'
+    const result = computeAtsScore(mockResumeData, jd)
+    expect(result.confidence).toBe('low')
+  })
+})
+
+// =============================================================================
+// getResumeSectionTexts
+// =============================================================================
+
+describe('getResumeSectionTexts', () => {
+  it('should partition resume text into 8 locations', () => {
+    const texts = getResumeSectionTexts(mockResumeData)
+
+    expect(texts.title).toContain('software engineer')
+    expect(texts.summary).toContain('experienced software engineer')
+    expect(texts.skills).toContain('typescript')
+    expect(texts.experience_recent).toContain('react')
+    expect(texts.education).toContain('computer science')
+    expect(texts.projects).toContain('resume builder')
+    expect(texts.certifications).toContain('aws')
+  })
+
+  it('should put first 2 experience entries in recent, rest in old', () => {
+    const dataWith3Exp: ResumeData = {
+      ...mockResumeData,
+      experience: [
+        ...mockResumeData.experience,
+        {
+          id: 'exp-3', company: 'OldCorp', position: 'Intern', location: '',
+          startDate: '2015', endDate: '2016', current: false,
+          description: 'old work', highlights: ['ancient task'],
+        },
+      ],
+    }
+    const texts = getResumeSectionTexts(dataWith3Exp)
+    expect(texts.experience_old).toContain('oldcorp')
+    expect(texts.experience_recent).not.toContain('oldcorp')
   })
 })

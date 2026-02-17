@@ -2,11 +2,13 @@
 // Resume Builder - ATS Score Card Component
 // =============================================================================
 // Displays the overall ATS score (0-100) with a circular SVG progress ring.
-// Color-coded: red (<50), yellow (50-75), green (>75).
+// 5-tier color system with pass likelihood label and confidence indicator.
 
 interface AtsScoreCardProps {
   score: number;
   isCalculating?: boolean;
+  passLikelihood?: string;
+  confidence?: 'high' | 'medium' | 'low';
 }
 
 function getScoreColor(score: number): {
@@ -15,32 +17,55 @@ function getScoreColor(score: number): {
   bg: string;
   label: string;
 } {
-  if (score >= 75) {
+  if (score >= 85) {
+    return {
+      stroke: 'stroke-green-600',
+      text: 'text-green-700',
+      bg: 'bg-green-50',
+      label: 'Strong pass',
+    };
+  }
+  if (score >= 70) {
     return {
       stroke: 'stroke-green-500',
       text: 'text-green-600',
       bg: 'bg-green-50',
-      label: 'Great',
+      label: 'Likely pass',
     };
   }
-  if (score >= 50) {
+  if (score >= 55) {
     return {
       stroke: 'stroke-yellow-500',
       text: 'text-yellow-600',
       bg: 'bg-yellow-50',
-      label: 'Needs Work',
+      label: 'Uncertain',
+    };
+  }
+  if (score >= 40) {
+    return {
+      stroke: 'stroke-orange-500',
+      text: 'text-orange-600',
+      bg: 'bg-orange-50',
+      label: 'At risk',
     };
   }
   return {
     stroke: 'stroke-red-500',
     text: 'text-red-600',
     bg: 'bg-red-50',
-    label: 'Poor',
+    label: 'Unlikely to pass',
   };
 }
 
-export function AtsScoreCard({ score, isCalculating = false }: AtsScoreCardProps) {
+const CONFIDENCE_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+  high: { bg: 'bg-green-50 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400', label: 'High confidence' },
+  medium: { bg: 'bg-yellow-50 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-400', label: 'Medium confidence' },
+  low: { bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-600 dark:text-gray-400', label: 'Low confidence' },
+};
+
+export function AtsScoreCard({ score, isCalculating = false, passLikelihood, confidence }: AtsScoreCardProps) {
   const { stroke, text, bg, label } = getScoreColor(score);
+  const displayLabel = passLikelihood ?? label;
 
   // SVG circle parameters
   const size = 140;
@@ -49,6 +74,8 @@ export function AtsScoreCard({ score, isCalculating = false }: AtsScoreCardProps
   const circumference = 2 * Math.PI * radius;
   const progress = (score / 100) * circumference;
   const offset = circumference - progress;
+
+  const confidenceStyle = confidence ? CONFIDENCE_STYLES[confidence] : null;
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -67,7 +94,7 @@ export function AtsScoreCard({ score, isCalculating = false }: AtsScoreCardProps
             fill="none"
             stroke="currentColor"
             strokeWidth={strokeWidth}
-            className="text-gray-100"
+            className="text-gray-100 dark:text-gray-700"
           />
           {/* Progress circle */}
           <circle
@@ -89,7 +116,7 @@ export function AtsScoreCard({ score, isCalculating = false }: AtsScoreCardProps
           ) : (
             <>
               <span className={`text-3xl font-bold ${text}`}>{score}</span>
-              <span className="text-xs text-gray-500">/ 100</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">/ 100</span>
             </>
           )}
         </div>
@@ -97,8 +124,15 @@ export function AtsScoreCard({ score, isCalculating = false }: AtsScoreCardProps
       <div
         className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${bg} ${text}`}
       >
-        {isCalculating ? 'Calculating...' : `ATS Score: ${label}`}
+        {isCalculating ? 'Calculating...' : displayLabel}
       </div>
+      {confidenceStyle && !isCalculating && (
+        <div
+          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium ${confidenceStyle.bg} ${confidenceStyle.text}`}
+        >
+          {confidenceStyle.label}
+        </div>
+      )}
     </div>
   );
 }

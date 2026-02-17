@@ -1,21 +1,22 @@
 // =============================================================================
 // Resume Builder - Keyword Analysis Component
 // =============================================================================
-// Shows matched keywords (green badges) and missing keywords (red badges).
+// Shows matched keywords (green), synonym matches (blue), and missing (red).
 
-import { CheckCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, ArrowRightLeft } from 'lucide-react';
 import { Badge } from '@/components/ui';
 
 interface KeywordAnalysisProps {
   matched: string[];
   missing: string[];
+  partial?: string[];
 }
 
-export function KeywordAnalysis({ matched, missing }: KeywordAnalysisProps) {
-  if (matched.length === 0 && missing.length === 0) {
+export function KeywordAnalysis({ matched, missing, partial = [] }: KeywordAnalysisProps) {
+  if (matched.length === 0 && missing.length === 0 && partial.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-center">
-        <p className="text-sm text-gray-500">
+      <div className="rounded-lg border border-gray-200 dark:border-dark-edge bg-gray-50 dark:bg-dark-card p-4 text-center">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           Paste a job description above and click "Analyze" to see keyword matches.
         </p>
       </div>
@@ -29,7 +30,7 @@ export function KeywordAnalysis({ matched, missing }: KeywordAnalysisProps) {
         <div>
           <div className="mb-2 flex items-center gap-1.5">
             <CheckCircle className="h-4 w-4 text-green-500" />
-            <h4 className="text-sm font-medium text-gray-700">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Matched Keywords ({matched.length})
             </h4>
           </div>
@@ -43,12 +44,34 @@ export function KeywordAnalysis({ matched, missing }: KeywordAnalysisProps) {
         </div>
       )}
 
+      {/* Synonym Matches */}
+      {partial.length > 0 && (
+        <div>
+          <div className="mb-2 flex items-center gap-1.5">
+            <ArrowRightLeft className="h-4 w-4 text-blue-500" />
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Synonym Matches ({partial.length})
+            </h4>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {partial.map((keyword) => (
+              <Badge key={keyword} variant="blue" size="sm">
+                {keyword}
+              </Badge>
+            ))}
+          </div>
+          <p className="mt-1.5 text-xs text-gray-400">
+            Matched via equivalent term
+          </p>
+        </div>
+      )}
+
       {/* Missing Keywords */}
       {missing.length > 0 && (
         <div>
           <div className="mb-2 flex items-center gap-1.5">
             <AlertTriangle className="h-4 w-4 text-red-500" />
-            <h4 className="text-sm font-medium text-gray-700">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Missing Keywords ({missing.length})
             </h4>
           </div>
