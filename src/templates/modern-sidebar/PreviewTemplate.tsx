@@ -7,7 +7,7 @@
 import React from 'react';
 import type { TemplateProps } from '@/types/template';
 import type { SectionConfig } from '@/types/resume';
-import { EntryBlock, ContactLine } from '../shared';
+import { EntryBlock, ContactLine, SkillsBlock, CustomContentBlock } from '../shared';
 import { formatDateRange } from '../shared/DateRange';
 
 const SIDEBAR_SECTIONS = new Set(['contact', 'skills', 'languages', 'certifications', 'hobbies']);
@@ -88,21 +88,16 @@ const ModernSidebarPreview: React.FC<TemplateProps> = ({ resume }) => {
 
       case 'skills':
         if (data.skills.length === 0) return null;
-        return (
-          <div key={section.id} style={{ marginBottom: `${layout.sectionSpacing}px` }}>
-            <h2 style={sidebarTitleStyle}>{section.title}</h2>
-            {data.skills.map((category) => (
-              <div key={category.id} style={{ marginBottom: '8px' }}>
-                {category.category ? <div style={{ fontWeight: 600, fontSize: `${font.sizes.small}px`, fontFamily: font.family, color: 'rgba(255,255,255,0.9)', marginBottom: '2px' }}>
-                  {category.category}
-                </div> : null}
-                <div style={{ fontSize: `${font.sizes.small}px`, fontFamily: font.family, color: 'rgba(255,255,255,0.75)' }}>
-                  {category.items.join(', ')}
-                </div>
-              </div>
-            ))}
-          </div>
-        );
+        {
+          const sidebarFont = { ...font, sizes: { ...font.sizes, normal: font.sizes.small } };
+          const sidebarColors = { ...colors, text: 'rgba(255,255,255,0.75)', accent: 'rgba(255,255,255,0.9)' };
+          return (
+            <div key={section.id} style={{ marginBottom: `${layout.sectionSpacing}px` }}>
+              <h2 style={sidebarTitleStyle}>{section.title}</h2>
+              <SkillsBlock skills={data.skills} layout={data.skillsLayout} mode={data.skillsMode} font={sidebarFont} colors={sidebarColors} categoryColor="rgba(255,255,255,0.9)" />
+            </div>
+          );
+        }
 
       case 'languages':
         if (data.languages.length === 0) return null;
@@ -274,9 +269,13 @@ const ModernSidebarPreview: React.FC<TemplateProps> = ({ resume }) => {
             {data.customSections.map((cs) => (
               <div key={cs.id} style={{ marginBottom: `${layout.sectionSpacing}px` }}>
                 <h2 style={mainTitleStyle}>{cs.title}</h2>
-                {cs.entries.map((entry) => (
-                  <EntryBlock key={entry.id} title={entry.title} subtitle={entry.subtitle} dateRange={entry.date} description={entry.description} highlights={entry.highlights} font={font} colors={colors} spacing={layout.itemSpacing} />
-                ))}
+                {cs.content ? (
+                  <CustomContentBlock content={cs.content} font={font} colors={colors} />
+                ) : (
+                  cs.entries.map((entry) => (
+                    <EntryBlock key={entry.id} title={entry.title} subtitle={entry.subtitle} dateRange={entry.date} description={entry.description} highlights={entry.highlights} font={font} colors={colors} spacing={layout.itemSpacing} />
+                  ))
+                )}
               </div>
             ))}
           </React.Fragment>

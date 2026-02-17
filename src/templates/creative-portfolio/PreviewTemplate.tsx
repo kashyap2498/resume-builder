@@ -6,7 +6,7 @@
 import React from 'react';
 import type { TemplateProps } from '@/types/template';
 import type { SectionConfig } from '@/types/resume';
-import { EntryBlock, ContactLine } from '../shared';
+import { EntryBlock, ContactLine, SkillsBlock, CustomContentBlock } from '../shared';
 import { formatDateRange } from '../shared/DateRange';
 
 const SIDEBAR_SECTIONS = new Set(['contact', 'skills', 'languages', 'hobbies']);
@@ -49,17 +49,16 @@ const CreativePortfolioPreview: React.FC<TemplateProps> = ({ resume }) => {
         );
       case 'skills':
         if (data.skills.length === 0) return null;
-        return (
-          <div key={section.id} style={{ marginBottom: `${layout.sectionSpacing}px` }}>
-            <h2 style={sidebarTitleStyle}>{section.title}</h2>
-            {data.skills.map((category) => (
-              <div key={category.id} style={{ marginBottom: '8px' }}>
-                {category.category ? <div style={{ fontWeight: 600, fontSize: `${font.sizes.small}px`, color: accentColor, marginBottom: '3px' }}>{category.category}</div> : null}
-                <div style={{ fontSize: `${font.sizes.small}px`, color: 'rgba(255,255,255,0.7)' }}>{category.items.join(' / ')}</div>
-              </div>
-            ))}
-          </div>
-        );
+        {
+          const sidebarFont = { ...font, sizes: { ...font.sizes, normal: font.sizes.small } };
+          const sidebarColors = { ...colors, text: 'rgba(255,255,255,0.7)', accent: accentColor };
+          return (
+            <div key={section.id} style={{ marginBottom: `${layout.sectionSpacing}px` }}>
+              <h2 style={sidebarTitleStyle}>{section.title}</h2>
+              <SkillsBlock skills={data.skills} layout={data.skillsLayout} mode={data.skillsMode} font={sidebarFont} colors={sidebarColors} separator=" / " categoryColor={accentColor} />
+            </div>
+          );
+        }
       case 'languages':
         if (data.languages.length === 0) return null;
         return (
@@ -137,7 +136,7 @@ const CreativePortfolioPreview: React.FC<TemplateProps> = ({ resume }) => {
         return (<div key={section.id} style={{ marginBottom: `${layout.sectionSpacing}px` }}><h2 style={mainTitleStyle}>{section.title}</h2>{data.courses.map((entry) => (<EntryBlock key={entry.id} title={entry.name} subtitle={entry.institution} dateRange={entry.completionDate} description={entry.description} font={font} colors={colors} spacing={layout.itemSpacing} />))}</div>);
       case 'customSections':
         if (data.customSections.length === 0) return null;
-        return (<React.Fragment key={section.id}>{data.customSections.map((cs) => (<div key={cs.id} style={{ marginBottom: `${layout.sectionSpacing}px` }}><h2 style={mainTitleStyle}>{cs.title}</h2>{cs.entries.map((entry) => (<EntryBlock key={entry.id} title={entry.title} subtitle={entry.subtitle} dateRange={entry.date} description={entry.description} highlights={entry.highlights} font={font} colors={colors} spacing={layout.itemSpacing} />))}</div>))}</React.Fragment>);
+        return (<React.Fragment key={section.id}>{data.customSections.map((cs) => (<div key={cs.id} style={{ marginBottom: `${layout.sectionSpacing}px` }}><h2 style={mainTitleStyle}>{cs.title}</h2>{cs.content ? (<CustomContentBlock content={cs.content} font={font} colors={colors} />) : (cs.entries.map((entry) => (<EntryBlock key={entry.id} title={entry.title} subtitle={entry.subtitle} dateRange={entry.date} description={entry.description} highlights={entry.highlights} font={font} colors={colors} spacing={layout.itemSpacing} />)))}</div>))}</React.Fragment>);
       default: return null;
     }
   };

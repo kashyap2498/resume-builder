@@ -300,6 +300,19 @@ function getResumeFullText(data: ResumeData): string {
     parts.push(pub.title, pub.description);
   }
 
+  // Custom Sections
+  for (const cs of data.customSections) {
+    parts.push(cs.title);
+    if (cs.content) {
+      // Strip HTML tags to extract plain text
+      parts.push(cs.content.replace(/<[^>]*>/g, ' '));
+    }
+    for (const entry of cs.entries) {
+      parts.push(entry.title, entry.subtitle, entry.description);
+      parts.push(...entry.highlights);
+    }
+  }
+
   return parts.filter(Boolean).join(' ');
 }
 
@@ -312,6 +325,9 @@ function getAllHighlights(data: ResumeData): string[] {
   for (const edu of data.education) highlights.push(...edu.highlights);
   for (const proj of data.projects) highlights.push(...proj.highlights);
   for (const vol of data.volunteer) highlights.push(...vol.highlights);
+  for (const cs of data.customSections) {
+    for (const entry of cs.entries) highlights.push(...entry.highlights);
+  }
   return highlights;
 }
 

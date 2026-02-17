@@ -84,6 +84,8 @@ export interface EducationEntry {
 
 // -- Skills -------------------------------------------------------------------
 
+export type SkillsLayout = 'comma' | 'bullets' | 'vertical' | '2-column' | '3-column';
+
 export interface SkillCategory {
   id: string;
   category: string;
@@ -215,6 +217,7 @@ export interface CustomSectionEntry {
 export interface CustomSection {
   id: string;
   title: string;
+  content?: string;                  // HTML from TipTap rich text editor
   entries: CustomSectionEntry[];
 }
 
@@ -226,6 +229,8 @@ export interface ResumeData {
   experience: ExperienceEntry[];
   education: EducationEntry[];
   skills: SkillCategory[];
+  skillsLayout?: SkillsLayout;
+  skillsMode?: 'freeform' | 'categories';
   projects: ProjectEntry[];
   certifications: CertificationEntry[];
   languages: LanguageEntry[];

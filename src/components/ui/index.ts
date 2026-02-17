@@ -45,3 +45,6 @@ export type { MonthYearPickerProps } from './MonthYearPicker';
 
 export { RichTextEditor } from './RichTextEditor';
 export type { RichTextEditorProps } from './RichTextEditor';
+
+export { TagInput } from './TagInput';
+export type { TagInputProps } from './TagInput';

@@ -8,6 +8,8 @@ import type { TemplateProps } from '@/types/template';
 import type { SectionConfig } from '@/types/resume';
 import { formatDateRange } from '../shared/DateRange';
 import { resolvePdfFontFamily } from '@/utils/pdfFontRegistry'
+import SkillsBlockPdf from '../shared/SkillsBlockPdf';
+import CustomContentBlockPdf from '../shared/CustomContentBlockPdf';
 
 const AcademicResearchPdf: React.FC<TemplateProps> = ({ resume }) => {
   const { data, styling, sections } = resume;
@@ -60,7 +62,7 @@ const AcademicResearchPdf: React.FC<TemplateProps> = ({ resume }) => {
         return (<View key={section.id} style={styles.sectionContainer}><Text style={styles.sectionTitle}>{section.title}</Text>{data.education.map((entry) => (<View key={entry.id} style={styles.entryBlock}><View style={styles.entryRow}><Text style={styles.entryTitle}>{entry.degree}{entry.field ? ` in ${entry.field}` : ''}</Text><Text style={styles.entryDate}>{formatDateRange(entry.startDate, entry.endDate)}</Text></View><Text style={styles.entrySubtitle}>{entry.institution}</Text>{entry.gpa ? <Text style={styles.description}>GPA: {entry.gpa}</Text> : null}{entry.description ? <Text style={styles.description}>{entry.description}</Text> : null}{entry.highlights.length > 0 && renderBullets(entry.highlights)}</View>))}</View>);
       case 'skills':
         if (data.skills.length === 0) return null;
-        return (<View key={section.id} style={styles.sectionContainer}><Text style={styles.sectionTitle}>{section.title}</Text>{data.skills.map((category) => (<Text key={category.id} style={styles.skillLine}>{category.category ? <Text style={styles.skillCategory}>{category.category}: </Text> : null}{category.items.join(', ')}</Text>))}</View>);
+        return (<View key={section.id} style={styles.sectionContainer}><Text style={styles.sectionTitle}>{section.title}</Text><SkillsBlockPdf skills={data.skills} layout={data.skillsLayout} mode={data.skillsMode} fontSize={font.sizes.normal} fontFamily={bodyFont} textColor={colors.text} separator=", " categoryWeight={700} categoryColor={colors.text} categoryFontFamily={bodyFont} /></View>);
       case 'projects':
         if (data.projects.length === 0) return null;
         return (<View key={section.id} style={styles.sectionContainer}><Text style={styles.sectionTitle}>Research Projects</Text>{data.projects.map((entry) => (<View key={entry.id} style={styles.entryBlock}><View style={styles.entryRow}><Text style={styles.entryTitle}>{entry.name}</Text><Text style={styles.entryDate}>{formatDateRange(entry.startDate, entry.endDate)}</Text></View>{entry.technologies.length > 0 && <Text style={styles.entrySubtitle}>{entry.technologies.join(', ')}</Text>}{entry.description ? <Text style={styles.description}>{entry.description}</Text> : null}{entry.highlights.length > 0 && renderBullets(entry.highlights)}</View>))}</View>);
@@ -90,7 +92,7 @@ const AcademicResearchPdf: React.FC<TemplateProps> = ({ resume }) => {
         return (<View key={section.id} style={styles.sectionContainer}><Text style={styles.sectionTitle}>{section.title}</Text>{data.courses.map((entry) => (<View key={entry.id} style={styles.entryBlock}><View style={styles.entryRow}><Text style={styles.entryTitle}>{entry.name}</Text><Text style={styles.entryDate}>{entry.completionDate}</Text></View><Text style={styles.entrySubtitle}>{entry.institution}</Text>{entry.description ? <Text style={styles.description}>{entry.description}</Text> : null}</View>))}</View>);
       case 'customSections':
         if (data.customSections.length === 0) return null;
-        return (<React.Fragment key={section.id}>{data.customSections.map((cs) => (<View key={cs.id} style={styles.sectionContainer}><Text style={styles.sectionTitle}>{cs.title}</Text>{cs.entries.map((entry) => (<View key={entry.id} style={styles.entryBlock}><View style={styles.entryRow}><Text style={styles.entryTitle}>{entry.title}</Text><Text style={styles.entryDate}>{entry.date}</Text></View>{entry.subtitle ? <Text style={styles.entrySubtitle}>{entry.subtitle}</Text> : null}{entry.description ? <Text style={styles.description}>{entry.description}</Text> : null}{entry.highlights.length > 0 && renderBullets(entry.highlights)}</View>))}</View>))}</React.Fragment>);
+        return (<React.Fragment key={section.id}>{data.customSections.map((cs) => (<View key={cs.id} style={styles.sectionContainer}><Text style={styles.sectionTitle}>{cs.title}</Text>{cs.content ? (<CustomContentBlockPdf content={cs.content} fontSize={font.sizes.normal} fontFamily={bodyFont} textColor={colors.text} />) : (cs.entries.map((entry) => (<View key={entry.id} style={styles.entryBlock}><View style={styles.entryRow}><Text style={styles.entryTitle}>{entry.title}</Text><Text style={styles.entryDate}>{entry.date}</Text></View>{entry.subtitle ? <Text style={styles.entrySubtitle}>{entry.subtitle}</Text> : null}{entry.description ? <Text style={styles.description}>{entry.description}</Text> : null}{entry.highlights.length > 0 && renderBullets(entry.highlights)}</View>)))}</View>))}</React.Fragment>);
       default: return null;
     }
   };

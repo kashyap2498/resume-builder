@@ -8,6 +8,8 @@ import type { TemplateProps } from '@/types/template';
 import type { SectionConfig } from '@/types/resume';
 import { formatDateRange } from '../shared/DateRange';
 import { resolvePdfFontFamily } from '@/utils/pdfFontRegistry'
+import SkillsBlockPdf from '../shared/SkillsBlockPdf';
+import CustomContentBlockPdf from '../shared/CustomContentBlockPdf';
 
 const SIDEBAR_SECTIONS = new Set(['skills', 'languages', 'certifications', 'hobbies']);
 
@@ -187,14 +189,7 @@ const DeveloperStackPdf: React.FC<TemplateProps> = ({ resume }) => {
         return (
           <View key={section.id} style={styles.sidebarSection}>
             <Text style={styles.sidebarSectionTitle}>{'// '}{section.title}</Text>
-            {data.skills.map((category) => (
-              <View key={category.id} style={{ marginBottom: 6 }}>
-                {category.category ? <Text style={styles.sidebarCategoryName}>{category.category}</Text> : null}
-                {category.items.map((s, i) => (
-                  <Text key={i} style={styles.sidebarSkillItem}>{'- '}{s}</Text>
-                ))}
-              </View>
-            ))}
+            <SkillsBlockPdf skills={data.skills} layout={data.skillsLayout} mode={data.skillsMode} fontSize={font.sizes.small} fontFamily={bodyFont} textColor={'#abb2bf'} separator=", " categoryWeight={700} categoryColor={'#e06c75'} categoryFontFamily={bodyFont} />
           </View>
         );
 
@@ -328,14 +323,18 @@ const DeveloperStackPdf: React.FC<TemplateProps> = ({ resume }) => {
             {data.customSections.map((cs) => (
               <View key={cs.id} style={styles.mainSection}>
                 <Text style={styles.mainSectionTitle}>{cs.title}</Text>
-                {cs.entries.map((entry) => (
-                  <View key={entry.id} style={styles.entryBlock}>
-                    <View style={styles.entryRow}><Text style={styles.entryTitle}>{entry.title}</Text><Text style={styles.entryDate}>{entry.date}</Text></View>
-                    {entry.subtitle ? <Text style={styles.entrySubtitle}>{entry.subtitle}</Text> : null}
-                    {entry.description ? <Text style={styles.description}>{entry.description}</Text> : null}
-                    {entry.highlights.length > 0 && renderBullets(entry.highlights)}
-                  </View>
-                ))}
+                {cs.content ? (
+                  <CustomContentBlockPdf content={cs.content} fontSize={font.sizes.normal} fontFamily={bodyFont} textColor={colors.text} />
+                ) : (
+                  cs.entries.map((entry) => (
+                    <View key={entry.id} style={styles.entryBlock}>
+                      <View style={styles.entryRow}><Text style={styles.entryTitle}>{entry.title}</Text><Text style={styles.entryDate}>{entry.date}</Text></View>
+                      {entry.subtitle ? <Text style={styles.entrySubtitle}>{entry.subtitle}</Text> : null}
+                      {entry.description ? <Text style={styles.description}>{entry.description}</Text> : null}
+                      {entry.highlights.length > 0 && renderBullets(entry.highlights)}
+                    </View>
+                  ))
+                )}
               </View>
             ))}
           </React.Fragment>

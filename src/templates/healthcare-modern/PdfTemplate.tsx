@@ -8,6 +8,8 @@ import type { TemplateProps } from '@/types/template';
 import type { SectionConfig } from '@/types/resume';
 import { formatDateRange } from '../shared/DateRange';
 import { resolvePdfFontFamily } from '@/utils/pdfFontRegistry'
+import SkillsBlockPdf from '../shared/SkillsBlockPdf';
+import CustomContentBlockPdf from '../shared/CustomContentBlockPdf';
 
 const SIDEBAR_SECTIONS = new Set(['contact', 'skills', 'certifications', 'languages', 'hobbies']);
 
@@ -57,7 +59,7 @@ const HealthcareModernPdf: React.FC<TemplateProps> = ({ resume }) => {
         return (<View key={section.id} style={styles.sidebarSection}><Text style={styles.name}>{data.contact.firstName} {data.contact.lastName}</Text>{data.contact.title ? <Text style={styles.jobTitle}>{data.contact.title}</Text> : null}{contactItems.map((item, i) => (<Text key={i} style={styles.contactItem}>{item}</Text>))}</View>);
       case 'skills':
         if (data.skills.length === 0) return null;
-        return (<View key={section.id} style={styles.sidebarSection}><Text style={styles.sidebarSectionTitle}>{section.title}</Text>{data.skills.map((category) => (<View key={category.id} style={{ marginBottom: 6 }}>{category.category ? <Text style={styles.sidebarCategoryName}>{category.category}</Text> : null}<Text style={styles.sidebarText}>{category.items.join(', ')}</Text></View>))}</View>);
+        return (<View key={section.id} style={styles.sidebarSection}><Text style={styles.sidebarSectionTitle}>{section.title}</Text><SkillsBlockPdf skills={data.skills} layout={data.skillsLayout} mode={data.skillsMode} fontSize={font.sizes.small} fontFamily={bodyFont} textColor={'rgba(255,255,255,0.7)'} separator=", " categoryWeight={700} categoryColor={'rgba(255,255,255,0.9)'} categoryFontFamily={bodyFont} /></View>);
       case 'certifications':
         if (data.certifications.length === 0) return null;
         return (<View key={section.id} style={styles.sidebarSection}><Text style={styles.sidebarSectionTitle}>{section.title}</Text>{data.certifications.map((entry) => (<View key={entry.id} style={{ marginBottom: 6 }}><Text style={styles.sidebarEntryTitle}>{entry.name}</Text><Text style={styles.sidebarEntrySubtitle}>{entry.issuer}</Text>{entry.date ? <Text style={styles.sidebarEntrySubtitle}>{entry.date}</Text> : null}</View>))}</View>);
@@ -105,7 +107,7 @@ const HealthcareModernPdf: React.FC<TemplateProps> = ({ resume }) => {
         return (<View key={section.id} style={styles.mainSection}><Text style={styles.mainSectionTitle}>{section.title}</Text>{data.courses.map((entry) => (<View key={entry.id} style={styles.entryBlock}><View style={styles.entryRow}><Text style={styles.entryTitle}>{entry.name}</Text><Text style={styles.entryDate}>{entry.completionDate}</Text></View><Text style={styles.entrySubtitle}>{entry.institution}</Text>{entry.description ? <Text style={styles.description}>{entry.description}</Text> : null}</View>))}</View>);
       case 'customSections':
         if (data.customSections.length === 0) return null;
-        return (<React.Fragment key={section.id}>{data.customSections.map((cs) => (<View key={cs.id} style={styles.mainSection}><Text style={styles.mainSectionTitle}>{cs.title}</Text>{cs.entries.map((entry) => (<View key={entry.id} style={styles.entryBlock}><View style={styles.entryRow}><Text style={styles.entryTitle}>{entry.title}</Text><Text style={styles.entryDate}>{entry.date}</Text></View>{entry.subtitle ? <Text style={styles.entrySubtitle}>{entry.subtitle}</Text> : null}{entry.description ? <Text style={styles.description}>{entry.description}</Text> : null}{entry.highlights.length > 0 && renderBullets(entry.highlights)}</View>))}</View>))}</React.Fragment>);
+        return (<React.Fragment key={section.id}>{data.customSections.map((cs) => (<View key={cs.id} style={styles.mainSection}><Text style={styles.mainSectionTitle}>{cs.title}</Text>{cs.content ? (<CustomContentBlockPdf content={cs.content} fontSize={font.sizes.normal} fontFamily={bodyFont} textColor={colors.text} />) : (cs.entries.map((entry) => (<View key={entry.id} style={styles.entryBlock}><View style={styles.entryRow}><Text style={styles.entryTitle}>{entry.title}</Text><Text style={styles.entryDate}>{entry.date}</Text></View>{entry.subtitle ? <Text style={styles.entrySubtitle}>{entry.subtitle}</Text> : null}{entry.description ? <Text style={styles.description}>{entry.description}</Text> : null}{entry.highlights.length > 0 && renderBullets(entry.highlights)}</View>)))}</View>))}</React.Fragment>);
       default: return null;
     }
   };

@@ -11,6 +11,7 @@ import type {
   ExperienceEntry,
   EducationEntry,
   SkillCategory,
+  SkillsLayout,
   ProjectEntry,
   CertificationEntry,
   LanguageEntry,
@@ -63,6 +64,8 @@ interface ResumeActions {
 
   // -- Skills -----------------------------------------------------------------
   updateSkills: (skills: SkillCategory[]) => void;
+  updateSkillsLayout: (layout: SkillsLayout) => void;
+  updateSkillsMode: (mode: 'freeform' | 'categories') => void;
 
   // -- Projects ---------------------------------------------------------------
   addProject: (entry: Omit<ProjectEntry, 'id'>) => void;
@@ -161,6 +164,29 @@ export const useResumeStore = create<ResumeStore>((set) => ({
                 : String(item),
             ),
           })),
+        },
+      };
+    }
+    // Auto-migrate custom sections: convert entries to HTML content if no content field
+    if (resume?.data?.customSections) {
+      resume = {
+        ...resume,
+        data: {
+          ...resume.data,
+          customSections: resume.data.customSections.map((cs) => {
+            if (!cs.content && cs.entries.length > 0) {
+              const parts: string[] = [];
+              for (const entry of cs.entries) {
+                if (entry.title) parts.push(`<p><strong>${entry.title}</strong>${entry.subtitle ? ` — ${entry.subtitle}` : ''}${entry.date ? ` (${entry.date})` : ''}</p>`);
+                if (entry.description) parts.push(`<p>${entry.description}</p>`);
+                if (entry.highlights.length > 0) {
+                  parts.push(`<ul>${entry.highlights.map((h) => `<li><p>${h}</p></li>`).join('')}</ul>`);
+                }
+              }
+              return { ...cs, content: parts.join('') };
+            }
+            return cs;
+          }),
         },
       };
     }
@@ -276,6 +302,18 @@ export const useResumeStore = create<ResumeStore>((set) => ({
     mutate(set, (r) => ({
       ...r,
       data: { ...r.data, skills },
+    })),
+
+  updateSkillsLayout: (layout) =>
+    mutate(set, (r) => ({
+      ...r,
+      data: { ...r.data, skillsLayout: layout },
+    })),
+
+  updateSkillsMode: (mode) =>
+    mutate(set, (r) => ({
+      ...r,
+      data: { ...r.data, skillsMode: mode },
     })),
 
   // -- Projects ---------------------------------------------------------------

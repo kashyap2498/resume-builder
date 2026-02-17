@@ -7,7 +7,7 @@
 import React from 'react';
 import type { TemplateProps } from '@/types/template';
 import type { SectionConfig } from '@/types/resume';
-import { SectionHeading, EntryBlock, ContactLine, Divider } from '../shared';
+import { SectionHeading, EntryBlock, ContactLine, Divider, SkillsBlock, CustomContentBlock } from '../shared';
 import { formatDateRange } from '../shared/DateRange';
 
 const AtsStandardPreview: React.FC<TemplateProps> = ({ resume }) => {
@@ -120,16 +120,7 @@ const AtsStandardPreview: React.FC<TemplateProps> = ({ resume }) => {
         return (
           <div key={section.id} style={{ marginBottom: `${layout.sectionSpacing}px` }}>
             <SectionHeading title={section.title} font={font} colors={{ ...colors, primary: colors.text }} variant="uppercase" showDivider dividerStyle="line" />
-            {data.skills.map((category) => (
-              <div key={category.id} style={{ marginBottom: '4px' }}>
-                {category.category ? <><span style={{ fontWeight: 700, fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: colors.text }}>
-                  {category.category}:
-                </span>{' '}</> : null}
-                <span style={{ fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: colors.text }}>
-                  {category.items.join(', ')}
-                </span>
-              </div>
-            ))}
+            <SkillsBlock skills={data.skills} layout={data.skillsLayout} mode={data.skillsMode} font={font} colors={colors} categoryColor={colors.text} />
           </div>
         );
 
@@ -323,19 +314,23 @@ const AtsStandardPreview: React.FC<TemplateProps> = ({ resume }) => {
             {data.customSections.map((cs) => (
               <div key={cs.id} style={{ marginBottom: `${layout.sectionSpacing}px` }}>
                 <SectionHeading title={cs.title} font={font} colors={{ ...colors, primary: colors.text }} variant="uppercase" showDivider dividerStyle="line" />
-                {cs.entries.map((entry) => (
-                  <EntryBlock
-                    key={entry.id}
-                    title={entry.title}
-                    subtitle={entry.subtitle}
-                    dateRange={entry.date}
-                    description={entry.description}
-                    highlights={entry.highlights}
-                    font={font}
-                    colors={colors}
-                    spacing={layout.itemSpacing}
-                  />
-                ))}
+                {cs.content ? (
+                  <CustomContentBlock content={cs.content} font={font} colors={colors} />
+                ) : (
+                  cs.entries.map((entry) => (
+                    <EntryBlock
+                      key={entry.id}
+                      title={entry.title}
+                      subtitle={entry.subtitle}
+                      dateRange={entry.date}
+                      description={entry.description}
+                      highlights={entry.highlights}
+                      font={font}
+                      colors={colors}
+                      spacing={layout.itemSpacing}
+                    />
+                  ))
+                )}
               </div>
             ))}
           </React.Fragment>

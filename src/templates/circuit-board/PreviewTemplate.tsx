@@ -7,7 +7,7 @@
 import React from 'react';
 import type { TemplateProps } from '@/types/template';
 import type { SectionConfig } from '@/types/resume';
-import { EntryBlock, ContactLine } from '../shared';
+import { EntryBlock, ContactLine, SkillsBlock, CustomContentBlock } from '../shared';
 import { formatDateRange } from '../shared/DateRange';
 
 const SIDEBAR_SECTIONS = new Set(['skills', 'certifications', 'languages', 'hobbies']);
@@ -58,21 +58,16 @@ const CircuitBoardPreview: React.FC<TemplateProps> = ({ resume }) => {
     switch (section.type) {
       case 'skills':
         if (data.skills.length === 0) return null;
-        return (
-          <div key={section.id} style={{ marginBottom: `${layout.sectionSpacing}px` }}>
-            <h2 style={sidebarTitleStyle}>{section.title}</h2>
-            {data.skills.map((category) => (
-              <div key={category.id} style={{ marginBottom: '8px' }}>
-                {category.category ? <div style={{ fontWeight: 700, fontSize: `${font.sizes.small}px`, fontFamily: '"Courier New", monospace', color: accentColor, marginBottom: '2px' }}>
-                  {'> '}{category.category}
-                </div> : null}
-                <div style={{ fontSize: `${font.sizes.small}px`, fontFamily: font.family, color: colors.lightText }}>
-                  {category.items.join(', ')}
-                </div>
-              </div>
-            ))}
-          </div>
-        );
+        {
+          const sidebarFont = { ...font, sizes: { ...font.sizes, normal: font.sizes.small } };
+          const sidebarColors = { ...colors, text: colors.lightText, accent: accentColor };
+          return (
+            <div key={section.id} style={{ marginBottom: `${layout.sectionSpacing}px` }}>
+              <h2 style={sidebarTitleStyle}>{section.title}</h2>
+              <SkillsBlock skills={data.skills} layout={data.skillsLayout} mode={data.skillsMode} font={sidebarFont} colors={sidebarColors} categoryWeight={700} categoryColor={accentColor} />
+            </div>
+          );
+        }
 
       case 'certifications':
         if (data.certifications.length === 0) return null;
@@ -242,9 +237,13 @@ const CircuitBoardPreview: React.FC<TemplateProps> = ({ resume }) => {
             {data.customSections.map((cs) => (
               <div key={cs.id} style={{ marginBottom: `${layout.sectionSpacing}px` }}>
                 <h2 style={mainTitleStyle}>{cs.title}</h2>
-                {cs.entries.map((entry) => (
-                  <EntryBlock key={entry.id} title={entry.title} subtitle={entry.subtitle} dateRange={entry.date} description={entry.description} highlights={entry.highlights} font={font} colors={colors} spacing={layout.itemSpacing} />
-                ))}
+                {cs.content ? (
+                  <CustomContentBlock content={cs.content} font={font} colors={colors} />
+                ) : (
+                  cs.entries.map((entry) => (
+                    <EntryBlock key={entry.id} title={entry.title} subtitle={entry.subtitle} dateRange={entry.date} description={entry.description} highlights={entry.highlights} font={font} colors={colors} spacing={layout.itemSpacing} />
+                  ))
+                )}
               </div>
             ))}
           </React.Fragment>

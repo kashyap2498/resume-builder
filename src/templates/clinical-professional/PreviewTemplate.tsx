@@ -6,7 +6,7 @@
 import React from 'react';
 import type { TemplateProps } from '@/types/template';
 import type { SectionConfig } from '@/types/resume';
-import { EntryBlock, ContactLine } from '../shared';
+import { EntryBlock, ContactLine, SkillsBlock, CustomContentBlock } from '../shared';
 import { formatDateRange } from '../shared/DateRange';
 
 const ClinicalProfessionalPreview: React.FC<TemplateProps> = ({ resume }) => {
@@ -92,12 +92,7 @@ const ClinicalProfessionalPreview: React.FC<TemplateProps> = ({ resume }) => {
         return (
           <div key={section.id} style={{ marginBottom: `${layout.sectionSpacing}px` }}>
             <h2 style={sectionTitleStyle}>{section.title}</h2>
-            {data.skills.map((category) => (
-              <div key={category.id} style={{ marginBottom: '6px' }}>
-                {category.category ? <span style={{ fontWeight: 700, fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: medBlue }}>{category.category}: </span> : null}
-                <span style={{ fontSize: `${font.sizes.normal}px`, fontFamily: font.family, color: colors.text }}>{category.items.join(', ')}</span>
-              </div>
-            ))}
+            <SkillsBlock skills={data.skills} layout={data.skillsLayout} mode={data.skillsMode} font={font} colors={colors} categoryColor={medBlue} />
           </div>
         );
 
@@ -209,7 +204,13 @@ const ClinicalProfessionalPreview: React.FC<TemplateProps> = ({ resume }) => {
             {data.customSections.map((cs) => (
               <div key={cs.id} style={{ marginBottom: `${layout.sectionSpacing}px` }}>
                 <h2 style={sectionTitleStyle}>{cs.title}</h2>
-                {cs.entries.map((entry) => (<EntryBlock key={entry.id} title={entry.title} subtitle={entry.subtitle} dateRange={entry.date} description={entry.description} highlights={entry.highlights} font={font} colors={colors} spacing={layout.itemSpacing} />))}
+                {cs.content ? (
+                  <CustomContentBlock content={cs.content} font={font} colors={colors} />
+                ) : (
+                  cs.entries.map((entry) => (
+                    <EntryBlock key={entry.id} title={entry.title} subtitle={entry.subtitle} dateRange={entry.date} description={entry.description} highlights={entry.highlights} font={font} colors={colors} spacing={layout.itemSpacing} />
+                  ))
+                )}
               </div>
             ))}
           </React.Fragment>

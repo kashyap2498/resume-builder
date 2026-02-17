@@ -117,6 +117,8 @@ export const SAMPLE_RESUME: Resume = {
         items: ['User Interviews', 'A/B Testing', 'Usability Testing'],
       },
     ],
+    skillsLayout: 'comma',
+    skillsMode: 'categories',
     projects: [],
     certifications: [],
     languages: [],

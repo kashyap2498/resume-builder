@@ -20,3 +20,15 @@ export { formatDateRange } from './DateRange';
 
 export { default as Divider } from './Divider';
 export type { DividerProps } from './Divider';
+
+export { default as SkillsBlock } from './SkillsBlock';
+export type { SkillsBlockProps } from './SkillsBlock';
+
+export { default as SkillsBlockPdf } from './SkillsBlockPdf';
+export type { SkillsBlockPdfProps } from './SkillsBlockPdf';
+
+export { default as CustomContentBlock } from './CustomContentBlock';
+export type { CustomContentBlockProps } from './CustomContentBlock';
+
+export { default as CustomContentBlockPdf } from './CustomContentBlockPdf';
+export type { CustomContentBlockPdfProps } from './CustomContentBlockPdf';
