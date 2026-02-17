@@ -10,7 +10,7 @@ import { Modal, Button } from '@/components/ui';
 import { useFileImport } from '@/hooks/useFileImport';
 import { useResumeStore } from '@/store/resumeStore';
 import type { ResumeData, Resume } from '@/types/resume';
-import { ImportPreview } from './ImportPreview';
+import { ImportReview } from './ImportReview';
 
 interface ImportModalProps {
   open: boolean;
@@ -162,6 +162,15 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
       if (data.education) updatedData.education = data.education;
       if (data.skills) updatedData.skills = data.skills;
       if (data.certifications) updatedData.certifications = data.certifications;
+      if (data.projects) updatedData.projects = data.projects;
+      if (data.languages) updatedData.languages = data.languages;
+      if (data.volunteer) updatedData.volunteer = data.volunteer;
+      if (data.awards) updatedData.awards = data.awards;
+      if (data.publications) updatedData.publications = data.publications;
+      if (data.references) updatedData.references = data.references;
+      if (data.hobbies) updatedData.hobbies = data.hobbies;
+      if (data.affiliations) updatedData.affiliations = data.affiliations;
+      if (data.courses) updatedData.courses = data.courses;
 
       // Auto-enable sections that have imported data
       const sectionDataMap: Record<string, boolean> = {
@@ -170,6 +179,15 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
         education: (data.education?.length ?? 0) > 0,
         skills: (data.skills?.length ?? 0) > 0,
         certifications: (data.certifications?.length ?? 0) > 0,
+        projects: (data.projects?.length ?? 0) > 0,
+        languages: (data.languages?.length ?? 0) > 0,
+        volunteer: (data.volunteer?.length ?? 0) > 0,
+        awards: (data.awards?.length ?? 0) > 0,
+        publications: (data.publications?.length ?? 0) > 0,
+        references: (data.references?.length ?? 0) > 0,
+        hobbies: (data.hobbies?.items?.length ?? 0) > 0,
+        affiliations: (data.affiliations?.length ?? 0) > 0,
+        courses: (data.courses?.length ?? 0) > 0,
       };
 
       const updatedSections = currentResume.sections.map((section) => {
@@ -203,7 +221,8 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
       open={open}
       onClose={handleClose}
       title="Import Resume"
-      size="lg"
+      size={showPreview ? 'xl' : 'lg'}
+      className={showPreview ? 'max-w-4xl max-h-[95vh]' : undefined}
     >
       {/* Preview mode */}
       {showPreview && (
@@ -212,8 +231,10 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
             <ShieldCheck className="h-4 w-4 shrink-0 text-green-600" />
             <span>Imported data has been sanitized for security.</span>
           </div>
-          <ImportPreview
+          <ImportReview
             parsedData={jsonData ?? result!.parsedData}
+            rawText={result?.rawText ?? ''}
+            parseMetadata={result?.parseMetadata}
             onApply={handleApplyData}
             onCancel={resetAll}
           />

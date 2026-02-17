@@ -8,7 +8,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { extractTextFromPdf } from '@/utils/pdfParser';
 import { extractTextFromDocx } from '@/utils/docxParser';
-import { parseResumeText } from '@/utils/resumeParser';
+import { parseResumeText, parseResumeTextWithMetadata } from '@/utils/resumeParser';
+import type { ParseMetadata } from '@/utils/resumeParser';
 import { sanitizeResumeData } from '@/utils/sanitize';
 import type { ResumeData } from '@/types/resume';
 
@@ -18,6 +19,7 @@ export type ImportStatus = 'idle' | 'reading' | 'parsing' | 'done' | 'error';
 export interface FileImportResult {
   rawText: string;
   parsedData: Partial<ResumeData>;
+  parseMetadata?: ParseMetadata;
   fileName: string;
   fileType: ImportFileType;
 }
@@ -125,12 +127,14 @@ export function useFileImport(): UseFileImportReturn {
       }
 
       // Step 3: Parse text into structured resume data
-      const parsedData = sanitizeResumeData(parseResumeText(rawText));
+      const { data: rawParsedData, metadata: parseMetadata } = parseResumeTextWithMetadata(rawText);
+      const parsedData = sanitizeResumeData(rawParsedData);
       if (signal.aborted) return;
 
       setResult({
         rawText,
         parsedData,
+        parseMetadata,
         fileName: file.name,
         fileType,
       });
