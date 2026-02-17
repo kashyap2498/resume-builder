@@ -2,7 +2,7 @@
 // Resume Builder - AppShell (3-panel layout)
 // =============================================================================
 //
-// Desktop  : 300px sidebar | flex-1 editor | 540px preview
+// Desktop  : 336px sidebar | flex-1 editor | 580px preview
 // Tablet   : toggle between editor and preview
 // Mobile   : tabs for sections / editor / preview
 // =============================================================================
@@ -62,7 +62,7 @@ export default function AppShell() {
 
   // -- Toggle bar component (shared across layouts) ---------------------------
   const DocToggleBar = (
-    <div className="flex items-center justify-center border-b border-gray-200 bg-white py-1.5 shrink-0">
+    <div className="flex items-center justify-center border-b border-gray-200 dark:border-dark-edge bg-white/90 dark:bg-dark-surface backdrop-blur-lg py-1.5 shrink-0">
       <Tabs
         tabs={docTabs}
         activeTab={activeDocType}
@@ -84,20 +84,20 @@ export default function AppShell() {
       : (['sections', 'editor', 'preview'] as const)
 
     layoutContent = (
-      <div className="flex h-screen flex-col bg-gray-50">
+      <div className="flex h-screen flex-col bg-mesh-gradient">
         <TopBar />
         {DocToggleBar}
 
         {/* Tab bar */}
-        <div className="flex border-b border-gray-200 bg-white shrink-0">
+        <div className="flex border-b border-gray-200 dark:border-dark-edge bg-white/90 dark:bg-dark-surface backdrop-blur-lg shrink-0">
           {mobileTabs.map((tab) => (
             <button
               key={tab}
               onClick={() => setMobileTab(tab)}
               className={`flex-1 py-2.5 text-xs font-medium capitalize transition-colors ${
                 mobileTab === tab
-                  ? 'border-b-2 border-blue-600 text-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }`}
             >
               {tab}
@@ -134,18 +134,18 @@ export default function AppShell() {
   } else if (isTablet) {
     // -- Tablet layout --------------------------------------------------------
     layoutContent = (
-      <div className="flex h-screen flex-col bg-gray-50">
+      <div className="flex h-screen flex-col bg-mesh-gradient">
         <TopBar />
         {DocToggleBar}
 
         {/* Toggle bar */}
-        <div className="flex items-center justify-center gap-1 border-b border-gray-200 bg-white py-2 shrink-0">
+        <div className="flex items-center justify-center gap-1 border-b border-gray-200 dark:border-dark-edge bg-white/90 dark:bg-dark-surface backdrop-blur-lg py-2 shrink-0">
           <button
             onClick={() => setShowPreview(false)}
             className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
               !showPreview
-                ? 'bg-blue-50 text-blue-700'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'bg-blue-50/70 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 shadow-[var(--shadow-glass-sm)]'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
             Editor
@@ -154,8 +154,8 @@ export default function AppShell() {
             onClick={() => setShowPreview(true)}
             className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
               showPreview
-                ? 'bg-blue-50 text-blue-700'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'bg-blue-50/70 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 shadow-[var(--shadow-glass-sm)]'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
             Preview
@@ -165,7 +165,7 @@ export default function AppShell() {
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar (only in resume mode) */}
           {!isCoverLetter && (
-            <aside className="w-[240px] shrink-0 border-r border-gray-200 bg-white overflow-y-auto no-print">
+            <aside className="w-[240px] shrink-0 border-r border-gray-200 dark:border-dark-edge bg-gray-50 dark:bg-dark-surface backdrop-blur-xl overflow-y-auto no-print">
               <ErrorBoundary fallbackMessage="Sidebar failed to load">
                 <Sidebar />
               </ErrorBoundary>
@@ -190,14 +190,14 @@ export default function AppShell() {
   } else {
     // -- Desktop layout -------------------------------------------------------
     layoutContent = (
-      <div className="flex h-screen flex-col bg-gray-50">
+      <div className="flex h-screen flex-col bg-mesh-gradient">
         <TopBar />
         {DocToggleBar}
 
         <div className="flex flex-1 overflow-hidden">
           {/* Left sidebar (only in resume mode) */}
           {!isCoverLetter && (
-            <aside className="w-[300px] shrink-0 border-r border-gray-200 bg-white overflow-y-auto no-print">
+            <aside className="w-[336px] shrink-0 border-r border-gray-200 dark:border-dark-edge bg-gray-50 dark:bg-dark-surface backdrop-blur-xl overflow-y-auto no-print">
               <ErrorBoundary fallbackMessage="Sidebar failed to load">
                 <Sidebar />
               </ErrorBoundary>
@@ -212,7 +212,7 @@ export default function AppShell() {
           </main>
 
           {/* Right preview */}
-          <aside className="w-[540px] shrink-0 border-l border-gray-200 bg-gray-100 overflow-y-auto">
+          <aside className="w-[580px] shrink-0 border-l border-gray-200 dark:border-dark-edge bg-gray-100 dark:bg-dark-base backdrop-blur-lg overflow-y-auto">
             <ErrorBoundary fallbackMessage="Preview failed to load">
               {isCoverLetter ? <CoverLetterPreview /> : <PreviewPanel />}
             </ErrorBoundary>
@@ -226,7 +226,7 @@ export default function AppShell() {
     <>
       <a
         href="#editor-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:bg-white focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:text-blue-600 focus:font-medium"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:bg-white/90 focus:backdrop-blur-lg focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-[var(--shadow-glass-lg)] focus:text-blue-600 focus:font-medium"
       >
         Skip to editor
       </a>

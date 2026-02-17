@@ -32,13 +32,13 @@ export function EmptyState({
       )}
     >
       {icon && (
-        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-50 dark:bg-dark-card border border-gray-200 dark:border-dark-edge shadow-[var(--shadow-glass-sm)] text-gray-500">
           {icon}
         </div>
       )}
-      <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+      <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
       {description && (
-        <p className="mt-1.5 max-w-sm text-sm text-gray-500">{description}</p>
+        <p className="mt-1.5 max-w-sm text-sm text-gray-500 dark:text-gray-400">{description}</p>
       )}
       {action && (
         <div className="mt-5">

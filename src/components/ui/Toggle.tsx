@@ -53,12 +53,12 @@ export function Toggle({
           'transition-colors duration-200 ease-in-out',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
           trackSizes[size],
-          checked ? 'bg-blue-600' : 'bg-gray-200'
+          checked ? 'bg-gradient-to-r from-blue-500 to-blue-600' : 'bg-gray-300 dark:bg-dark-overlay'
         )}
       >
         <span
           className={cn(
-            'inline-block rounded-full bg-white shadow-sm',
+            'inline-block rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.12)]',
             'transition-transform duration-200 ease-in-out',
             thumbSizes[size],
             checked ? thumbTranslate[size] : 'translate-x-0'
@@ -68,10 +68,10 @@ export function Toggle({
       {(label || description) && (
         <div className="flex flex-col gap-0.5 pt-0.5">
           {label && (
-            <span className="text-sm font-medium text-gray-900">{label}</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{label}</span>
           )}
           {description && (
-            <span className="text-xs text-gray-500">{description}</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">{description}</span>
           )}
         </div>
       )}

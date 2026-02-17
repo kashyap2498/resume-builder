@@ -11,6 +11,7 @@ export type SidebarTab = 'sections' | 'styling' | 'ats' | 'versions';
 // -- Store Shape --------------------------------------------------------------
 
 export type ActiveDocType = 'resume' | 'coverLetter';
+export type ThemeMode = 'light' | 'dark' | 'system';
 
 interface UIState {
   collapsedSections: Set<string>;
@@ -24,6 +25,7 @@ interface UIState {
   isTablet: boolean;
   activeDocType: ActiveDocType;
   showShortcuts: boolean;
+  theme: ThemeMode;
 }
 
 interface UIActions {
@@ -39,6 +41,7 @@ interface UIActions {
   setDeviceSize: (width: number) => void;
   setActiveDocType: (type: ActiveDocType) => void;
   setShowShortcuts: (show: boolean) => void;
+  setTheme: (theme: ThemeMode) => void;
 }
 
 export type UIStore = UIState & UIActions;
@@ -47,6 +50,28 @@ export type UIStore = UIState & UIActions;
 
 const MOBILE_MAX = 768;
 const TABLET_MAX = 1024;
+
+// -- Theme helpers ------------------------------------------------------------
+
+function getInitialTheme(): ThemeMode {
+  try {
+    const stored = localStorage.getItem('resumello-theme');
+    if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
+  } catch { /* ignore */ }
+  return 'light';
+}
+
+function applyThemeClass(theme: ThemeMode) {
+  const root = document.documentElement;
+  if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    root.classList.add('dark');
+  } else {
+    root.classList.remove('dark');
+  }
+}
+
+// Apply on load
+applyThemeClass(getInitialTheme());
 
 // -- Store --------------------------------------------------------------------
 
@@ -63,6 +88,7 @@ export const useUIStore = create<UIStore>((set) => ({
   isTablet: false,
   activeDocType: 'resume',
   showShortcuts: false,
+  theme: getInitialTheme(),
 
   // -- Actions ----------------------------------------------------------------
 
@@ -107,4 +133,10 @@ export const useUIStore = create<UIStore>((set) => ({
   setActiveDocType: (type) => set({ activeDocType: type }),
 
   setShowShortcuts: (show) => set({ showShortcuts: show }),
+
+  setTheme: (theme) => {
+    applyThemeClass(theme);
+    try { localStorage.setItem('resumello-theme', theme); } catch { /* ignore */ }
+    set({ theme });
+  },
 }));

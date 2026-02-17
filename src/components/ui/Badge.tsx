@@ -17,13 +17,13 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 const variantStyles: Record<NonNullable<BadgeProps['variant']>, string> = {
-  gray: 'bg-gray-100 text-gray-700 ring-gray-200',
-  blue: 'bg-blue-50 text-blue-700 ring-blue-200',
-  green: 'bg-green-50 text-green-700 ring-green-200',
-  yellow: 'bg-yellow-50 text-yellow-700 ring-yellow-200',
-  red: 'bg-red-50 text-red-700 ring-red-200',
-  purple: 'bg-purple-50 text-purple-700 ring-purple-200',
-  indigo: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
+  gray: 'bg-gray-100/70 text-gray-700 ring-gray-200/60 dark:bg-gray-700/40 dark:text-gray-300 dark:ring-gray-600/40',
+  blue: 'bg-blue-50/70 text-blue-700 ring-blue-200/60 dark:bg-blue-900/40 dark:text-blue-300 dark:ring-blue-700/40',
+  green: 'bg-green-50/70 text-green-700 ring-green-200/60 dark:bg-green-900/40 dark:text-green-300 dark:ring-green-700/40',
+  yellow: 'bg-yellow-50/70 text-yellow-700 ring-yellow-200/60 dark:bg-yellow-900/40 dark:text-yellow-300 dark:ring-yellow-700/40',
+  red: 'bg-red-50/70 text-red-700 ring-red-200/60 dark:bg-red-900/40 dark:text-red-300 dark:ring-red-700/40',
+  purple: 'bg-purple-50/70 text-purple-700 ring-purple-200/60 dark:bg-purple-900/40 dark:text-purple-300 dark:ring-purple-700/40',
+  indigo: 'bg-indigo-50/70 text-indigo-700 ring-indigo-200/60 dark:bg-indigo-900/40 dark:text-indigo-300 dark:ring-indigo-700/40',
 };
 
 const sizeStyles: Record<NonNullable<BadgeProps['size']>, string> = {

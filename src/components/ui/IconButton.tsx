@@ -17,9 +17,9 @@ export interface IconButtonProps
 
 const variantStyles: Record<NonNullable<IconButtonProps['variant']>, string> = {
   default:
-    'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:text-gray-900 shadow-sm',
-  ghost: 'text-gray-500 hover:bg-gray-100 hover:text-gray-700',
-  danger: 'text-gray-500 hover:bg-red-50 hover:text-red-600',
+    'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:text-gray-900 shadow-[var(--shadow-glass-sm)] dark:bg-dark-card dark:text-gray-300 dark:border-dark-edge-strong dark:hover:bg-dark-raised',
+  ghost: 'text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-dark-raised dark:hover:text-gray-200',
+  danger: 'text-gray-500 hover:bg-red-50 hover:text-red-600 dark:text-red-400 dark:hover:bg-red-900/30',
 };
 
 const sizeStyles: Record<NonNullable<IconButtonProps['size']>, string> = {
@@ -55,8 +55,8 @@ export function IconButton({
       aria-label={label}
       className={cn(
         'inline-flex items-center justify-center',
-        'transition-all duration-150 ease-in-out',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1',
+        'transition-all duration-200 ease-out',
+        'focus:outline-none focus-visible:shadow-[var(--shadow-glow-blue)]',
         'disabled:opacity-50 disabled:cursor-not-allowed',
         'cursor-pointer',
         variantStyles[variant],

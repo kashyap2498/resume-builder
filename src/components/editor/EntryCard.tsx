@@ -36,14 +36,14 @@ export function EntryCard({
   return (
     <div
       className={cn(
-        'rounded-lg border border-gray-200 bg-white overflow-hidden transition-shadow duration-200',
+        'rounded-lg border border-gray-200 dark:border-dark-edge bg-white dark:bg-dark-card shadow-[var(--shadow-glass-sm)] overflow-hidden transition-all duration-200',
         dragHandleProps && 'hover:shadow-sm',
         className
       )}
     >
       {/* Header */}
       <div
-        className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+        className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-white/50 transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
         {dragHandleProps ? (
@@ -52,10 +52,10 @@ export function EntryCard({
             className="cursor-grab active:cursor-grabbing shrink-0 touch-none"
             onClick={(e) => e.stopPropagation()}
           >
-            <GripVertical className="h-4 w-4 text-gray-300" />
+            <GripVertical className="h-4 w-4 text-gray-300 dark:text-gray-600" />
           </div>
         ) : (
-          <GripVertical className="h-4 w-4 text-gray-300 shrink-0" />
+          <GripVertical className="h-4 w-4 text-gray-300 dark:text-gray-600 shrink-0" />
         )}
 
         <span className="shrink-0 text-gray-500">
@@ -67,11 +67,11 @@ export function EntryCard({
         </span>
 
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 truncate">
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
             {title || 'Untitled'}
           </p>
           {subtitle && (
-            <p className="text-xs text-gray-500 truncate">{subtitle}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{subtitle}</p>
           )}
         </div>
 
@@ -110,7 +110,7 @@ export function EntryCard({
             transition={{ duration: 0.2, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-4 pt-2 border-t border-gray-100">
+            <div className="px-4 pb-4 pt-2 border-t border-gray-100/50 dark:border-dark-edge">
               {children}
             </div>
           </motion.div>

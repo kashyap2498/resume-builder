@@ -32,8 +32,8 @@ export function Tooltip({
         role="tooltip"
         className={cn(
           'absolute z-50 whitespace-nowrap',
-          'rounded-md bg-gray-900 px-2.5 py-1.5 text-xs font-medium text-white',
-          'shadow-lg',
+          'rounded-lg bg-gray-900/90 backdrop-blur-md px-2.5 py-1.5 text-xs font-medium text-white',
+          'shadow-[var(--shadow-glass-lg)]',
           'opacity-0 scale-95 pointer-events-none',
           'transition-all duration-150 ease-in-out',
           'group-hover:opacity-100 group-hover:scale-100',

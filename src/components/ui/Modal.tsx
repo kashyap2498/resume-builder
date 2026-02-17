@@ -140,7 +140,7 @@ export function Modal({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
           <motion.div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/30 backdrop-blur-md"
             variants={backdropVariants}
             initial="hidden"
             animate="visible"
@@ -158,7 +158,7 @@ export function Modal({
             aria-labelledby={title ? titleId : undefined}
             aria-label={title ? undefined : 'Dialog'}
             className={cn(
-              'relative z-10 w-full rounded-xl bg-white shadow-2xl',
+              'relative z-10 w-full rounded-2xl bg-white/92 dark:bg-dark-overlay backdrop-blur-xl shadow-[var(--shadow-glass-xl)] border border-gray-200 dark:border-dark-edge',
               sizeStyles[size],
               className
             )}
@@ -169,15 +169,15 @@ export function Modal({
           >
             {/* Header */}
             {title && (
-              <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-                <h2 id={titleId} className="text-lg font-semibold text-gray-900">
+              <div className="flex items-center justify-between border-b border-gray-200 dark:border-dark-edge px-6 py-4">
+                <h2 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {title}
                 </h2>
                 <button
                   onClick={onClose}
                   className={cn(
                     'rounded-lg p-1.5 text-gray-500 transition-colors',
-                    'hover:bg-gray-100 hover:text-gray-600',
+                    'hover:bg-white/60 hover:text-gray-700',
                     'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
                   )}
                   aria-label="Close modal"
@@ -207,7 +207,7 @@ export function Modal({
 
             {/* Footer */}
             {footer && (
-              <div className="border-t border-gray-100 px-6 py-4">
+              <div className="border-t border-gray-200 dark:border-dark-edge px-6 py-4">
                 {footer}
               </div>
             )}

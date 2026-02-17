@@ -60,23 +60,23 @@ function ColorSwatch({ color, label, onChange }: ColorSwatchProps) {
     <div className="relative" ref={popoverRef}>
       <button
         type="button"
-        className="flex items-center gap-2 w-full text-left group py-1 px-1 -mx-1 rounded hover:bg-gray-50 transition-colors"
+        className="flex items-center gap-2 w-full text-left group py-1 px-1 -mx-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
         onClick={() => setOpen(!open)}
       >
         <span
-          className="h-5 w-5 rounded border border-gray-300 shrink-0 shadow-sm"
+          className="h-5 w-5 rounded border border-gray-300/60 shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
           style={{ backgroundColor: color }}
         />
-        <span className="text-xs font-medium text-gray-700 flex-1 truncate">
+        <span className="text-xs font-medium text-gray-700 dark:text-gray-300 flex-1 truncate">
           {label}
         </span>
-        <span className="text-xs text-gray-500 font-mono uppercase">
+        <span className="text-xs text-gray-500 dark:text-gray-400 font-mono uppercase">
           {color}
         </span>
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1 z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-3">
+        <div className="absolute left-0 top-full mt-1 z-50 bg-white/90 dark:bg-dark-overlay backdrop-blur-xl rounded-xl shadow-[var(--shadow-glass-lg)] border border-gray-200 dark:border-dark-edge p-3">
           <HexColorPicker color={color} onChange={onChange} />
           <div className="mt-2 flex items-center gap-2">
             <span
@@ -92,7 +92,7 @@ function ColorSwatch({ color, label, onChange }: ColorSwatchProps) {
                   onChange(val);
                 }
               }}
-              className="flex-1 text-xs font-mono border border-gray-200 rounded px-2 py-1 uppercase"
+              className="flex-1 text-xs font-mono border border-gray-200 dark:border-dark-edge-strong bg-white dark:bg-dark-card text-gray-900 dark:text-gray-100 rounded px-2 py-1 uppercase"
               maxLength={7}
             />
           </div>
@@ -118,7 +118,7 @@ export function ColorControls() {
   return (
     <div className="flex flex-col gap-3">
       {/* Section heading */}
-      <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+      <div className="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200">
         <Palette className="h-4 w-4" />
         <span>Colors</span>
       </div>

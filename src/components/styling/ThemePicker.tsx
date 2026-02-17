@@ -38,19 +38,19 @@ function ThemeCard({ theme, isActive, onSelect }: ThemeCardProps) {
         'relative flex flex-col items-start gap-1.5 p-2 rounded-lg border transition-all text-left',
         'hover:shadow-sm',
         isActive
-          ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
-          : 'border-gray-200 bg-white hover:border-gray-300',
+          ? 'border-blue-400/60 bg-blue-50/50 dark:border-blue-400 dark:bg-blue-900/20 shadow-[var(--shadow-glow-blue)]'
+          : 'border-gray-200 dark:border-dark-edge bg-white/80 dark:bg-dark-card hover:border-gray-300/70 hover:bg-white dark:hover:bg-dark-raised',
       )}
     >
       {/* Active check */}
       {isActive && (
-        <span className="absolute top-1.5 right-1.5 h-4 w-4 rounded-full bg-blue-600 flex items-center justify-center">
+        <span className="absolute top-1.5 right-1.5 h-4 w-4 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 shadow-[0_1px_3px_rgba(37,99,235,0.3)] flex items-center justify-center">
           <Check className="h-2.5 w-2.5 text-white" />
         </span>
       )}
 
       {/* Theme name */}
-      <span className="text-xs font-medium text-gray-700 truncate w-full pr-5">
+      <span className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate w-full pr-5">
         {theme.name}
       </span>
 
@@ -84,7 +84,7 @@ export function ThemePicker() {
   return (
     <div className="flex flex-col gap-3">
       {/* Section heading */}
-      <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+      <div className="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200">
         <Palette className="h-4 w-4" />
         <span>Color Themes</span>
       </div>

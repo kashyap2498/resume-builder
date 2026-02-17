@@ -27,18 +27,18 @@ export function Divider({
         )}
         role="separator"
       >
-        <div className="h-px flex-1 bg-gray-200" />
-        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider select-none">
+        <div className="h-px flex-1 bg-gray-200/60 dark:bg-dark-edge" />
+        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider select-none dark:bg-dark-base">
           {label}
         </span>
-        <div className="h-px flex-1 bg-gray-200" />
+        <div className="h-px flex-1 bg-gray-200/60 dark:bg-dark-edge" />
       </div>
     );
   }
 
   return (
     <hr
-      className={cn('border-0 h-px bg-gray-200', spacingStyles[spacing], className)}
+      className={cn('border-0 h-px bg-gray-200/60 dark:bg-dark-edge', spacingStyles[spacing], className)}
       role="separator"
     />
   );

@@ -106,14 +106,14 @@ function SectionRow({ section, onToggleVisibility }: SectionRowProps) {
       onClick={handleClick}
       className={cn(
         'flex items-center gap-2 px-2 py-1.5 rounded-md group cursor-pointer',
-        'hover:bg-gray-50 transition-colors',
+        'hover:bg-gray-50 dark:hover:bg-dark-raised transition-colors',
         !section.visible && 'opacity-50',
-        isDragging && 'z-10 bg-white shadow-md',
+        isDragging && 'z-10 bg-white dark:bg-dark-card shadow-[var(--shadow-glass-md)]',
       )}
     >
       {/* Drag handle */}
       <span
-        className="cursor-grab text-gray-300 hover:text-gray-500 transition-colors shrink-0 touch-none"
+        className="cursor-grab text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 transition-colors shrink-0 touch-none"
         title="Drag to reorder"
         {...attributes}
         {...listeners}
@@ -125,7 +125,7 @@ function SectionRow({ section, onToggleVisibility }: SectionRowProps) {
       <Icon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
 
       {/* Section title */}
-      <span className="text-xs font-medium flex-1 truncate text-gray-700">
+      <span className="text-xs font-medium flex-1 truncate text-gray-700 dark:text-gray-200">
         {section.title}
       </span>
 
@@ -187,11 +187,11 @@ export function SectionManager() {
   if (sortedSections.length === 0) {
     return (
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+        <div className="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200">
           <Layers className="h-4 w-4" />
           <span>Sections</span>
         </div>
-        <p className="text-xs text-gray-500 italic px-1">
+        <p className="text-xs text-gray-500 dark:text-gray-400 italic px-1">
           No resume loaded. Open a resume to manage sections.
         </p>
       </div>
@@ -201,12 +201,12 @@ export function SectionManager() {
   return (
     <div className="flex flex-col gap-3">
       {/* Section heading */}
-      <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+      <div className="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200">
         <Layers className="h-4 w-4" />
         <span>Sections</span>
       </div>
 
-      <p className="text-xs text-gray-500 px-1">
+      <p className="text-xs text-gray-500 dark:text-gray-400 px-1">
         Toggle visibility and reorder sections.
       </p>
 

@@ -22,7 +22,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
         {label && (
           <label
             htmlFor={textareaId}
-            className="text-sm font-medium text-gray-700 select-none"
+            className="text-sm font-medium text-gray-700 dark:text-gray-300 select-none"
           >
             {label}
           </label>
@@ -34,14 +34,15 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
           spellCheck={true}
           className={cn(
             'w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900',
-            'placeholder:text-gray-400',
-            'transition-all duration-150 ease-in-out',
-            'focus:outline-none focus:ring-2 focus:ring-offset-0',
-            'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed',
+            'dark:bg-dark-card dark:text-gray-100 dark:border-dark-edge-strong',
+            'placeholder:text-gray-400 dark:placeholder:text-gray-500',
+            'transition-all duration-200 ease-out',
+            'focus:outline-none',
+            'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-dark-raised',
             'resize-y',
             error
-              ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
-              : 'border-gray-200 focus:border-blue-500 focus:ring-blue-200',
+              ? 'border-red-300/80 focus:border-red-500 focus:ring-0 focus:shadow-[0_0_0_1px_rgba(239,68,68,0.2),0_0_12px_rgba(239,68,68,0.1)] dark:border-red-500/60'
+              : 'border-gray-200 dark:border-dark-edge-strong focus:border-blue-400 dark:focus:border-blue-500 focus:ring-0 focus:shadow-[var(--shadow-glow-blue)]',
             className
           )}
           aria-invalid={error ? 'true' : undefined}
@@ -57,14 +58,14 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
         {error && (
           <p
             id={`${textareaId}-error`}
-            className="text-xs text-red-600"
+            className="text-xs text-red-600 dark:text-red-400"
             role="alert"
           >
             {error}
           </p>
         )}
         {!error && hint && (
-          <p id={`${textareaId}-hint`} className="text-xs text-gray-500">
+          <p id={`${textareaId}-hint`} className="text-xs text-gray-500 dark:text-gray-500">
             {hint}
           </p>
         )}

@@ -46,12 +46,12 @@ export default function CoverLetterEditor() {
   const progressVariant = filledCount > 7 ? 'green' : filledCount >= 4 ? 'blue' : 'gray'
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-6 space-y-6">
+    <div className="mx-auto max-w-2xl px-6 py-6 space-y-6">
       {/* Header with progress */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Cover Letter</h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Cover Letter</h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Customize your cover letter for each application.
           </p>
         </div>
@@ -187,8 +187,8 @@ export default function CoverLetterEditor() {
             subtitle="Auto-filled from your resume contact information"
             icon={<User className="h-4.5 w-4.5" />}
           />
-          <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
-            {fullName && <p className="text-sm font-medium text-gray-700 mb-2">{fullName}</p>}
+          <div className="mt-4 rounded-lg border border-gray-100 dark:border-dark-edge bg-gray-50 dark:bg-dark-raised px-4 py-3">
+            {fullName && <p className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">{fullName}</p>}
             <div className="space-y-1">
               {contact.email && (
                 <div className="flex items-center gap-2 text-sm text-gray-500">

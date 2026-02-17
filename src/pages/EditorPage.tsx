@@ -190,10 +190,10 @@ export default function EditorPage() {
 
   if (!loaded && !error) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-dark-base">
         <div className="text-center">
           <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-          <p className="text-sm text-gray-500">Loading resume...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading resume...</p>
         </div>
       </div>
     )
@@ -203,9 +203,9 @@ export default function EditorPage() {
 
   if (error) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-dark-base">
         <div className="text-center max-w-sm">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-500">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-7 w-7"
@@ -221,8 +221,8 @@ export default function EditorPage() {
               />
             </svg>
           </div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-1">{error}</h2>
-          <p className="text-sm text-gray-500 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">{error}</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
             Please go back to the dashboard and try again.
           </p>
           <button

@@ -13,13 +13,13 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<NonNullable<ButtonProps['variant']>, string> = {
   primary:
-    'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm',
+    'bg-gradient-to-b from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 active:from-blue-700 active:to-blue-800 shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)]',
   secondary:
-    'bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300 border border-gray-200',
+    'bg-white dark:bg-dark-card text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-raised active:bg-gray-100 dark:active:bg-dark-overlay border border-gray-200 dark:border-dark-edge-strong shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)]',
   ghost:
-    'bg-transparent text-gray-700 hover:bg-gray-100 active:bg-gray-200',
+    'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/60 dark:hover:bg-dark-raised active:bg-white/80 dark:active:bg-dark-overlay',
   danger:
-    'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm',
+    'bg-gradient-to-b from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 active:from-red-700 active:to-red-800 shadow-[var(--shadow-glass-sm)]',
 };
 
 const sizeStyles: Record<NonNullable<ButtonProps['size']>, string> = {
@@ -47,8 +47,8 @@ export function Button({
       disabled={isDisabled}
       className={cn(
         'inline-flex items-center justify-center font-medium rounded-lg',
-        'transition-all duration-150 ease-in-out',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
+        'transition-all duration-200 ease-out',
+        'focus:outline-none focus-visible:shadow-[var(--shadow-glow-blue-strong)]',
         'disabled:opacity-50 disabled:cursor-not-allowed',
         'select-none cursor-pointer',
         variantStyles[variant],

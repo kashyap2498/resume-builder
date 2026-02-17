@@ -31,7 +31,7 @@ export default function CoverLetterPreview() {
   const handleZoomIn = () => setPreviewZoom(previewZoom + ZOOM_STEP)
   const handleZoomOut = () => setPreviewZoom(previewZoom - ZOOM_STEP)
   const handleFitWidth = () => {
-    const fitZoom = Math.round((380 / A4_WIDTH) * 100)
+    const fitZoom = Math.round((520 / A4_WIDTH) * 100)
     setPreviewZoom(fitZoom)
   }
 
@@ -40,16 +40,16 @@ export default function CoverLetterPreview() {
   return (
     <div className="flex h-full flex-col">
       {/* Toolbar */}
-      <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2 shrink-0">
+      <div className="flex items-center justify-between border-b border-gray-200 dark:border-dark-edge bg-white/80 dark:bg-dark-surface backdrop-blur-lg px-4 py-2 shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-gray-500">Cover Letter Preview</span>
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Cover Letter Preview</span>
           {numPages > 1 && (
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
               {numPages} pages
             </span>
           )}
           {isGenerating && (
-            <Loader2 className="h-3 w-3 animate-spin text-gray-500" />
+            <Loader2 className="h-3 w-3 animate-spin text-gray-500 dark:text-gray-400" />
           )}
         </div>
 
@@ -57,30 +57,30 @@ export default function CoverLetterPreview() {
           <button
             onClick={handleZoomOut}
             disabled={previewZoom <= MIN_ZOOM}
-            className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="rounded-md p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-raised hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             title="Zoom out"
           >
             <ZoomOut className="h-4 w-4" />
           </button>
 
-          <span className="w-12 text-center text-xs font-medium text-gray-600 tabular-nums">
+          <span className="w-12 text-center text-xs font-medium text-gray-600 dark:text-gray-400 tabular-nums">
             {previewZoom}%
           </span>
 
           <button
             onClick={handleZoomIn}
             disabled={previewZoom >= MAX_ZOOM}
-            className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="rounded-md p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-raised hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             title="Zoom in"
           >
             <ZoomIn className="h-4 w-4" />
           </button>
 
-          <div className="mx-1 h-4 w-px bg-gray-200" />
+          <div className="mx-1 h-4 w-px bg-gray-200/50 dark:bg-dark-edge" />
 
           <button
             onClick={handleFitWidth}
-            className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            className="rounded-md p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-raised hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
             title="Fit to width"
           >
             <Maximize2 className="h-4 w-4" />
@@ -96,7 +96,7 @@ export default function CoverLetterPreview() {
               <div key={i} className="relative">
                 {/* Page sheet */}
                 <div
-                  className="bg-white shadow-lg border border-gray-200 overflow-hidden"
+                  className="bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08),0_8px_32px_rgba(0,0,0,0.1)] border border-gray-200 rounded-sm overflow-hidden"
                   style={{
                     width: A4_WIDTH * scale,
                     height: A4_HEIGHT * scale,
@@ -120,7 +120,7 @@ export default function CoverLetterPreview() {
                   className="flex items-center justify-center mt-2"
                   style={{ width: A4_WIDTH * scale }}
                 >
-                  <span className="text-xs text-gray-500 tabular-nums">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 tabular-nums">
                     Page {i + 1}{numPages > 1 ? ` of ${numPages}` : ''}
                   </span>
                 </div>

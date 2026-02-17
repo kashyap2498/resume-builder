@@ -216,20 +216,20 @@ export default function TopBar() {
   const anyExporting = pdfExporting || docxExporting
 
   return (
-    <header className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5 shrink-0 shadow-sm no-print">
+    <header className="relative z-20 flex items-center justify-between border-b border-gray-200 dark:border-dark-edge bg-white/85 dark:bg-dark-surface backdrop-blur-xl px-4 py-2.5 shrink-0 shadow-[var(--shadow-glass-sm)] no-print">
       {/* Left side */}
       <div className="flex items-center gap-3 min-w-0">
         {/* Back button */}
         <button
           onClick={() => navigate('/dashboard')}
-          className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-600 transition-colors shrink-0"
+          className="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0"
           title="Back to dashboard"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
 
         {/* Divider */}
-        <div className="h-6 w-px bg-gray-200 shrink-0" />
+        <div className="h-6 w-px bg-gray-200/50 dark:bg-dark-edge shrink-0" />
 
         {/* Resume name */}
         <div className="min-w-0">
@@ -241,15 +241,15 @@ export default function TopBar() {
               onChange={(e) => setEditName(e.target.value)}
               onBlur={handleFinishEdit}
               onKeyDown={handleKeyDown}
-              className="rounded-md border border-blue-300 px-2 py-0.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 w-64"
+              className="rounded-md border border-blue-300/60 dark:border-dark-edge-strong bg-white dark:bg-dark-card px-2 py-0.5 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none focus:shadow-[var(--shadow-glow-blue)] w-64"
             />
           ) : (
             <button
               onClick={handleStartEdit}
-              className="group flex items-center gap-2 rounded-md px-2 py-0.5 hover:bg-gray-50 transition-colors min-w-0"
+              className="group flex items-center gap-2 rounded-md px-2 py-0.5 hover:bg-white/50 transition-colors min-w-0"
               title="Click to rename"
             >
-              <span className="text-sm font-semibold text-gray-900 truncate max-w-[200px]">
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[200px]">
                 {resumeName}
               </span>
               <span className="text-xs text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
@@ -271,7 +271,7 @@ export default function TopBar() {
       <div className="flex items-center gap-2 shrink-0">
         {/* Auto-save indicator */}
         {(lastSaved || isSaving) && (
-          <span className="flex items-center gap-1 text-xs text-gray-500 mr-1">
+          <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mr-1">
             {isSaving ? (
               <>
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -325,22 +325,22 @@ export default function TopBar() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -4, scale: 0.95 }}
                 transition={{ duration: 0.15, ease: 'easeOut' }}
-                className="absolute right-0 top-full mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg py-1 z-50"
+                className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-gray-200 dark:border-dark-edge bg-white/95 dark:bg-dark-overlay backdrop-blur-xl shadow-[var(--shadow-glass-lg)] py-1 z-50"
               >
                 <button onClick={() => { setExportOpen(false); handleExportPDF() }}
                   disabled={pdfExporting}
-                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                  <FileDown className="h-4 w-4 text-gray-500" /> Download PDF
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-raised">
+                  <FileDown className="h-4 w-4 text-gray-500 dark:text-gray-400" /> Download PDF
                 </button>
                 <button onClick={() => { setExportOpen(false); handleExportDocx() }}
                   disabled={docxExporting}
-                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                  <FileText className="h-4 w-4 text-gray-500" /> Download DOCX
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-raised">
+                  <FileText className="h-4 w-4 text-gray-500 dark:text-gray-400" /> Download DOCX
                 </button>
-                <div className="my-1 h-px bg-gray-100" />
+                <div className="my-1 h-px bg-gray-100/50 dark:bg-dark-edge" />
                 <button onClick={() => { setExportOpen(false); handleSaveJSON() }}
-                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                  <Download className="h-4 w-4 text-gray-500" /> Save as JSON
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-raised">
+                  <Download className="h-4 w-4 text-gray-500 dark:text-gray-400" /> Save as JSON
                 </button>
               </motion.div>
             )}
@@ -369,7 +369,7 @@ export default function TopBar() {
               <span className="hidden sm:inline">Version</span>
             </Button>
 
-            <div className="h-6 w-px bg-gray-200" />
+            <div className="h-6 w-px bg-gray-200 dark:bg-dark-edge-strong" />
 
             <Button
               variant="secondary"
@@ -401,14 +401,14 @@ export default function TopBar() {
         }
       >
         <label className="block">
-          <span className="block text-sm font-medium text-gray-700 mb-1.5">Version Label</span>
+          <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Version Label</span>
           <input
             ref={versionInputRef}
             type="text"
             value={versionLabel}
             onChange={(e) => setVersionLabel(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleSaveVersion() }}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+            className="w-full rounded-lg border border-gray-300 dark:border-dark-edge-strong bg-white dark:bg-dark-card px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-400 dark:focus:border-blue-500 focus:outline-none focus:shadow-[var(--shadow-glow-blue)] transition-all duration-200"
             placeholder="e.g. Final draft, Before redesign..."
             autoFocus
           />

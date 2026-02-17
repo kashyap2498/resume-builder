@@ -17,8 +17,8 @@ const paddingStyles: Record<NonNullable<CardProps['padding']>, string> = {
 
 const shadowStyles: Record<NonNullable<CardProps['shadow']>, string> = {
   none: '',
-  sm: 'shadow-sm',
-  md: 'shadow-md',
+  sm: 'shadow-[var(--shadow-glass-sm)]',
+  md: 'shadow-[var(--shadow-glass-md)]',
 };
 
 export function Card({
@@ -33,11 +33,11 @@ export function Card({
   return (
     <div
       className={cn(
-        'rounded-xl bg-white',
-        border && 'border border-gray-200',
+        'rounded-xl bg-white dark:bg-dark-card',
+        border && 'border border-gray-200 dark:border-dark-edge',
         shadowStyles[shadow],
         paddingStyles[padding],
-        hover && 'transition-shadow duration-200 hover:shadow-md',
+        hover && 'transition-all duration-200 hover:shadow-[var(--shadow-glass-md)]',
         className
       )}
       {...props}
@@ -72,16 +72,16 @@ export function CardHeader({
     <div className={cn('flex items-start justify-between gap-4', className)} {...props}>
       <div className="flex items-start gap-3">
         {icon && (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50/80 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400">
             {icon}
           </div>
         )}
         <div className="flex flex-col gap-0.5">
           {title && (
-            <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
           )}
           {desc && (
-            <p className="text-xs text-gray-500">{desc}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{desc}</p>
           )}
           {children}
         </div>
@@ -107,7 +107,7 @@ export function CardFooter({ className, children, ...props }: CardFooterProps) {
   return (
     <div
       className={cn(
-        'mt-4 flex items-center justify-end gap-2 border-t border-gray-100 pt-4',
+        'mt-4 flex items-center justify-end gap-2 border-t border-gray-100 dark:border-dark-edge pt-4',
         className
       )}
       {...props}

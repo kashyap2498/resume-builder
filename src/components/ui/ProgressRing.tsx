@@ -17,7 +17,7 @@ export function ProgressRing({ percent, size = 40, strokeWidth = 3 }: ProgressRi
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#E5E7EB"
+          className="stroke-gray-200/60 dark:stroke-dark-edge"
           strokeWidth={strokeWidth}
         />
         <circle
@@ -33,7 +33,7 @@ export function ProgressRing({ percent, size = 40, strokeWidth = 3 }: ProgressRi
           className="transition-all duration-500 ease-out"
         />
       </svg>
-      <span className="absolute text-[10px] font-semibold text-gray-700">
+      <span className="absolute text-[10px] font-semibold text-gray-700 dark:text-gray-300">
         {Math.round(percent)}%
       </span>
     </div>

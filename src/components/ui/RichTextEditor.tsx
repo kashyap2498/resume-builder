@@ -123,20 +123,20 @@ export function RichTextEditor({
   const btnClass = (active: boolean) =>
     `p-1.5 rounded transition-colors ${
       active
-        ? 'bg-blue-100 text-blue-700'
-        : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+        ? 'bg-blue-100/70 text-blue-700 dark:bg-dark-overlay dark:text-white'
+        : 'text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-overlay hover:text-gray-700 dark:hover:text-gray-100'
     }`;
 
   return (
     <div className="space-y-1">
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           {label}
         </label>
       )}
-      <div className="rounded-lg border border-gray-300 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 overflow-hidden transition-shadow">
+      <div className="rounded-lg border border-gray-200 dark:border-dark-edge-strong bg-white dark:bg-dark-card focus-within:shadow-[var(--shadow-glow-blue)] focus-within:border-blue-400 dark:focus-within:border-blue-500 overflow-hidden transition-all duration-200">
         {/* Toolbar */}
-        <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-gray-200 bg-gray-50/50">
+        <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-gray-200 dark:border-dark-edge bg-gray-50/80 dark:bg-dark-raised">
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBold().run()}
@@ -153,7 +153,7 @@ export function RichTextEditor({
           >
             <Italic className="h-4 w-4" />
           </button>
-          <div className="w-px h-5 bg-gray-200 mx-1" />
+          <div className="w-px h-5 bg-gray-200 dark:bg-dark-edge-strong mx-1" />
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -166,7 +166,7 @@ export function RichTextEditor({
         {/* Editor area */}
         <EditorContent
           editor={editor}
-          className="tiptap-editor px-3 py-2 min-h-[80px] text-sm text-gray-900 prose prose-sm max-w-none focus:outline-none"
+          className="tiptap-editor px-3 py-2 min-h-[80px] text-sm text-gray-900 dark:text-gray-100 prose prose-sm max-w-none focus:outline-none"
         />
       </div>
     </div>

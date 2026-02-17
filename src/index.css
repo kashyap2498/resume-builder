@@ -1,8 +1,27 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-display: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+
+  /* Glassmorphism shadows */
+  --shadow-glass-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-glass-md: 0 2px 8px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-glass-lg: 0 4px 12px rgba(0, 0, 0, 0.04), 0 8px 32px rgba(0, 0, 0, 0.08);
+  --shadow-glass-xl: 0 8px 24px rgba(0, 0, 0, 0.06), 0 16px 48px rgba(0, 0, 0, 0.10);
+  --shadow-glow-blue: 0 0 0 1px rgba(59, 130, 246, 0.15), 0 0 12px rgba(59, 130, 246, 0.10);
+  --shadow-glow-blue-strong: 0 0 0 1px rgba(59, 130, 246, 0.25), 0 0 20px rgba(59, 130, 246, 0.15);
+
+  /* Dark mode semantic tokens — neutral grays */
+  --color-dark-base: #121212;
+  --color-dark-surface: #1a1a1a;
+  --color-dark-card: #1e1e1e;
+  --color-dark-raised: #2a2a2a;
+  --color-dark-overlay: #333333;
+  --color-dark-edge: rgba(255, 255, 255, 0.08);
+  --color-dark-edge-strong: rgba(255, 255, 255, 0.14);
 }
 
 html {
@@ -21,11 +40,18 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: rgba(0, 0, 0, 0.12);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 /* ------------------------------------------------------------------ */
@@ -58,6 +84,18 @@ body {
   background-size: 24px 24px;
 }
 
+.bg-mesh-gradient {
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(219, 234, 254, 0.20) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 0%, rgba(224, 231, 255, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(237, 233, 254, 0.10) 0%, transparent 50%),
+    linear-gradient(180deg, #F1F5F9 0%, #EDF0F4 100%);
+}
+
+.dark .bg-mesh-gradient {
+  background: linear-gradient(180deg, #121212 0%, #1a1a1a 100%);
+}
+
 /* Tiptap editor styles */
 .tiptap-editor .tiptap {
   outline: none;
@@ -66,9 +104,12 @@ body {
 .tiptap-editor .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
-  color: #9ca3af;
+  color: #94a3b8;
   pointer-events: none;
   height: 0;
+}
+.dark .tiptap-editor .tiptap p.is-editor-empty:first-child::before {
+  color: #6b7280;
 }
 .tiptap-editor .tiptap ul {
   list-style-type: disc;
@@ -83,6 +124,23 @@ body {
 }
 .tiptap-editor .tiptap p {
   margin: 0.125rem 0;
+}
+
+/* Shimmer animation for skeleton loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.5) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.dark .animate-shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.06) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }
 
 /* Print styles */

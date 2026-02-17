@@ -41,11 +41,11 @@ export default function Sidebar() {
     <div className="flex h-full flex-col">
       {/* Resume completion indicator */}
       {completeness && (
-        <div className="px-4 pt-4 pb-2 border-b border-gray-100">
+        <div className="px-4 pt-4 pb-2 border-b border-gray-100/50 dark:border-dark-edge">
           <div className="flex items-center gap-3">
             <ProgressRing percent={completeness.percent} />
             <div>
-              <p className="text-xs font-semibold text-gray-800">Resume Strength</p>
+              <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">Resume Strength</p>
               {completeness.details.length > 0 ? (
                 <p className="text-[11px] text-gray-500 mt-0.5">
                   Missing: {completeness.details.slice(0, 2).join(', ')}
@@ -60,7 +60,7 @@ export default function Sidebar() {
       )}
 
       {/* Tab switcher */}
-      <div className="flex border-b border-gray-200 shrink-0" role="tablist" aria-label="Sidebar tabs">
+      <div className="flex border-b border-gray-200 dark:border-dark-edge shrink-0" role="tablist" aria-label="Sidebar tabs">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -72,8 +72,8 @@ export default function Sidebar() {
             className={cn(
               'flex flex-1 items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors',
               sidebarTab === tab.id
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-500 hover:text-gray-700',
+                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300',
             )}
           >
             {tab.icon}
@@ -106,7 +106,7 @@ export default function Sidebar() {
 function SectionsTab() {
   return (
     <div className="p-3">
-      <p className="px-2 pb-3 text-xs text-gray-500">
+      <p className="px-2 pb-3 text-xs text-gray-500 dark:text-gray-400">
         Drag to reorder. Click to edit. Toggle visibility with the switch.
       </p>
       <SectionManager />
@@ -122,11 +122,11 @@ function StylingTab() {
   return (
     <div className="p-4 space-y-6 overflow-y-auto">
       <ThemePicker />
-      <div className="h-px bg-gray-200" />
+      <div className="h-px bg-gray-200/50 dark:bg-dark-edge" />
       <FontControls />
-      <div className="h-px bg-gray-200" />
+      <div className="h-px bg-gray-200/50 dark:bg-dark-edge" />
       <ColorControls />
-      <div className="h-px bg-gray-200" />
+      <div className="h-px bg-gray-200/50 dark:bg-dark-edge" />
       <LayoutControls />
     </div>
   )
@@ -152,7 +152,7 @@ function VersionsTab() {
   return (
     <div className="p-4 space-y-6 overflow-y-auto">
       <VersionPanel />
-      <div className="h-px bg-gray-200" />
+      <div className="h-px bg-gray-200/50 dark:bg-dark-edge" />
       <JobTracker />
     </div>
   )
