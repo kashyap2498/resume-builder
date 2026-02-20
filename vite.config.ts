@@ -34,6 +34,7 @@ export default defineConfig({
           'framer': ['framer-motion'],
           'docx': ['docx'],
           'tiptap': ['@tiptap/react', '@tiptap/starter-kit', '@tiptap/extension-placeholder'],
+          'skill-db': ['./src/constants/skillDatabase'],
         },
       },
     },

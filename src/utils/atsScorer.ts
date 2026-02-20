@@ -17,8 +17,9 @@
 
 import type { ResumeData, ExperienceEntry } from '@/types/resume';
 import { getKeywordsByIndustry, type IndustryId } from '@/constants/atsKeywords';
-import { resolveSynonyms, getKnownPhrases, getCanonicalForm, SYNONYM_MAP, SOFT_SKILL_CANONICALS } from '@/constants/atsSynonyms';
+import { resolveSynonyms, getCanonicalForm, SOFT_SKILL_CANONICALS } from '@/constants/atsSynonyms';
 import { parseJobDescription, type ParsedJobDescription } from '@/utils/jdParser';
+import { extractSkillsFromText, SKILL_DB } from '@/constants/skillDatabase';
 
 // -- Types --------------------------------------------------------------------
 
@@ -184,60 +185,6 @@ const RELATED_FIELDS: string[][] = [
 // -- Helper Functions ---------------------------------------------------------
 
 /**
- * Extracts all meaningful keywords from text, lowercased and de-duped.
- */
-function extractKeywords(text: string): string[] {
-  const words = text
-    .toLowerCase()
-    .replace(/[^a-z0-9+#.\s-]/g, ' ')
-    .split(/\s+/)
-    .filter((w) => w.length > 2 && !STOP_WORDS.has(w));
-
-  return [...new Set(words)];
-}
-
-/**
- * Extracts phrases (2-grams, 3-grams) and individual words from text.
- * Cross-references against synonym dictionary to keep meaningful phrases.
- */
-function extractPhrasesAndKeywords(
-  text: string,
-  _jdPhrases?: Set<string>
-): { phrases: string[]; words: string[] } {
-  const lower = text.toLowerCase();
-  const cleanedWords = lower
-    .replace(/[^a-z0-9+#./\s-]/g, ' ')
-    .split(/\s+/)
-    .filter((w) => w.length > 0);
-
-  const knownPhrases = getKnownPhrases();
-  const phraseSet = new Set<string>();
-
-  // Extract 2-grams and 3-grams, but only keep known meaningful phrases
-  for (let i = 0; i < cleanedWords.length - 1; i++) {
-    const bigram = `${cleanedWords[i]} ${cleanedWords[i + 1]}`;
-    if (knownPhrases.has(bigram) || SYNONYM_MAP.has(bigram)) {
-      phraseSet.add(bigram);
-    }
-
-    if (i < cleanedWords.length - 2) {
-      const trigram = `${cleanedWords[i]} ${cleanedWords[i + 1]} ${cleanedWords[i + 2]}`;
-      if (knownPhrases.has(trigram) || SYNONYM_MAP.has(trigram)) {
-        phraseSet.add(trigram);
-      }
-    }
-  }
-
-  // Regular single-word keywords
-  const words = extractKeywords(text);
-
-  return {
-    phrases: [...phraseSet],
-    words,
-  };
-}
-
-/**
  * Builds a single string from all resume text content for keyword matching.
  */
 function getResumeFullText(data: ResumeData): string {
@@ -366,12 +313,14 @@ function directMatch(keyword: string, resumeTextLower: string): boolean {
 
 /**
  * Classifies a keyword as hard_skill or soft_skill.
- * Uses canonical form + SOFT_SKILL_CANONICALS for O(1) lookup.
+ * Primary: SKILL_DB lookup. Fallback: SOFT_SKILL_CANONICALS.
  */
 export function classifySkillType(keyword: string): 'hard_skill' | 'soft_skill' {
+  const record = SKILL_DB.get(keyword.toLowerCase());
+  if (record) return record.type === 'soft' ? 'soft_skill' : 'hard_skill';
+  // Existing fallback
   const canonical = getCanonicalForm(keyword);
   if (SOFT_SKILL_CANONICALS.has(canonical)) return 'soft_skill';
-  // Also check the raw keyword lowercased in case it's not in synonym dict
   if (SOFT_SKILL_CANONICALS.has(keyword.toLowerCase())) return 'soft_skill';
   return 'hard_skill';
 }
@@ -750,35 +699,11 @@ function scoreKeywordMatchSplit(
   // Full JD path
   const parsedJd = parseJobDescription(jobDescription);
 
-  // Build a set of phrases that appear in the JD
-  const jdLower = jobDescription.toLowerCase();
-  const jdPhraseSet = new Set<string>();
-  const jdWords = jdLower.replace(/[^a-z0-9+#./\s-]/g, ' ').split(/\s+/).filter((w) => w.length > 0);
-  for (let i = 0; i < jdWords.length - 1; i++) {
-    jdPhraseSet.add(`${jdWords[i]} ${jdWords[i + 1]}`);
-    if (i < jdWords.length - 2) {
-      jdPhraseSet.add(`${jdWords[i]} ${jdWords[i + 1]} ${jdWords[i + 2]}`);
-    }
-  }
-
-  // Extract phrases and keywords from JD
-  const { phrases: jdPhrases, words: jdWordKeywords } = extractPhrasesAndKeywords(
-    jobDescription,
-    jdPhraseSet
-  );
-
-  // Combine phrases and words, dedup — phrases take priority
-  const phraseSet = new Set(jdPhrases);
-  const allJdKeywords = [
-    ...jdPhrases,
-    ...jdWordKeywords.filter((w) => {
-      for (const phrase of jdPhrases) {
-        if (phrase.includes(w)) return false;
-      }
-      return true;
-    }),
-  ];
-  const uniqueJdKeywords = [...new Set(allJdKeywords)];
+  // Extract only real skills from JD using skill database lookup
+  const jdSkills = extractSkillsFromText(jobDescription);
+  const uniqueJdKeywords = jdSkills.map(s => s.canonicalName.toLowerCase());
+  // Build a map for quick type lookup
+  const skillTypeMap = new Map(jdSkills.map(s => [s.canonicalName.toLowerCase(), s.type]));
 
   const resumeText = getResumeFullText(data);
   const resumeTextLower = resumeText.toLowerCase();
@@ -796,8 +721,9 @@ function scoreKeywordMatchSplit(
   for (const keyword of uniqueJdKeywords) {
     const source = classifyKeywordSource(keyword, parsedJd);
     const weight = sourceWeight(source);
-    const isPhrase = phraseSet.has(keyword) || keyword.includes(' ');
-    const skillType = classifySkillType(keyword);
+    const isPhrase = keyword.includes(' ');
+    const dbType = skillTypeMap.get(keyword.toLowerCase());
+    const skillType: 'hard_skill' | 'soft_skill' = dbType === 'soft' ? 'soft_skill' : 'hard_skill';
 
     if (skillType === 'hard_skill') {
       hardWeightedTotal += weight;
