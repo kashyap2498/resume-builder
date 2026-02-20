@@ -16,7 +16,6 @@
 // Returns a detailed breakdown with per-category scores and suggestions.
 
 import type { ResumeData, ExperienceEntry } from '@/types/resume';
-import { getKeywordsByIndustry, type IndustryId } from '@/constants/atsKeywords';
 import { resolveSynonyms, getCanonicalForm, SOFT_SKILL_CANONICALS } from '@/constants/atsSynonyms';
 import { parseJobDescription, type ParsedJobDescription } from '@/utils/jdParser';
 import { extractSkillsFromText, SKILL_DB } from '@/constants/skillDatabase';
@@ -603,8 +602,7 @@ function sourceWeight(source: KeywordMatchDetail['source']): number {
  */
 function scoreKeywordMatchSplit(
   data: ResumeData,
-  jobDescription: string,
-  industryId?: IndustryId
+  jobDescription: string
 ): {
   hardSkillScore: CategoryScore;
   softSkillScore: CategoryScore;
@@ -614,13 +612,13 @@ function scoreKeywordMatchSplit(
   matchDetails: KeywordMatchDetail[];
   parsedJd: ParsedJobDescription | null;
 } {
-  // No JD + no industry → baselines
-  if (!jobDescription.trim() && !industryId) {
+  // No JD → baselines
+  if (!jobDescription.trim()) {
     return {
       hardSkillScore: {
         score: 12,
         maxScore: 25,
-        suggestions: ['Provide a job description to get a detailed keyword match analysis.'],
+        suggestions: ['Paste a job description to get a detailed keyword match analysis.'],
       },
       softSkillScore: {
         score: 3,
@@ -632,67 +630,6 @@ function scoreKeywordMatchSplit(
       partial: [],
       matchDetails: [],
       parsedJd: null,
-    };
-  }
-
-  // Industry-only path (no JD)
-  if (!jobDescription.trim() && industryId) {
-    const industryKeywords = getKeywordsByIndustry(industryId);
-    if (industryKeywords.length === 0) {
-      return {
-        hardSkillScore: { score: 12, maxScore: 25, suggestions: ['Provide a job description to get a detailed keyword match analysis.'] },
-        softSkillScore: { score: 3, maxScore: 5, suggestions: [] },
-        matched: [], missing: [], partial: [], matchDetails: [], parsedJd: null,
-      };
-    }
-
-    const resumeText = getResumeFullText(data).toLowerCase();
-    const matched: string[] = [];
-    const missing: string[] = [];
-    const partial: string[] = [];
-    const matchDetails: KeywordMatchDetail[] = [];
-
-    for (const kw of industryKeywords) {
-      const skillType = classifySkillType(kw);
-      if (directMatch(kw, resumeText)) {
-        matched.push(kw);
-        matchDetails.push({ keyword: kw, status: 'matched', source: 'general', isPhrase: kw.includes(' '), skillType });
-      } else {
-        const synMatch = findSynonymMatch(kw, resumeText);
-        if (synMatch) {
-          partial.push(kw);
-          matchDetails.push({ keyword: kw, status: 'partial', source: 'general', synonymUsed: synMatch, isPhrase: kw.includes(' '), skillType });
-        } else {
-          missing.push(kw);
-          matchDetails.push({ keyword: kw, status: 'missing', source: 'general', isPhrase: kw.includes(' '), skillType });
-        }
-      }
-    }
-
-    // Split by skill type
-    const hardDetails = matchDetails.filter((d) => d.skillType === 'hard_skill');
-    const softDetails = matchDetails.filter((d) => d.skillType === 'soft_skill');
-
-    const hardTotal = hardDetails.length || 1;
-    const hardMatched = hardDetails.filter((d) => d.status === 'matched').length +
-      hardDetails.filter((d) => d.status === 'partial').length * 0.5;
-    const hardScore = Math.round(Math.min(hardMatched / hardTotal, 1) * 25);
-
-    const softTotal = softDetails.length || 1;
-    const softMatched = softDetails.filter((d) => d.status === 'matched').length +
-      softDetails.filter((d) => d.status === 'partial').length * 0.5;
-    const softScore = Math.round(Math.min(softMatched / softTotal, 1) * 5);
-
-    const hardSuggestions: string[] = [];
-    const hardMissing = hardDetails.filter((d) => d.status === 'missing');
-    if (hardMissing.length > 0) {
-      hardSuggestions.push(`Top industry hard skills to add: ${hardMissing.slice(0, 6).map((d) => d.keyword).join(', ')}.`);
-    }
-
-    return {
-      hardSkillScore: { score: hardScore, maxScore: 25, suggestions: hardSuggestions },
-      softSkillScore: { score: softScore, maxScore: 5, suggestions: [] },
-      matched, missing, partial, matchDetails, parsedJd: null,
     };
   }
 
@@ -1544,11 +1481,10 @@ function prioritizeActions(
  */
 export function computeAtsScore(
   data: ResumeData,
-  jobDescription: string = '',
-  industryId?: IndustryId
+  jobDescription: string = ''
 ): AtsScoreResult {
   // 1+2: Keyword match split
-  const keywordResult = scoreKeywordMatchSplit(data, jobDescription, industryId);
+  const keywordResult = scoreKeywordMatchSplit(data, jobDescription);
 
   // 3: Experience alignment
   const experienceAlignment = scoreExperienceAlignment(data, keywordResult.parsedJd);

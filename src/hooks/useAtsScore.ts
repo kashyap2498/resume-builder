@@ -15,8 +15,6 @@ import {
 } from '@/utils/atsScorer';
 import type { ParsedJobDescription } from '@/utils/jdParser';
 import type { ResumeData } from '@/types/resume';
-import type { IndustryId } from '@/constants/atsKeywords';
-
 export interface UseAtsScoreReturn {
   score: number;
   breakdown: AtsScoreResult['breakdown'];
@@ -31,8 +29,7 @@ export interface UseAtsScoreReturn {
 
 export function useAtsScore(
   resumeData: ResumeData | null,
-  jobDescription: string = '',
-  industryId?: IndustryId
+  jobDescription: string = ''
 ): UseAtsScoreReturn {
   const [isCalculating, setIsCalculating] = useState(false);
 
@@ -44,11 +41,11 @@ export function useAtsScore(
 
     setIsCalculating(true);
     try {
-      return computeAtsScore(resumeData, debouncedJobDescription, industryId);
+      return computeAtsScore(resumeData, debouncedJobDescription);
     } finally {
       setIsCalculating(false);
     }
-  }, [resumeData, debouncedJobDescription, industryId]);
+  }, [resumeData, debouncedJobDescription]);
 
   // Reset calculating flag after render
   useEffect(() => {

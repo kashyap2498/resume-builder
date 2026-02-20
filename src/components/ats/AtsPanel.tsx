@@ -6,18 +6,12 @@
 
 import { useState, useCallback } from 'react';
 import { FileText, AlertCircle, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
-import { Button, TextArea, Select } from '@/components/ui';
+import { Button, TextArea } from '@/components/ui';
 import { useResumeStore } from '@/store/resumeStore';
 import { useAtsScore } from '@/hooks/useAtsScore';
-import { INDUSTRY_KEYWORDS, type IndustryId } from '@/constants/atsKeywords';
 import { AtsScoreCard } from './AtsScoreCard';
 import { KeywordAnalysis } from './KeywordAnalysis';
 import { FormattingWarnings } from './FormattingWarnings';
-
-const INDUSTRY_OPTIONS = [
-  { value: '', label: 'No industry selected' },
-  ...INDUSTRY_KEYWORDS.map((i) => ({ value: i.id, label: i.name })),
-];
 
 const PRIORITY_COLORS: Record<string, { bg: string; text: string; icon: typeof AlertCircle }> = {
   critical: { bg: 'bg-red-50 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400', icon: AlertCircle },
@@ -29,15 +23,13 @@ const PRIORITY_COLORS: Record<string, { bg: string; text: string; icon: typeof A
 export function AtsPanel() {
   const [jobDescription, setJobDescription] = useState('');
   const [analyzedDescription, setAnalyzedDescription] = useState('');
-  const [selectedIndustry, setSelectedIndustry] = useState<IndustryId | ''>('');
 
   const currentResume = useResumeStore((s) => s.currentResume);
   const resumeData = currentResume?.data ?? null;
 
   const { score, breakdown, keywords, isCalculating, passLikelihood, prioritizedActions, parsedJd, confidence, requirements } = useAtsScore(
     resumeData,
-    analyzedDescription,
-    selectedIndustry || undefined
+    analyzedDescription
   );
 
   const handleAnalyze = useCallback(() => {
@@ -69,17 +61,6 @@ export function AtsPanel() {
       <div className="flex items-center gap-2">
         <FileText className="h-5 w-5 text-blue-600" />
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">ATS Analysis</h2>
-      </div>
-
-      {/* Industry Selector */}
-      <div>
-        <Select
-          label="Industry"
-          options={INDUSTRY_OPTIONS}
-          value={selectedIndustry}
-          onChange={(e) => setSelectedIndustry(e.target.value as IndustryId | '')}
-          hint="Select an industry to score against common keywords even without a job description."
-        />
       </div>
 
       {/* Job Description Input */}

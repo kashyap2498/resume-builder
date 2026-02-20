@@ -10,7 +10,6 @@ import {
   getResumeSectionTexts,
 } from '@/utils/atsScorer'
 import { mockResumeData, createEmptyResumeData } from '@/test/fixtures'
-import { INDUSTRY_KEYWORDS } from '@/constants/atsKeywords'
 import { extractSkillsFromText, SKILL_DB } from '@/constants/skillDatabase'
 import type { ResumeData, ExperienceEntry } from '@/types/resume'
 
@@ -428,20 +427,6 @@ Preferred
     const emptyResult = computeAtsScore(createEmptyResumeData())
     expect(emptyResult.score).toBeLessThan(40)
     expect(emptyResult.passLikelihood).toBe('Unlikely to pass')
-  })
-
-  // ---------------------------------------------------------------------------
-  // All 21 industries have keywords
-  // ---------------------------------------------------------------------------
-
-  it('should have non-empty keyword arrays for all 21 industries', () => {
-    expect(INDUSTRY_KEYWORDS.length).toBe(21)
-
-    for (const industry of INDUSTRY_KEYWORDS) {
-      expect(industry.keywords.length).toBeGreaterThan(0)
-      expect(industry.id).toBeTruthy()
-      expect(industry.name).toBeTruthy()
-    }
   })
 
   // ---------------------------------------------------------------------------
