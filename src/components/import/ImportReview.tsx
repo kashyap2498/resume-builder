@@ -2,9 +2,11 @@
 // Resume Builder - ImportReview (main review UI for imported resume data)
 // =============================================================================
 
-import { useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { Undo2, Redo2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useImportReviewState } from '@/hooks/useImportReviewState';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { ResumeData } from '@/types/resume';
 import type { ParseMetadata } from '@/utils/resumeParser';
 import {
@@ -148,6 +150,12 @@ export function ImportReview({
   onCancel,
 }: ImportReviewProps) {
   const state = useImportReviewState(parsedData);
+  const isWide = useMediaQuery('(min-width: 768px)');
+  const hasSourceText = !!(rawText && parseMetadata);
+  const isSideBySide = isWide && hasSourceText;
+
+  // Bidirectional sync: track which section is hovered on the right panel
+  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
 
   // Section refs for scroll-to-section from SourceTextPanel
   const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -187,9 +195,34 @@ export function ImportReview({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Undo/Redo keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        state.undo();
+      } else if (
+        (e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey
+      ) {
+        e.preventDefault();
+        state.redo();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+        e.preventDefault();
+        state.redo();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [state]);
+
   const visibleSections = useMemo(
     () => SECTION_DEFS.filter((def) => def.shouldShow(state)),
     [state],
+  );
+
+  const issueCount = useMemo(
+    () => visibleSections.filter((def) => state.getSectionConfidence(def.key) === 'incomplete').length,
+    [visibleSections, state],
   );
 
   const handleImport = useCallback(() => {
@@ -198,26 +231,9 @@ export function ImportReview({
 
   const updateHobbiesItems = useCallback(
     (items: string[]) => {
-      // The hook stores hobbies as HobbiesData { items: string[] }
-      // We need to use the full object replacement via a workaround:
-      // hobbies isn't in the array section map, so we update via the state directly
-      // Actually, looking at the hook, hobbies has its own setter but isn't exposed
-      // We can use updateEntry pattern — but hobbies is not an array section.
-      // Instead, we pass a helper that reconstructs hobbies.
-      // The hook doesn't expose setHobbies directly, but we can see it stores
-      // hobbies state. For now, we'll use a direct approach.
-      // Looking at the hook more carefully: it doesn't expose setHobbies.
-      // We need to work around this by noting the hook's buildPartialResumeData
-      // reads from hobbies state. Let's just pass items through the entry system.
-      // Actually, hobbies is not in sectionStateMap. We need to handle this.
-      // For now, let's just call the state's internal setter via the returned object.
-      // The hook DOES NOT expose setHobbies — this is a gap we need to work around.
-      // We'll treat this as a non-editable display for now, or we can add a simple
-      // workaround: since the hook returns hobbies state, we can't modify it.
-      // Let's just not make hobbies editable in this phase — show read-only.
-      void items;
+      state.setHobbies({ items });
     },
-    [],
+    [state],
   );
 
   // ---------------------------------------------------------------------------
@@ -257,6 +273,11 @@ export function ImportReview({
             onSplitEntry={state.splitEntry}
             onMergeEntries={(indexA, indexB) => state.mergeEntries('experience', indexA, indexB)}
             onReorderEntries={(from, to) => state.reorderEntries('experience', from, to)}
+            onUpdateBullet={state.updateBullet}
+            onRemoveBullet={state.removeBullet}
+            onAddBullet={state.addBullet}
+            onReorderBullet={state.reorderBullet}
+            onMoveBullet={state.moveBullet}
           />
         );
 
@@ -303,13 +324,73 @@ export function ImportReview({
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Review cards (shared between both layouts)
+  // ---------------------------------------------------------------------------
+
+  const reviewCards = (
+    <>
+      {visibleSections.map((def) => (
+        <div
+          key={def.key}
+          onMouseEnter={() => setHoveredSection(def.key)}
+          onMouseLeave={() => setHoveredSection(null)}
+        >
+          <ReviewSectionCard
+            title={def.title}
+            count={def.getCount?.(state)}
+            confidence={state.getSectionConfidence(def.key)}
+            sectionRef={getSectionRef(def.key)}
+          >
+            {renderSectionContent(def.key)}
+          </ReviewSectionCard>
+        </div>
+      ))}
+
+      {/* Unmatched content */}
+      <UnmatchedContentBlock
+        chunks={state.unmatchedChunks}
+        onAddAs={state.addUnmatchedAs}
+        onSkip={state.skipUnmatchedChunk}
+      />
+    </>
+  );
+
   return (
     <div className="flex flex-col">
       {/* Sticky top bar */}
       <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white/95 px-1 py-3 backdrop-blur dark:border-dark-edge dark:bg-dark-card/95">
-        <span className="text-sm text-gray-600 dark:text-gray-400">
-          {visibleSections.length} section{visibleSections.length !== 1 ? 's' : ''} found
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            {visibleSections.length} section{visibleSections.length !== 1 ? 's' : ''} found
+          </span>
+          {issueCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+              <AlertTriangle className="h-3 w-3" />
+              {issueCount} need{issueCount === 1 ? 's' : ''} review
+            </span>
+          )}
+          <div className="flex gap-1">
+            <button
+              type="button"
+              onClick={state.undo}
+              disabled={!state.canUndo}
+              className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-colors"
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo2 className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={state.redo}
+              disabled={!state.canRedo}
+              className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-colors"
+              title="Redo (Ctrl+Shift+Z)"
+            >
+              <Redo2 className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={onCancel}>
             Cancel
@@ -320,36 +401,41 @@ export function ImportReview({
         </div>
       </div>
 
-      {/* Scrollable sections */}
-      <div className="space-y-3 overflow-y-auto py-4" style={{ maxHeight: 'calc(95vh - 200px)' }}>
-        {/* Source text panel */}
-        {rawText && parseMetadata && (
-          <SourceTextPanel
-            rawText={rawText}
-            sectionRanges={parseMetadata.sectionRanges}
-            onScrollToSection={scrollToSection}
-          />
-        )}
+      {/* Main content area */}
+      {isSideBySide ? (
+        /* Side-by-side layout (>= 768px with source text) */
+        <div className="flex gap-4 py-4" style={{ height: 'calc(95vh - 200px)' }}>
+          {/* Left panel: Source text (always visible) */}
+          <div className="w-2/5 min-w-0 flex-shrink-0">
+            <SourceTextPanel
+              rawText={rawText}
+              sectionRanges={parseMetadata!.sectionRanges}
+              onScrollToSection={scrollToSection}
+              alwaysExpanded
+              highlightedSection={hoveredSection}
+            />
+          </div>
 
-        {visibleSections.map((def) => (
-          <ReviewSectionCard
-            key={def.key}
-            title={def.title}
-            count={def.getCount?.(state)}
-            confidence={state.getSectionConfidence(def.key)}
-            sectionRef={getSectionRef(def.key)}
-          >
-            {renderSectionContent(def.key)}
-          </ReviewSectionCard>
-        ))}
+          {/* Right panel: Review cards (scrollable) */}
+          <div className="w-3/5 min-w-0 space-y-3 overflow-y-auto pr-1">
+            {reviewCards}
+          </div>
+        </div>
+      ) : (
+        /* Stacked layout (< 768px or no source text) */
+        <div className="space-y-3 overflow-y-auto py-4" style={{ maxHeight: 'calc(95vh - 200px)' }}>
+          {/* Source text panel (collapsible in stacked mode) */}
+          {hasSourceText && (
+            <SourceTextPanel
+              rawText={rawText}
+              sectionRanges={parseMetadata!.sectionRanges}
+              onScrollToSection={scrollToSection}
+            />
+          )}
 
-        {/* Unmatched content */}
-        <UnmatchedContentBlock
-          chunks={state.unmatchedChunks}
-          onAddAs={state.addUnmatchedAs}
-          onSkip={state.skipUnmatchedChunk}
-        />
-      </div>
+          {reviewCards}
+        </div>
+      )}
 
       {/* Bottom action bar */}
       <div className="flex justify-end gap-2 border-t border-gray-200 pt-3 dark:border-dark-edge">

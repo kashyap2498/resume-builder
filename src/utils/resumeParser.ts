@@ -28,7 +28,7 @@ import type {
 
 const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
 const PHONE_REGEX =
-  /(?:\+?1\s*[-.]?\s*)?(?:\(\d{3}\)|\d{3})\s*[-.\s]\s*\d{3}\s*[-.\s]\s*\d{4}/;
+  /(?:\+?1\s*[-.]?\s*)?(?:\(\d{3}\)|\d{3})\s*[-.\s]\s*\d{3}\s*[-.\s]\s*\d{4}|\b\d{10}\b/;
 const LINKEDIN_REGEX =
   /(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+\/?/i;
 const GITHUB_REGEX =
@@ -260,14 +260,18 @@ function extractContact(text: string): Partial<ContactData> {
     }
   }
 
-  // Try to extract website from first 10 lines (exclude LinkedIn and GitHub)
+  // Try to extract website (and portfolio) from first 10 lines (exclude LinkedIn and GitHub)
   for (const line of first10Lines) {
     const urlMatch = line.match(URL_REGEX);
     if (urlMatch) {
       const url = urlMatch[0];
       if (!LINKEDIN_REGEX.test(url) && !GITHUB_REGEX.test(url)) {
-        contact.website = url;
-        break;
+        if (!contact.website) {
+          contact.website = url;
+        } else if (!contact.portfolio) {
+          contact.portfolio = url;
+          break;
+        }
       }
     }
   }
@@ -306,12 +310,26 @@ function extractContact(text: string): Partial<ContactData> {
     if (
       nextLine &&
       nextLine.length < 60 &&
-      JOB_TITLE_WORDS.test(nextLine) &&
       !EMAIL_REGEX.test(nextLine) &&
       !PHONE_REGEX.test(nextLine) &&
-      !URL_REGEX.test(nextLine)
+      !URL_REGEX.test(nextLine) &&
+      !DATE_REGEX.test(nextLine)
     ) {
-      contact.title = nextLine;
+      if (JOB_TITLE_WORDS.test(nextLine)) {
+        // Known title keywords
+        contact.title = nextLine;
+      } else if (nameLineIndex + 2 < firstLines.length) {
+        // Heuristic: if the line after the potential title contains contact info
+        // (email/phone), treat this short non-contact line as a title
+        const lineAfterTitle = firstLines[nameLineIndex + 2].trim();
+        if (
+          nextLine.length < 60 &&
+          !/^\d/.test(nextLine) &&
+          (EMAIL_REGEX.test(lineAfterTitle) || PHONE_REGEX.test(lineAfterTitle) || LOCATION_REGEX.test(lineAfterTitle))
+        ) {
+          contact.title = nextLine;
+        }
+      }
     }
   }
 
@@ -324,12 +342,49 @@ const BULLET_RE = /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014\u25BA\u25B8\u2
 
 const COMPANY_INDICATORS = /\b(?:Inc\.?|LLC|Corp(?:oration)?\.?|Ltd\.?|Limited|Technologies|Solutions|Systems|Group|Associates|Partners|Consulting|Services|Company|Co\.?|Foundation|Institute|University|College|Hospital|Bank|Agency|Studio|Labs?|Ventures?|Capital|Holdings?|International|Global|Enterprises?)\b/i;
 
-function scoreBoundarySignals(line: string, prevLine: string | null, isBullet: boolean): number {
+interface RunningDateRange {
+  lastEndDate: string | null;
+}
+
+function scoreBoundarySignals(
+  line: string,
+  prevLine: string | null,
+  isBullet: boolean,
+  runningDates?: RunningDateRange,
+): number {
   let score = 0;
 
   // Non-bullet with date range: +3
   if (!isBullet && DATE_RANGE_REGEX.test(line)) {
     score += 3;
+  }
+
+  // Date discontinuity: if we had a running date range and this line has a
+  // different date range, it's likely a new entry: +3
+  if (runningDates?.lastEndDate && !isBullet && DATE_RANGE_REGEX.test(line)) {
+    const match = line.match(DATE_RANGE_REGEX);
+    if (match && !match[0].includes(runningDates.lastEndDate)) {
+      score += 3;
+    }
+  }
+
+  // Two consecutive short non-bullet lines after a bullet = strong header signal: +3
+  // (Only applies when the line two positions back was a bullet, so we don't
+  //  trigger on the very first header lines of a section.)
+  if (
+    prevLine !== null &&
+    !isBullet &&
+    !BULLET_RE.test(prevLine) &&
+    line.length < 60 &&
+    !line.endsWith('.') &&
+    prevLine.length < 60 &&
+    !prevLine.endsWith('.')
+  ) {
+    // This signal only fires when prevPrevLine was a bullet or long text
+    // (indicating we were in content territory and are now seeing new headers)
+    if (runningDates?.lastEndDate) {
+      score += 3;
+    }
   }
 
   // Short (<60 chars), non-bullet, no period: +1
@@ -342,9 +397,30 @@ function scoreBoundarySignals(line: string, prevLine: string | null, isBullet: b
     score += 2;
   }
 
-  // Previous line was bullet, this is not: +1
+  // Previous line was bullet, this is not: +2 (increased from +1)
   if (prevLine !== null && BULLET_RE.test(prevLine) && !isBullet) {
-    score += 1;
+    score += 2;
+  }
+
+  // Bullet containing a date range = likely misclassified entry header: +5
+  if (isBullet) {
+    const stripped = line.replace(/^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014\u25BA\u25B8\u25B6\u2023\u27A4\u2192>\u2605\u2606\u203A\u276F]\s*/, '');
+    if (DATE_RANGE_REGEX.test(stripped) && stripped.length < 100) {
+      score += 5;
+    }
+    // Bullet containing "at [Company]" + date pattern = misclassified header: +2
+    const atCompanyDate = /\bat\s+[A-Z][a-zA-Z\s]+/.test(line) && DATE_REGEX.test(line);
+    if (atCompanyDate) {
+      score += 2;
+    }
+  }
+
+  // Non-bullet line with a date range AND a title-like phrase = entry header: +5
+  if (!isBullet && DATE_RANGE_REGEX.test(line) && line.length < 80) {
+    const beforeDate = line.replace(DATE_RANGE_REGEX, '').trim();
+    if (beforeDate.length > 2 && /^[A-Z]/.test(beforeDate)) {
+      score += 5;
+    }
   }
 
   // Title-cased (>=70% words capitalized), 2-6 words: +1
@@ -371,15 +447,53 @@ function extractExperience(content: string): ExperienceEntry[] {
   // 2. No paragraph breaks — boundary scoring
   const lines = content.split('\n').map((l) => l.trim()).filter(Boolean);
 
+  // Track running date range for discontinuity detection
+  const runningDates: RunningDateRange = { lastEndDate: null };
+
   const rawBoundaries: number[] = [];
   for (let i = 0; i < lines.length; i++) {
     const isBullet = BULLET_RE.test(lines[i]);
     const prevLine = i > 0 ? lines[i - 1] : null;
-    const score = scoreBoundarySignals(lines[i], prevLine, isBullet);
+    const score = scoreBoundarySignals(lines[i], prevLine, isBullet, runningDates);
     if (score >= 3 && i > 0) {
       rawBoundaries.push(i);
     }
+
+    // Update running date range when we encounter date ranges
+    if (!isBullet) {
+      const dateRangeMatch = lines[i].match(DATE_RANGE_REGEX);
+      if (dateRangeMatch) {
+        const parts = dateRangeMatch[0].split(/[-–—]|to/i).map((d) => d.trim()).filter(Boolean);
+        if (parts.length >= 2) {
+          runningDates.lastEndDate = parts[parts.length - 1];
+        }
+      }
+    }
   }
+
+  // Second pass: detect absorbed entry headers within bullet lists.
+  // If a bullet contains a date range and is short, it's likely a missed boundary.
+  const BULLET_RE_FULL = /^[-*\u2022\u25CF\u25CB\u25AA\u25AB\u2013\u2014\u25BA\u25B8\u25B6\u2023\u27A4\u2192>\u2605\u2606\u203A\u276F]\s*/;
+  for (let i = 1; i < lines.length; i++) {
+    if (BULLET_RE.test(lines[i])) {
+      const stripped = lines[i].replace(BULLET_RE_FULL, '');
+      if (DATE_RANGE_REGEX.test(stripped) && stripped.length < 100) {
+        if (!rawBoundaries.includes(i)) {
+          rawBoundaries.push(i);
+        }
+      }
+    }
+    // Also check non-bullet lines within content that have date ranges
+    if (!BULLET_RE.test(lines[i]) && DATE_RANGE_REGEX.test(lines[i]) && lines[i].length < 100) {
+      const textBeforeDate = lines[i].replace(DATE_RANGE_REGEX, '').trim();
+      if (textBeforeDate.length > 2 && /[A-Z]/.test(textBeforeDate)) {
+        if (!rawBoundaries.includes(i)) {
+          rawBoundaries.push(i);
+        }
+      }
+    }
+  }
+  rawBoundaries.sort((a, b) => a - b);
 
   // Consolidate boundaries that are within 2 lines of each other (same entry header)
   const boundaries: number[] = [];
@@ -492,16 +606,20 @@ function parseExperienceBlock(blockText: string): ExperienceEntry | null {
     }
   }
 
-  // If company not found in headers, check first content line for "Company | Location"
+  // If company not found in headers, check first content line for company name
   if (!entry.company && contentLines.length > 0) {
     const firstContent = contentLines[0];
-    if (!BULLET_RE.test(firstContent) && firstContent.length < 60) {
-      const compSep = firstContent.match(/^(.+?)\s*[|]\s*(.+?)$/);
+    // Promote first non-bullet, short line to company (with or without separator)
+    if (!BULLET_RE.test(firstContent) && firstContent.length < 80) {
+      const compSep = firstContent.match(/^(.+?)\s*[|,]\s*(.+?)$/);
       if (compSep) {
         entry.company = compSep[1].trim();
         entry.location = compSep[2].trim();
-        contentLines = contentLines.slice(1);
+      } else {
+        // Plain company name (no separator) — promote as company
+        entry.company = firstContent.trim();
       }
+      contentLines = contentLines.slice(1);
     }
   }
 
@@ -598,12 +716,22 @@ function extractEducation(content: string): EducationEntry[] {
     const entry: Partial<EducationEntry> = {};
     const blockText = lines.join(' ');
 
-    // Try to detect degree
-    const degreeMatch = blockText.match(
-      /(?:Bachelor|Master|Doctor|Ph\.?D|B\.?S\.?|B\.?A\.?|M\.?S\.?|M\.?A\.?|M\.?B\.?A\.?|Associate)[^,\n]*/i
+    // Try to detect degree — two-step: match keyword, then capture "of/in Field"
+    // but stop at institution keywords or year patterns
+    const degreeKeywordMatch = blockText.match(
+      /(?:Bachelor|Master|Doctor|Ph\.?D|B\.?S\.?|B\.?A\.?|M\.?S\.?|M\.?A\.?|M\.?B\.?A\.?|Associate)/i
     );
-    if (degreeMatch) {
-      entry.degree = degreeMatch[0].trim();
+    if (degreeKeywordMatch) {
+      const degreeStart = degreeKeywordMatch.index!;
+      const afterKeyword = blockText.substring(degreeStart + degreeKeywordMatch[0].length);
+      // Stop at institution name (word + keyword) or 4-digit year
+      const stopMatch = afterKeyword.match(/\s+[A-Z][a-zA-Z'-]*\s+(?:University|College|Institute|School|Academy)|\s+\b\d{4}\b/i);
+      if (stopMatch) {
+        entry.degree = blockText.substring(degreeStart, degreeStart + degreeKeywordMatch[0].length + stopMatch.index!).trim();
+      } else {
+        const commaIdx = afterKeyword.indexOf(',');
+        entry.degree = blockText.substring(degreeStart, degreeStart + degreeKeywordMatch[0].length + (commaIdx >= 0 ? commaIdx : afterKeyword.length)).trim();
+      }
     }
 
     // Try to extract dates
@@ -617,9 +745,9 @@ function extractEducation(content: string): EducationEntry[] {
     } else {
       const singleDate = blockText.match(DATE_REGEX);
       if (singleDate) {
-        // Single date (e.g. graduation year) — use as endDate but also
-        // set startDate so formatDateRange doesn't produce "- Aug 2022"
-        entry.startDate = singleDate[0];
+        // Single date (e.g. graduation year) — only set as endDate (graduation date).
+        // formatDateRange already handles empty startDate correctly.
+        entry.startDate = '';
         entry.endDate = singleDate[0];
       }
     }
@@ -630,17 +758,43 @@ function extractEducation(content: string): EducationEntry[] {
       entry.gpa = gpaMatch[1];
     }
 
-    // First line is usually institution or degree
+    // Extract institution from remainder after degree, or from lines
     if (lines.length >= 1 && !entry.degree) {
       entry.institution = lines[0];
-    } else if (lines.length >= 1) {
-      // If we found the degree inline, first line is probably the institution
-      entry.institution = lines[0]
-        .replace(degreeMatch?.[0] || '', '')
-        .replace(DATE_RANGE_REGEX, '')
-        .trim();
-      if (!entry.institution && lines.length > 1) {
-        entry.institution = lines[1];
+    } else if (lines.length >= 1 && entry.degree) {
+      // Find institution in text around the degree
+      const degreePos = blockText.indexOf(entry.degree);
+      if (degreePos >= 0) {
+        const degreeEnd = degreePos + entry.degree.length;
+        const remainder = blockText.substring(degreeEnd).replace(DATE_RANGE_REGEX, '').replace(DATE_REGEX, '').trim();
+        // Look for institution keyword in remainder
+        const instMatch = remainder.match(/([A-Z][A-Za-z\s]+(?:University|College|Institute|School|Academy)[A-Za-z\s]*)/i);
+        if (instMatch) {
+          entry.institution = instMatch[0].trim();
+        } else if (remainder.length > 0 && remainder.length < 80) {
+          entry.institution = remainder.replace(/^[-–—,]\s*/, '').trim();
+        }
+        // Also check text BEFORE the degree keyword
+        if (!entry.institution) {
+          const beforeDegree = blockText.substring(0, degreePos).replace(/[-–—,]\s*$/, '').trim();
+          if (beforeDegree && beforeDegree.length < 80) entry.institution = beforeDegree;
+        }
+        // Fallback: check subsequent lines
+        if (!entry.institution && lines.length > 1) {
+          for (let li = 1; li < lines.length; li++) {
+            const candidate = lines[li].replace(DATE_RANGE_REGEX, '').replace(DATE_REGEX, '').trim();
+            if (candidate && candidate !== entry.degree && !/^[-*\u2022]/.test(candidate)) {
+              entry.institution = candidate;
+              break;
+            }
+          }
+        }
+      } else {
+        // Degree found elsewhere in block text — first line is institution
+        entry.institution = lines[0].replace(DATE_RANGE_REGEX, '').trim();
+        if (!entry.institution && lines.length > 1) {
+          entry.institution = lines[1].replace(DATE_RANGE_REGEX, '').trim();
+        }
       }
     }
 
@@ -680,11 +834,27 @@ function extractEducation(content: string): EducationEntry[] {
 
 // -- Skills Extraction --------------------------------------------------------
 
+function isValidSkillItem(s: string): boolean {
+  // Filter out fragments shorter than 2 chars
+  if (s.length < 2) return false;
+  // Filter out common sentence fragments that aren't real skills
+  if (/^(?:to|of|and|the|in|for|with|a|an)\s/i.test(s)) return false;
+  return true;
+}
+
 function extractSkills(content: string): SkillCategory[] {
-  const lines = content
+  // Split on newlines, then also split each line on inline bullet markers
+  const rawLines = content
     .split('\n')
     .map((l) => l.trim())
     .filter(Boolean);
+
+  const lines: string[] = [];
+  for (const line of rawLines) {
+    // Split on inline bullet markers (mid-line bullets)
+    const parts = line.split(/\s*\u2022\s*/);
+    lines.push(...parts.filter(Boolean));
+  }
 
   const categories: SkillCategory[] = [];
   let currentCategory: SkillCategory | null = null;
@@ -700,6 +870,11 @@ function extractSkills(content: string): SkillCategory[] {
         .map((s) => s.trim())
         .filter(Boolean);
 
+      // Strip leading "and " from last item (e.g. "and organizational skills")
+      if (skillNames.length > 1 && /^and\s+/i.test(skillNames[skillNames.length - 1])) {
+        skillNames[skillNames.length - 1] = skillNames[skillNames.length - 1].replace(/^and\s+/i, '').trim();
+      }
+
       // Save any accumulated general skills before starting a new category
       if (currentCategory && currentCategory.items.length > 0) {
         categories.push(currentCategory);
@@ -709,7 +884,7 @@ function extractSkills(content: string): SkillCategory[] {
       categories.push({
         id: generateId(),
         category: categoryName,
-        items: skillNames,
+        items: skillNames.filter(isValidSkillItem),
       });
     } else {
       // Treat as comma-separated list or bullet points
@@ -718,6 +893,11 @@ function extractSkills(content: string): SkillCategory[] {
         .split(/[,;|]/)
         .map((s) => s.trim())
         .filter(Boolean);
+
+      // Strip leading "and " from last item (e.g. "and organizational skills")
+      if (skills.length > 1 && /^and\s+/i.test(skills[skills.length - 1])) {
+        skills[skills.length - 1] = skills[skills.length - 1].replace(/^and\s+/i, '').trim();
+      }
 
       if (skills.length > 1) {
         // Multiple skills on one line -- group them
@@ -729,7 +909,9 @@ function extractSkills(content: string): SkillCategory[] {
           };
         }
         for (const skill of skills) {
-          currentCategory.items.push(skill);
+          if (isValidSkillItem(skill)) {
+            currentCategory.items.push(skill);
+          }
         }
       } else if (skills.length === 1 && skills[0]) {
         if (!currentCategory) {
@@ -739,7 +921,9 @@ function extractSkills(content: string): SkillCategory[] {
             items: [],
           };
         }
-        currentCategory.items.push(skills[0]);
+        if (isValidSkillItem(skills[0])) {
+          currentCategory.items.push(skills[0]);
+        }
       }
     }
   }
@@ -1466,6 +1650,267 @@ function generateId(): string {
   return `imported-${Date.now()}-${idCounter}`;
 }
 
+// -- Section Content Extraction -----------------------------------------------
+
+/**
+ * Maps a section type string to the correct extraction function.
+ * Returns extracted entries/data for the given section type.
+ */
+export function extractSectionContent(sectionType: string, content: string): unknown {
+  switch (sectionType) {
+    case 'experience':
+      return extractExperience(content);
+    case 'education':
+      return extractEducation(content);
+    case 'skills':
+      return extractSkills(content);
+    case 'certifications':
+      return extractCertifications(content);
+    case 'projects':
+      return extractProjects(content);
+    case 'languages':
+      return extractLanguages(content);
+    case 'volunteer':
+      return extractVolunteer(content);
+    case 'awards':
+      return extractAwards(content);
+    case 'publications':
+      return extractPublications(content);
+    case 'references':
+      return extractReferences(content);
+    case 'affiliations':
+      return extractAffiliations(content);
+    case 'courses':
+      return extractCourses(content);
+    case 'interests':
+    case 'hobbies':
+      return {
+        items: content
+          .split(/[,\n]/)
+          .map((s) => s.replace(/^[-*\u2022]\s*/, '').trim())
+          .filter(Boolean),
+      };
+    case 'summary':
+      return { text: content.trim() };
+    default:
+      return null;
+  }
+}
+
+// -- Post-Parse Auto-Cleanup --------------------------------------------------
+
+/**
+ * Catches edge cases the parser misses: promotes company-like first bullets,
+ * normalizes ALL CAPS names, filters placeholder data and bad skill fragments.
+ */
+function postProcessParseResult(result: Partial<ResumeData>): Partial<ResumeData> {
+  // 1. Normalize ALL CAPS names to title case
+  if (result.contact) {
+    if (result.contact.firstName && result.contact.firstName === result.contact.firstName.toUpperCase() && result.contact.firstName.length > 1) {
+      result.contact.firstName = result.contact.firstName.charAt(0).toUpperCase() + result.contact.firstName.slice(1).toLowerCase();
+    }
+    if (result.contact.lastName && result.contact.lastName === result.contact.lastName.toUpperCase() && result.contact.lastName.length > 1) {
+      // Handle multi-word last names
+      result.contact.lastName = result.contact.lastName
+        .split(/\s+/)
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+    }
+  }
+
+  // 2. Auto-promote first bullet to company for experience entries
+  if (result.experience) {
+    for (const entry of result.experience) {
+      if (!entry.company && entry.highlights.length > 0) {
+        const firstBullet = entry.highlights[0];
+        // Check if first bullet looks like a company name:
+        // short, mostly capitalized, no period at end
+        if (
+          firstBullet.length < 60 &&
+          !firstBullet.endsWith('.') &&
+          !firstBullet.endsWith(',')
+        ) {
+          const words = firstBullet.split(/\s+/).filter(Boolean);
+          if (words.length >= 1 && words.length <= 6) {
+            const capCount = words.filter(w => /^[A-Z]/.test(w)).length;
+            if (capCount / words.length >= 0.6) {
+              entry.company = firstBullet;
+              entry.highlights = entry.highlights.slice(1);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 3. Filter placeholder credential IDs, URLs, and issuers from certifications
+  if (result.certifications) {
+    const PLACEHOLDER_IDS = /^(?:ABC123|XYZ789|123456|PLACEHOLDER|N\/A|TBD|NA)$/i;
+    const PLACEHOLDER_URLS = /^https?:\/\/(?:\.{3}|example\.com|www\.example\.com|placeholder)\/?$/i;
+    const PLACEHOLDER_ISSUERS = /^(?:issuing\s*organization|organization|issuer|company\s*name|n\/a|tbd)$/i;
+    for (const cert of result.certifications) {
+      if (cert.credentialId && PLACEHOLDER_IDS.test(cert.credentialId.trim())) {
+        cert.credentialId = '';
+      }
+      if (cert.url && PLACEHOLDER_URLS.test(cert.url.trim())) {
+        cert.url = '';
+      }
+      if (cert.issuer && PLACEHOLDER_ISSUERS.test(cert.issuer.trim())) {
+        cert.issuer = '';
+      }
+    }
+  }
+
+  // 4. Auto-format phone numbers
+  if (result.contact?.phone) {
+    const digits = result.contact.phone.replace(/\D/g, '');
+    if (digits.length === 10) {
+      result.contact.phone = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    } else if (digits.length === 11 && digits.startsWith('1')) {
+      result.contact.phone = `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+    }
+  }
+
+  // 5. Split concatenated URLs in contact fields (PDF extraction artifact)
+  if (result.contact) {
+    const urlFields: (keyof typeof result.contact)[] = ['website', 'portfolio', 'linkedin', 'github'];
+    for (const field of urlFields) {
+      const val = result.contact[field];
+      if (val && typeof val === 'string') {
+        // Detect concatenated URLs: "https://...https://..." or "http://...http://..."
+        const splitMatch = val.match(/^(https?:\/\/.+?)(?=https?:\/\/)(https?:\/\/.+)$/i);
+        if (splitMatch) {
+          result.contact[field] = splitMatch[1]; // Keep first URL in current field
+          // Try to place second URL in an empty field
+          const secondUrl = splitMatch[2];
+          if (field === 'website' && !result.contact.portfolio) {
+            result.contact.portfolio = secondUrl;
+          } else if (field === 'portfolio' && !result.contact.website) {
+            result.contact.website = secondUrl;
+          }
+          // For linkedin/github, just keep the first URL
+        }
+      }
+    }
+  }
+
+  // 6. Filter bad skill fragments (backup for anything Layer 2C missed)
+  if (result.skills) {
+    for (const cat of result.skills) {
+      cat.items = cat.items.filter(s => s.length >= 2);
+    }
+    // Remove empty categories
+    result.skills = result.skills.filter(cat => cat.items.length > 0);
+  }
+
+  return result;
+}
+
+// -- Pre-Parse Text Normalization ---------------------------------------------
+
+/**
+ * Cleans up raw PDF/DOCX text extraction artifacts before parsing.
+ * Fixes hyphenated line breaks, joins continuation lines, and normalizes
+ * inline bullet markers so downstream parsers see clean semantic boundaries.
+ */
+function normalizeRawText(text: string): string {
+  let result = text;
+
+  // 0. Split concatenated URLs (PDF artifact): "https://a.comhttps://b.com" -> two lines
+  result = result.replace(/(https?:\/\/\S+?)(https?:\/\/)/gi, '$1\n$2');
+
+  // 1. Join hyphenated line breaks: "moni-\n  toring" -> "monitoring"
+  result = result.replace(/(\w)-\n\s*(\w)/g, '$1$2');
+
+  // 2. Join continuation lines: if a line ends mid-sentence (no period, colon,
+  //    not a bullet start, not a heading) and the next line starts lowercase or
+  //    continues a sentence, join them with a space.
+  const lines = result.split('\n');
+  const joined: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const current = lines[i];
+    const trimmed = current.trimEnd();
+
+    if (i + 1 < lines.length) {
+      const nextLine = lines[i + 1];
+      const nextTrimmed = nextLine.trim();
+
+      // Skip joining if current line is blank or next line is blank
+      if (!trimmed.trim() || !nextTrimmed) {
+        joined.push(current);
+        continue;
+      }
+
+      // Skip if next line starts with a bullet marker
+      if (BULLET_RE.test(nextTrimmed)) {
+        joined.push(current);
+        continue;
+      }
+
+      // Skip if current line ends with sentence-terminating punctuation
+      if (/[.!?:]\s*$/.test(trimmed)) {
+        joined.push(current);
+        continue;
+      }
+
+      // Skip if next line looks like a heading (all caps, short, title-cased)
+      if (/^[A-Z\s&\-/]+$/.test(nextTrimmed) && nextTrimmed.length >= 2 && /[A-Z]{2,}/.test(nextTrimmed)) {
+        joined.push(current);
+        continue;
+      }
+
+      // Skip if next line contains a date range (entry header)
+      if (DATE_RANGE_REGEX.test(nextTrimmed)) {
+        joined.push(current);
+        continue;
+      }
+
+      // Skip if next line starts with a date
+      if (DATE_REGEX.test(nextTrimmed)) {
+        joined.push(current);
+        continue;
+      }
+
+      // Skip if next line contains contact info (email, phone, URL)
+      if (EMAIL_REGEX.test(nextTrimmed) || PHONE_REGEX.test(nextTrimmed) || URL_REGEX.test(nextTrimmed) || /^https?:\/\//i.test(nextTrimmed)) {
+        joined.push(current);
+        continue;
+      }
+
+      // Skip if current line contains contact info
+      if (EMAIL_REGEX.test(trimmed) || PHONE_REGEX.test(trimmed) || URL_REGEX.test(trimmed)) {
+        joined.push(current);
+        continue;
+      }
+
+      // Skip join if the combined text would create a date range (split across lines)
+      // e.g. "Physiotherapist Aug 2024" + "– Feb 2025" => entry header, not continuation
+      if (/[A-Z][a-z]/.test(nextTrimmed) && !DATE_RANGE_REGEX.test(nextTrimmed)) {
+        const combined = trimmed + ' ' + nextTrimmed;
+        if (DATE_RANGE_REGEX.test(combined) && !DATE_RANGE_REGEX.test(trimmed)) {
+          joined.push(current);
+          continue;
+        }
+      }
+
+      // Join if next line starts lowercase or looks like a sentence continuation
+      if (/^[a-z]/.test(nextTrimmed) || /,\s*$/.test(trimmed)) {
+        joined.push(trimmed + ' ' + nextTrimmed);
+        i++; // skip next line since we merged it
+        continue;
+      }
+    }
+
+    joined.push(current);
+  }
+  result = joined.join('\n');
+
+  // 3. Normalize inline bullet markers: " • " mid-line -> newline + "• "
+  result = result.replace(/ \u2022 /g, '\n\u2022 ');
+
+  return result;
+}
+
 // -- Main Parser --------------------------------------------------------------
 
 /**
@@ -1475,8 +1920,11 @@ function generateId(): string {
 export function parseResumeText(text: string): Partial<ResumeData> {
   const result: Partial<ResumeData> = {};
 
+  // Normalize raw text to fix PDF extraction artifacts
+  const normalized = normalizeRawText(text);
+
   // Extract contact info from the full text (usually at the top)
-  const contactInfo = extractContact(text);
+  const contactInfo = extractContact(normalized);
   result.contact = {
     firstName: contactInfo.firstName || '',
     lastName: contactInfo.lastName || '',
@@ -1491,7 +1939,7 @@ export function parseResumeText(text: string): Partial<ResumeData> {
   };
 
   // Detect and extract sections
-  const sections = detectSections(text);
+  const sections = detectSections(normalized);
 
   for (const section of sections) {
     switch (section.type) {
@@ -1569,12 +2017,12 @@ export function parseResumeText(text: string): Partial<ResumeData> {
     const firstSectionStart = sections.length > 0 ? sections[0].startIndex : -1;
     if (firstSectionStart > 3) {
       // There's content between the header area and the first section
-      const lines = text.split('\n');
+      const normLines = normalized.split('\n');
       const candidateLines: string[] = [];
       // Start after the likely contact area (first ~5 lines) and before the first section
       const startLine = Math.min(5, firstSectionStart);
       for (let i = startLine; i < firstSectionStart; i++) {
-        const line = lines[i]?.trim();
+        const line = normLines[i]?.trim();
         if (line && !EMAIL_REGEX.test(line) && !PHONE_REGEX.test(line) && !URL_REGEX.test(line)) {
           candidateLines.push(line);
         }
@@ -1586,7 +2034,7 @@ export function parseResumeText(text: string): Partial<ResumeData> {
     }
   }
 
-  return result;
+  return postProcessParseResult(result);
 }
 
 export function parseResumeTextWithMetadata(text: string): { data: Partial<ResumeData>; metadata: ParseMetadata } {

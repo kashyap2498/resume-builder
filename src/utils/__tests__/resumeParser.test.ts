@@ -94,7 +94,7 @@ describe('parseResumeText', () => {
 
     it('should extract phone number', () => {
       const result = parseResumeText('Phone: 555-123-4567\nSome other line')
-      expect(result.contact?.phone).toBe('555-123-4567')
+      expect(result.contact?.phone).toBe('(555) 123-4567')
     })
 
     it('should extract first and last name', () => {
@@ -702,7 +702,7 @@ Mar 2022`
       expect(result.contact?.firstName).toBe('John')
       expect(result.contact?.lastName).toBe('Doe')
       expect(result.contact?.email).toBe('john@example.com')
-      expect(result.contact?.phone).toBe('555-123-4567')
+      expect(result.contact?.phone).toBe('(555) 123-4567')
       expect(result.contact?.linkedin).toMatch(/linkedin\.com\/in\/johndoe/)
 
       // Summary
@@ -930,6 +930,126 @@ Intern at D\nJan 2018 - May 2019\n- Work`
   })
 
   // ---------------------------------------------------------------------------
+  // Round 2 parser fixes
+  // ---------------------------------------------------------------------------
+
+  describe('education - degree/institution separation (1A)', () => {
+    it('should separate degree from institution on a single line', () => {
+      const text = `Prachi Patel\nprachi@email.com\n\nEducation
+Bachelor of Physiotherapy Sharda College of Physiotherapy Aug 2022`
+      const result = parseResumeText(text)
+      expect(result.education!.length).toBe(1)
+      const edu = result.education![0]
+      expect(edu.degree).toMatch(/Bachelor of Physiotherapy/)
+      expect(edu.degree).not.toMatch(/Sharda/)
+      expect(edu.institution).toMatch(/Sharda/)
+    })
+
+    it('should stop degree at institution keyword', () => {
+      const text = `John Doe\njohn@example.com\n\nEducation
+Master of Science in Data Science Stanford University 2021`
+      const result = parseResumeText(text)
+      const edu = result.education![0]
+      expect(edu.degree).toMatch(/Master of Science in Data Science/)
+      expect(edu.degree).not.toMatch(/Stanford/)
+    })
+  })
+
+  describe('contact - title detection with location (1B)', () => {
+    it('should detect title when location (not email/phone) follows', () => {
+      const text = `Prachi Patel\nPhysiotherapist\nBrampton, ON\nprachi@email.com`
+      const result = parseResumeText(text)
+      expect(result.contact?.title).toBe('Physiotherapist')
+    })
+  })
+
+  describe('experience - third entry detection (1C)', () => {
+    it('should detect entry header when position+date appears as bullet content', () => {
+      const text = `John Doe\njohn@example.com\n\nExperience
+Front Desk Receptionist
+Medrehab, Brampton
+Jun 2025 – Present
+- Welcomed patients
+- Managed scheduling
+Physiotherapist Aug 2024 – Feb 2025
+Health Focus Clinic
+- Supported therapists
+- Handled patient intake`
+      const result = parseResumeText(text)
+      expect(result.experience!.length).toBe(2)
+    })
+  })
+
+  describe('skills - trailing "and" preserved (1D)', () => {
+    it('should preserve skill after "and" in comma-separated list', () => {
+      const text = `John Doe\njohn@example.com\n\nSkills
+Strong communication, multitasking, and organizational skills`
+      const result = parseResumeText(text)
+      const allSkills = result.skills!.flatMap((c) => c.items)
+      expect(allSkills).toEqual(
+        expect.arrayContaining([expect.stringMatching(/organizational/i)])
+      )
+      // Should NOT have an item starting with "and"
+      for (const skill of allSkills) {
+        expect(skill).not.toMatch(/^and\s/i)
+      }
+    })
+
+    it('should handle "and" in categorized skills', () => {
+      const text = `John Doe\njohn@example.com\n\nSkills
+Soft Skills: communication, teamwork, and leadership`
+      const result = parseResumeText(text)
+      const allSkills = result.skills!.flatMap((c) => c.items)
+      expect(allSkills).toEqual(
+        expect.arrayContaining([expect.stringMatching(/leadership/i)])
+      )
+    })
+  })
+
+  describe('certifications - placeholder cleanup (1E)', () => {
+    it('should clear placeholder URLs from certifications', () => {
+      const text = `John Doe\njohn@example.com\n\nCertifications
+AWS Solutions Architect
+Issuing Organization
+https://example.com
+Credential ID: ABC123`
+      const result = parseResumeText(text)
+      const cert = result.certifications![0]
+      expect(cert.credentialId).toBe('')
+      expect(cert.url).toBe('')
+      expect(cert.issuer).toBe('')
+    })
+
+    it('should clear "Issuing Organization" issuer', () => {
+      const text = `John Doe\njohn@example.com\n\nCertifications
+CPR Certification
+Issuing Organization`
+      const result = parseResumeText(text)
+      expect(result.certifications![0].issuer).toBe('')
+    })
+  })
+
+  describe('phone formatting (1F)', () => {
+    it('should format 10-digit phone as (XXX) XXX-XXXX', () => {
+      const text = `John Doe\n5551234567\njohn@example.com`
+      const result = parseResumeText(text)
+      expect(result.contact?.phone).toBe('(555) 123-4567')
+    })
+
+    it('should format 11-digit phone starting with 1', () => {
+      const text = `John Doe\n1-555-123-4567\njohn@example.com`
+      const result = parseResumeText(text)
+      expect(result.contact?.phone).toBe('+1 (555) 123-4567')
+    })
+
+    it('should not reformat already formatted phone', () => {
+      const text = `John Doe\n(555) 123-4567\njohn@example.com`
+      const result = parseResumeText(text)
+      expect(result.contact?.phone).toBe('(555) 123-4567')
+    })
+  })
+
+  // ---------------------------------------------------------------------------
   // Experience — date-anchored splitting (parser bug fix)
   // ---------------------------------------------------------------------------
 
@@ -954,6 +1074,102 @@ Handled patient intake, phone calls, and scheduling`
       expect(result.experience![1].company).toMatch(/Balanced Body/)
       expect(result.experience![1].location).toMatch(/Kitchener/)
       expect(result.experience![1].highlights.length).toBe(2)
+    })
+  })
+
+  // ---------------------------------------------------------------------------
+  // Round 3 bug fixes
+  // ---------------------------------------------------------------------------
+
+  describe('experience - absorbed entry boundary detection (Round 3 Bug 1)', () => {
+    it('should detect 4 entries when jobs have no paragraph breaks', () => {
+      const text = `John Doe\njohn@example.com\n\nExperience
+Front Desk Receptionist
+Medrehab, Brampton
+Jun 2025 – Present
+- Welcomed patients
+- Managed scheduling
+- Handled phone calls
+Physiotherapist Aug 2024 – Feb 2025
+Health Focus Clinic
+- Supported therapists
+- Handled patient intake
+Volunteer Therapist
+Community Center
+Jan 2024 – Jul 2024
+- Provided free therapy sessions
+- Organized health camps
+Intern Jan 2023 – Dec 2023
+City Hospital
+- Shadowed senior therapists
+- Documented patient progress`
+      const result = parseResumeText(text)
+      expect(result.experience!.length).toBeGreaterThanOrEqual(3)
+    })
+
+    it('should not absorb entries when bullet contains a date range', () => {
+      const text = `John Doe\njohn@example.com\n\nExperience
+Manager at Company A
+Jan 2023 – Present
+- Led team of 10
+- Increased revenue
+- Expanded operations
+Developer at Company B Jun 2021 – Dec 2022
+- Built REST APIs
+- Deployed microservices`
+      const result = parseResumeText(text)
+      expect(result.experience!.length).toBe(2)
+    })
+  })
+
+  describe('contact - URL concatenation splitting (Round 3 Bug 2)', () => {
+    it('should split concatenated URLs in website field', () => {
+      const text = `John Doe\nhttps://example.comhttps://portfolio.example.com\njohn@example.com`
+      const result = parseResumeText(text)
+      expect(result.contact?.website).toBe('https://example.com')
+      expect(result.contact?.portfolio).toBe('https://portfolio.example.com')
+    })
+
+    it('should not modify single URLs', () => {
+      const text = `John Doe\nhttps://example.com/portfolio\njohn@example.com`
+      const result = parseResumeText(text)
+      expect(result.contact?.website).toBe('https://example.com/portfolio')
+    })
+  })
+
+  describe('education - single date only sets endDate (Round 3 Bug 3)', () => {
+    it('should set only endDate for single graduation date', () => {
+      const text = `John Doe\njohn@example.com\n\nEducation
+University of California
+Bachelor of Science in Computer Science
+Aug 2022`
+      const result = parseResumeText(text)
+      const edu = result.education![0]
+      expect(edu.startDate).toBe('')
+      expect(edu.endDate).toBe('Aug 2022')
+    })
+
+    it('should still set both dates for date ranges', () => {
+      const text = `John Doe\njohn@example.com\n\nEducation
+MIT
+Bachelor of Science in CS
+2018 - 2022`
+      const result = parseResumeText(text)
+      const edu = result.education![0]
+      expect(edu.startDate).toBeTruthy()
+      expect(edu.endDate).toBeTruthy()
+    })
+
+    it('should display single graduation date correctly via formatDateRange', () => {
+      const text = `John Doe\njohn@example.com\n\nEducation
+MIT
+Bachelor of Science in CS
+Aug 2022`
+      const result = parseResumeText(text)
+      const edu = result.education![0]
+      const display = formatDateRange(edu.startDate, edu.endDate)
+      expect(display).toBe('Aug 2022')
+      expect(display).not.toMatch(/^[\s]*-/)
     })
   })
 })

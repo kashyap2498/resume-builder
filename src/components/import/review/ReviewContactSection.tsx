@@ -23,9 +23,22 @@ const CONTACT_FIELDS: { field: keyof ContactData; label: string; placeholder: st
   { field: 'portfolio', label: 'Portfolio', placeholder: 'https://portfolio.com' },
 ];
 
+const IMPORTANT_FIELDS: (keyof ContactData)[] = ['firstName', 'lastName', 'title', 'email', 'phone'];
+
 export function ReviewContactSection({ contact, updateContact }: ReviewContactSectionProps) {
+  const missingFields = CONTACT_FIELDS
+    .filter(({ field }) => IMPORTANT_FIELDS.includes(field) && !contact[field])
+    .map(({ label }) => label);
+
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+    <div>
+      {missingFields.length > 0 && (
+        <p className="mb-2 text-xs text-amber-600 dark:text-amber-400">
+          Missing: {missingFields.slice(0, 4).join(', ')}
+          {missingFields.length > 4 && ` and ${missingFields.length - 4} more`}
+        </p>
+      )}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
       {CONTACT_FIELDS.map(({ field, label, placeholder }) => (
         <InlineField
           key={field}
@@ -35,6 +48,7 @@ export function ReviewContactSection({ contact, updateContact }: ReviewContactSe
           placeholder={placeholder}
         />
       ))}
+      </div>
     </div>
   );
 }

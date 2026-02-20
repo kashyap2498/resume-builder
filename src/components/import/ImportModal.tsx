@@ -222,7 +222,7 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
       onClose={handleClose}
       title="Import Resume"
       size={showPreview ? 'xl' : 'lg'}
-      className={showPreview ? 'max-w-4xl max-h-[95vh]' : undefined}
+      className={showPreview ? 'max-w-7xl w-[95vw] max-h-[95vh]' : undefined}
     >
       {/* Preview mode */}
       {showPreview && (

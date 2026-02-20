@@ -2,8 +2,8 @@
 // Resume Builder - ReviewExperienceSection (review UI for experience entries)
 // =============================================================================
 
-import { useCallback } from 'react';
-import { X, ArrowUpDown, Scissors, ChevronsUp, GripVertical } from 'lucide-react';
+import { useCallback, useMemo } from 'react';
+import { X, ArrowUpDown, ChevronsUp, GripVertical, Scissors } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -21,33 +21,11 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { ExperienceEntry } from '@/types/resume';
-import { RichTextEditor } from '@/components/ui';
-import { toEditorHtml, fromEditorHtml } from '@/utils/richTextConvert';
 import { InlineField } from './InlineField';
-
-// ---------------------------------------------------------------------------
-// Suspicious bullet detection
-// ---------------------------------------------------------------------------
-
-function isSuspiciousBullet(bullet: string): boolean {
-  let signals = 0;
-  // Short and no period
-  if (bullet.length < 40 && !bullet.endsWith('.')) signals++;
-  // Title-cased (>=70% capitalized words)
-  const words = bullet.split(/\s+/).filter(Boolean);
-  if (words.length >= 2 && words.length <= 6) {
-    const capCount = words.filter(w => /^[A-Z]/.test(w)).length;
-    if (capCount / words.length >= 0.7) signals++;
-  }
-  // Contains date
-  const DATE_RANGE_RE = /(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{4}\s*[-–—to]+\s*(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{4}|Present|Current)/i;
-  const DATE_RE = /(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{4}|\d{4}/i;
-  if (DATE_RANGE_RE.test(bullet) || DATE_RE.test(bullet)) signals++;
-  // Contains company indicators
-  const COMPANY_RE = /\b(?:Inc\.?|LLC|Corp|Ltd|Technologies|Solutions|Systems|Group|University|College|Hospital|Bank|Agency|Studio|Labs?)\b/i;
-  if (COMPANY_RE.test(bullet)) signals++;
-  return signals >= 2;
-}
+import { BulletList } from './BulletList';
+import { EntryWarnings } from './EntryWarnings';
+import { computeExperienceWarnings } from '@/utils/entryWarnings';
+import type { EntryWarning } from '@/utils/entryWarnings';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -61,6 +39,11 @@ interface ReviewExperienceSectionProps {
   onSplitEntry?: (entryIndex: number, bulletIndex: number) => void;
   onMergeEntries?: (indexA: number, indexB: number) => void;
   onReorderEntries?: (fromIndex: number, toIndex: number) => void;
+  onUpdateBullet?: (entryIndex: number, bulletIndex: number, text: string) => void;
+  onRemoveBullet?: (entryIndex: number, bulletIndex: number) => void;
+  onAddBullet?: (entryIndex: number, text?: string) => void;
+  onReorderBullet?: (entryIndex: number, fromIndex: number, toIndex: number) => void;
+  onMoveBullet?: (fromEntryIndex: number, bulletIndex: number, toEntryIndex: number) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -70,24 +53,38 @@ interface ReviewExperienceSectionProps {
 interface SortableExperienceCardProps {
   entry: ExperienceEntry;
   index: number;
+  totalEntries: number;
   updateEntry: ReviewExperienceSectionProps['updateEntry'];
   removeEntry: ReviewExperienceSectionProps['removeEntry'];
   onSwapPositionCompany?: (index: number) => void;
   onSplitEntry?: (entryIndex: number, bulletIndex: number) => void;
   onMergeEntries?: (indexA: number, indexB: number) => void;
-  handleRichTextChange: (index: number, html: string) => void;
+  onUpdateBullet?: (entryIndex: number, bulletIndex: number, text: string) => void;
+  onRemoveBullet?: (entryIndex: number, bulletIndex: number) => void;
+  onAddBullet?: (entryIndex: number, text?: string) => void;
+  onReorderBullet?: (entryIndex: number, fromIndex: number, toIndex: number) => void;
+  onMoveBullet?: (fromEntryIndex: number, bulletIndex: number, toEntryIndex: number) => void;
+  warnings: EntryWarning[];
+  onWarningAction: (warning: EntryWarning) => void;
   isFirst: boolean;
 }
 
 function SortableExperienceCard({
   entry,
   index,
+  totalEntries,
   updateEntry,
   removeEntry,
   onSwapPositionCompany,
   onSplitEntry,
   onMergeEntries,
-  handleRichTextChange,
+  onUpdateBullet,
+  onRemoveBullet,
+  onAddBullet,
+  onReorderBullet,
+  onMoveBullet,
+  warnings,
+  onWarningAction,
   isFirst,
 }: SortableExperienceCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -99,12 +96,25 @@ function SortableExperienceCard({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  // Pre-compute suspicious bullets for highlight rendering
-  const suspiciousBullets = entry.highlights.map(isSuspiciousBullet);
-  const hasSuspicious = suspiciousBullets.some(Boolean);
-
   return (
     <div ref={setNodeRef} style={style}>
+      {/* Smart split suggestion banner for entries with 8+ bullets */}
+      {entry.highlights.length > 8 && onSplitEntry && (
+        <div className="mb-2 flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-3 py-2">
+          <Scissors className="h-4 w-4 text-amber-600 flex-shrink-0" />
+          <span className="text-sm text-amber-800 dark:text-amber-300 flex-1">
+            This entry has {entry.highlights.length} bullets and may contain multiple roles.
+          </span>
+          <button
+            type="button"
+            onClick={() => onSplitEntry(index, Math.floor(entry.highlights.length / 2))}
+            className="text-sm font-medium text-amber-700 dark:text-amber-400 underline hover:text-amber-900 dark:hover:text-amber-200 whitespace-nowrap"
+          >
+            Split at midpoint
+          </button>
+        </div>
+      )}
+
       {/* Merge with previous button */}
       {!isFirst && onMergeEntries && (
         <div className="flex justify-center -mb-1 py-1">
@@ -120,7 +130,7 @@ function SortableExperienceCard({
         </div>
       )}
 
-      <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4 relative">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3 relative">
         {/* Drag handle */}
         <div
           className="absolute left-1 top-1/2 -translate-y-1/2 cursor-grab text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -139,7 +149,7 @@ function SortableExperienceCard({
           <X className="h-4 w-4" />
         </button>
 
-        <div className="grid grid-cols-[1fr_auto_1fr] gap-x-2 gap-y-2 pr-8 pl-6 items-end">
+        <div className="grid grid-cols-[1fr_auto_1fr] gap-x-2 gap-y-2 pr-6 pl-5 items-end">
           <InlineField
             label="Position"
             value={entry.position}
@@ -165,7 +175,7 @@ function SortableExperienceCard({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-2 pr-8 pl-6">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-2 pr-6 pl-5">
           <InlineField
             label="Start Date"
             value={entry.startDate}
@@ -180,7 +190,7 @@ function SortableExperienceCard({
           />
         </div>
 
-        <div className="mt-2 pl-6">
+        <div className="mt-2 pl-5">
           <InlineField
             label="Location"
             value={entry.location}
@@ -189,44 +199,39 @@ function SortableExperienceCard({
           />
         </div>
 
-        {/* If suspicious bullets exist, show them individually before the rich editor */}
-        {hasSuspicious && (
-          <div className="mt-3 pl-6 space-y-1">
-            <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mb-1">
-              Flagged highlights (may be misclassified):
-            </p>
-            {entry.highlights.map((bullet, bIdx) => {
-              const suspicious = suspiciousBullets[bIdx];
-              if (!suspicious) return null;
-              return (
-                <div
-                  key={bIdx}
-                  className="group flex items-start gap-2 border-l-2 border-amber-400 pl-2 py-0.5 text-sm text-gray-700 dark:text-gray-300"
-                >
-                  <span className="flex-1">{bullet}</span>
-                  {onSplitEntry && (
-                    <button
-                      type="button"
-                      onClick={() => onSplitEntry(index, bIdx)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-amber-500 hover:text-amber-700 p-0.5 flex-shrink-0"
-                      title="Split entry at this bullet"
-                    >
-                      <Scissors className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+        {/* Per-entry warnings */}
+        {warnings.length > 0 && (
+          <div className="mt-3 pl-5">
+            <EntryWarnings warnings={warnings} onAction={onWarningAction} />
           </div>
         )}
 
-        <div className="mt-3 pl-6">
-          <RichTextEditor
-            label="Description & Highlights"
-            content={toEditorHtml(entry.description, entry.highlights)}
-            onChange={(html) => handleRichTextChange(index, html)}
-            placeholder="Describe your responsibilities and achievements..."
-          />
+        {/* Bullet list (replaces RichTextEditor) */}
+        <div className="mt-3 pl-5">
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+            Highlights
+          </p>
+          {onUpdateBullet && onRemoveBullet && onAddBullet && onReorderBullet ? (
+            <BulletList
+              entryIndex={index}
+              highlights={entry.highlights}
+              onUpdateBullet={onUpdateBullet}
+              onRemoveBullet={onRemoveBullet}
+              onAddBullet={onAddBullet}
+              onReorderBullet={onReorderBullet}
+              onSplitEntry={onSplitEntry}
+              onMoveBullet={onMoveBullet}
+              hasPreviousEntry={index > 0}
+              hasNextEntry={index < totalEntries - 1}
+            />
+          ) : (
+            /* Fallback: read-only bullet display */
+            <ul className="list-disc list-inside text-sm text-gray-700 dark:text-gray-300 space-y-0.5">
+              {entry.highlights.map((h, i) => (
+                <li key={i}>{h}</li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>
@@ -245,18 +250,15 @@ export function ReviewExperienceSection({
   onSplitEntry,
   onMergeEntries,
   onReorderEntries,
+  onUpdateBullet,
+  onRemoveBullet,
+  onAddBullet,
+  onReorderBullet,
+  onMoveBullet,
 }: ReviewExperienceSectionProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-
-  const handleRichTextChange = useCallback(
-    (index: number, html: string) => {
-      const { description, highlights } = fromEditorHtml(html);
-      updateEntry('experience', index, { description, highlights });
-    },
-    [updateEntry],
   );
 
   const handleDragEnd = useCallback(
@@ -273,6 +275,42 @@ export function ReviewExperienceSection({
     [experience, onReorderEntries],
   );
 
+  // Compute warnings for all entries
+  const allWarnings = useMemo(
+    () => experience.map((entry, i) => computeExperienceWarnings(entry, i)),
+    [experience],
+  );
+
+  const handleWarningAction = useCallback(
+    (warning: EntryWarning) => {
+      if (!warning.action) return;
+      const payload = warning.action.payload as Record<string, number> | undefined;
+
+      switch (warning.action.type) {
+        case 'split':
+          if (payload && onSplitEntry) {
+            onSplitEntry(payload.entryIndex, payload.bulletIndex);
+          }
+          break;
+        case 'swap':
+          if (payload && onSwapPositionCompany) {
+            onSwapPositionCompany(payload.entryIndex);
+          }
+          break;
+        case 'promote_bullet':
+          if (payload) {
+            const entry = experience[payload.entryIndex];
+            if (entry && entry.highlights.length > 0) {
+              updateEntry('experience', payload.entryIndex, { company: entry.highlights[0] });
+              onRemoveBullet?.(payload.entryIndex, 0);
+            }
+          }
+          break;
+      }
+    },
+    [onSplitEntry, onSwapPositionCompany, experience, updateEntry, onRemoveBullet],
+  );
+
   const entryIds = experience.map((e) => e.id);
 
   return (
@@ -284,12 +322,19 @@ export function ReviewExperienceSection({
               key={entry.id}
               entry={entry}
               index={i}
+              totalEntries={experience.length}
               updateEntry={updateEntry}
               removeEntry={removeEntry}
               onSwapPositionCompany={onSwapPositionCompany}
               onSplitEntry={onSplitEntry}
               onMergeEntries={onMergeEntries}
-              handleRichTextChange={handleRichTextChange}
+              onUpdateBullet={onUpdateBullet}
+              onRemoveBullet={onRemoveBullet}
+              onAddBullet={onAddBullet}
+              onReorderBullet={onReorderBullet}
+              onMoveBullet={onMoveBullet}
+              warnings={allWarnings[i]}
+              onWarningAction={handleWarningAction}
               isFirst={i === 0}
             />
           ))}

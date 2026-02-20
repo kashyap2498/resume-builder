@@ -67,6 +67,12 @@ export function InlineField({
     [multiline, commit, revert]
   );
 
+  const isPlaceholder = !editing && (
+    !value ||
+    /^https?:\/\/(?:\.{3}|example)/i.test(value) ||
+    /^(?:issuing\s*organization|n\/a|tbd)$/i.test(value)
+  );
+
   const sharedInputClasses = cn(
     'w-full bg-transparent text-sm text-gray-900 dark:text-gray-100',
     'border-0 border-b-2 border-blue-500 dark:border-blue-400',
@@ -121,9 +127,11 @@ export function InlineField({
             'block w-full text-sm cursor-text py-0.5',
             'border-b border-transparent hover:border-gray-300 dark:hover:border-gray-600',
             'transition-colors duration-150',
-            value
-              ? 'text-gray-900 dark:text-gray-100'
-              : 'text-gray-400 dark:text-gray-500 italic'
+            isPlaceholder
+              ? 'text-amber-500 dark:text-amber-400 italic border-b border-dashed border-amber-300 dark:border-amber-600'
+              : value
+                ? 'text-gray-900 dark:text-gray-100'
+                : 'text-gray-400 dark:text-gray-500 italic'
           )}
         >
           {value || placeholder}

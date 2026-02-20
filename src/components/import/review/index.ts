@@ -8,3 +8,5 @@ export { ReviewGenericSection, ReviewHobbiesSection } from './ReviewGenericSecti
 export { SourceTextPanel } from './SourceTextPanel';
 export { UnmatchedContentBlock } from './UnmatchedContentBlock';
 export type { UnmatchedChunk } from './UnmatchedContentBlock';
+export { BulletList } from './BulletList';
+export { EntryWarnings } from './EntryWarnings';

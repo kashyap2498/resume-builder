@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import type {
   ResumeData,
   ContactData,
@@ -16,6 +16,7 @@ import type {
   AffiliationEntry,
   CourseEntry,
 } from '@/types/resume';
+import { extractSectionContent } from '@/utils/resumeParser';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -36,6 +37,27 @@ type ArraySection =
   | 'courses';
 
 type ConfidenceLevel = 'complete' | 'incomplete' | 'empty';
+
+interface ReviewSnapshot {
+  contact: ContactData;
+  summary: string;
+  experience: ExperienceEntry[];
+  education: EducationEntry[];
+  skills: SkillCategory[];
+  certifications: CertificationEntry[];
+  projects: ProjectEntry[];
+  languages: LanguageEntry[];
+  volunteer: VolunteerEntry[];
+  awards: AwardEntry[];
+  publications: PublicationEntry[];
+  references: ReferenceEntry[];
+  hobbies: HobbiesData;
+  affiliations: AffiliationEntry[];
+  courses: CourseEntry[];
+  unmatchedChunks: Array<{ text: string; startOffset: number; endOffset: number }>;
+}
+
+const MAX_HISTORY = 50;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -125,13 +147,73 @@ export function useImportReviewState(parsedData: Partial<ResumeData>) {
     [],
   );
 
-  const skipUnmatchedChunk = useCallback((index: number) => {
-    setUnmatchedChunks((prev) => prev.filter((_, i) => i !== index));
+  // -- Undo/Redo history ------------------------------------------------------
+
+  const pastRef = useRef<ReviewSnapshot[]>([]);
+  const futureRef = useRef<ReviewSnapshot[]>([]);
+  const [historyVersion, setHistoryVersion] = useState(0);
+
+  const takeSnapshot = useCallback((): ReviewSnapshot => ({
+    contact, summary, experience, education, skills, certifications,
+    projects, languages, volunteer, awards, publications, references,
+    hobbies, affiliations, courses, unmatchedChunks,
+  }), [
+    contact, summary, experience, education, skills, certifications,
+    projects, languages, volunteer, awards, publications, references,
+    hobbies, affiliations, courses, unmatchedChunks,
+  ]);
+
+  const restoreSnapshot = useCallback((snap: ReviewSnapshot) => {
+    setContact(snap.contact);
+    setSummary(snap.summary);
+    setExperience(snap.experience);
+    setEducation(snap.education);
+    setSkills(snap.skills);
+    setCertifications(snap.certifications);
+    setProjects(snap.projects);
+    setLanguages(snap.languages);
+    setVolunteer(snap.volunteer);
+    setAwards(snap.awards);
+    setPublications(snap.publications);
+    setReferences(snap.references);
+    setHobbies(snap.hobbies);
+    setAffiliations(snap.affiliations);
+    setCourses(snap.courses);
+    setUnmatchedChunks(snap.unmatchedChunks);
   }, []);
 
-  const addUnmatchedAs = useCallback((chunkIndex: number, _sectionType: string) => {
-    setUnmatchedChunks((prev) => prev.filter((_, i) => i !== chunkIndex));
-  }, []);
+  const pushHistory = useCallback(() => {
+    const snap = takeSnapshot();
+    pastRef.current = [...pastRef.current.slice(-(MAX_HISTORY - 1)), snap];
+    futureRef.current = [];
+    setHistoryVersion((v) => v + 1);
+  }, [takeSnapshot]);
+
+  const undo = useCallback(() => {
+    if (pastRef.current.length === 0) return;
+    const snap = takeSnapshot();
+    futureRef.current = [...futureRef.current, snap];
+    const prev = pastRef.current[pastRef.current.length - 1];
+    pastRef.current = pastRef.current.slice(0, -1);
+    restoreSnapshot(prev);
+    setHistoryVersion((v) => v + 1);
+  }, [takeSnapshot, restoreSnapshot]);
+
+  const redo = useCallback(() => {
+    if (futureRef.current.length === 0) return;
+    const snap = takeSnapshot();
+    pastRef.current = [...pastRef.current, snap];
+    const next = futureRef.current[futureRef.current.length - 1];
+    futureRef.current = futureRef.current.slice(0, -1);
+    restoreSnapshot(next);
+    setHistoryVersion((v) => v + 1);
+  }, [takeSnapshot, restoreSnapshot]);
+
+  const canUndo = pastRef.current.length > 0;
+  const canRedo = futureRef.current.length > 0;
+
+  // Force re-read of canUndo/canRedo when history changes
+  void historyVersion;
 
   // -- Section state map (for generic array operations) ----------------------
 
@@ -212,52 +294,105 @@ export function useImportReviewState(parsedData: Partial<ResumeData>) {
     ],
   );
 
+  // -- Unmatched content actions ---------------------------------------------
+
+  const skipUnmatchedChunk = useCallback((index: number) => {
+    pushHistory();
+    setUnmatchedChunks((prev) => prev.filter((_, i) => i !== index));
+  }, [pushHistory]);
+
+  const addUnmatchedAs = useCallback((chunkIndex: number, sectionType: string) => {
+    const chunk = unmatchedChunks[chunkIndex];
+    if (!chunk) return;
+
+    const extracted = extractSectionContent(sectionType, chunk.text);
+    if (!extracted) {
+      pushHistory();
+      setUnmatchedChunks((prev) => prev.filter((_, i) => i !== chunkIndex));
+      return;
+    }
+
+    pushHistory();
+
+    // Handle hobbies/interests as a special case (not in sectionStateMap)
+    if (sectionType === 'interests' || sectionType === 'hobbies') {
+      const data = extracted as { items: string[] };
+      if (data.items?.length > 0) {
+        setHobbies((prev) => ({
+          items: [...prev.items, ...data.items],
+        }));
+      }
+    } else if (sectionType === 'summary') {
+      const data = extracted as { text: string };
+      if (data.text) {
+        setSummary((prev) => (prev ? prev + '\n' + data.text : data.text));
+      }
+    } else {
+      // Array sections: append extracted entries
+      const s = sectionStateMap[sectionType as ArraySection];
+      if (s) {
+        const entries = extracted as ArrayEntry[];
+        if (Array.isArray(entries) && entries.length > 0) {
+          s.set((prev) => [...prev, ...entries]);
+        }
+      }
+    }
+
+    setUnmatchedChunks((prev) => prev.filter((_, i) => i !== chunkIndex));
+  }, [unmatchedChunks, sectionStateMap, pushHistory]);
+
   // -- Actions ---------------------------------------------------------------
 
   const updateContact = useCallback(
     (field: keyof ContactData, value: string) => {
+      pushHistory();
       setContact((prev) => ({ ...prev, [field]: value }));
     },
-    [],
+    [pushHistory],
   );
 
   const updateSummary = useCallback((text: string) => {
+    pushHistory();
     setSummary(text);
-  }, []);
+  }, [pushHistory]);
 
   const updateEntry = useCallback(
     (section: string, index: number, updates: Record<string, unknown>) => {
       const s = sectionStateMap[section as ArraySection];
       if (!s) return;
+      pushHistory();
       s.set((prev) => {
         const next = [...prev];
         next[index] = { ...next[index], ...updates };
         return next;
       });
     },
-    [sectionStateMap],
+    [sectionStateMap, pushHistory],
   );
 
   const removeEntry = useCallback(
     (section: string, index: number) => {
       const s = sectionStateMap[section as ArraySection];
       if (!s) return;
+      pushHistory();
       s.set((prev) => prev.filter((_, i) => i !== index));
     },
-    [sectionStateMap],
+    [sectionStateMap, pushHistory],
   );
 
   const addEntry = useCallback(
     (section: string, entry: unknown) => {
       const s = sectionStateMap[section as ArraySection];
       if (!s) return;
+      pushHistory();
       s.set((prev) => [...prev, entry as ArrayEntry]);
     },
-    [sectionStateMap],
+    [sectionStateMap, pushHistory],
   );
 
   const swapPositionCompany = useCallback(
     (index: number) => {
+      pushHistory();
       setExperience((prev) => {
         const next = [...prev];
         const entry = { ...next[index] };
@@ -268,11 +403,12 @@ export function useImportReviewState(parsedData: Partial<ResumeData>) {
         return next;
       });
     },
-    [],
+    [pushHistory],
   );
 
   const splitEntry = useCallback(
     (entryIndex: number, bulletIndex: number) => {
+      pushHistory();
       setExperience((prev) => {
         const source = prev[entryIndex];
         if (!source) return prev;
@@ -304,13 +440,14 @@ export function useImportReviewState(parsedData: Partial<ResumeData>) {
         return next;
       });
     },
-    [],
+    [pushHistory],
   );
 
   const mergeEntries = useCallback(
     (section: string, indexA: number, indexB: number) => {
       const s = sectionStateMap[section as ArraySection];
       if (!s) return;
+      pushHistory();
 
       if (section === 'experience') {
         setExperience((prev) => {
@@ -332,13 +469,14 @@ export function useImportReviewState(parsedData: Partial<ResumeData>) {
         s.set((prev) => prev.filter((_, i) => i !== indexB));
       }
     },
-    [sectionStateMap],
+    [sectionStateMap, pushHistory],
   );
 
   const reorderEntries = useCallback(
     (section: string, fromIndex: number, toIndex: number) => {
       const s = sectionStateMap[section as ArraySection];
       if (!s) return;
+      pushHistory();
       s.set((prev) => {
         const next = [...prev];
         const [moved] = next.splice(fromIndex, 1);
@@ -346,7 +484,88 @@ export function useImportReviewState(parsedData: Partial<ResumeData>) {
         return next;
       });
     },
-    [sectionStateMap],
+    [sectionStateMap, pushHistory],
+  );
+
+  // -- Bullet-level actions (experience only) ---------------------------------
+
+  const updateBullet = useCallback(
+    (entryIndex: number, bulletIndex: number, text: string) => {
+      pushHistory();
+      setExperience((prev) => {
+        const next = [...prev];
+        const entry = { ...next[entryIndex] };
+        const highlights = [...entry.highlights];
+        highlights[bulletIndex] = text;
+        entry.highlights = highlights;
+        next[entryIndex] = entry;
+        return next;
+      });
+    },
+    [pushHistory],
+  );
+
+  const removeBullet = useCallback(
+    (entryIndex: number, bulletIndex: number) => {
+      pushHistory();
+      setExperience((prev) => {
+        const next = [...prev];
+        const entry = { ...next[entryIndex] };
+        entry.highlights = entry.highlights.filter((_, i) => i !== bulletIndex);
+        next[entryIndex] = entry;
+        return next;
+      });
+    },
+    [pushHistory],
+  );
+
+  const addBullet = useCallback(
+    (entryIndex: number, text: string = '') => {
+      pushHistory();
+      setExperience((prev) => {
+        const next = [...prev];
+        const entry = { ...next[entryIndex] };
+        entry.highlights = [...entry.highlights, text];
+        next[entryIndex] = entry;
+        return next;
+      });
+    },
+    [pushHistory],
+  );
+
+  const reorderBullet = useCallback(
+    (entryIndex: number, fromIndex: number, toIndex: number) => {
+      pushHistory();
+      setExperience((prev) => {
+        const next = [...prev];
+        const entry = { ...next[entryIndex] };
+        const highlights = [...entry.highlights];
+        const [moved] = highlights.splice(fromIndex, 1);
+        highlights.splice(toIndex, 0, moved);
+        entry.highlights = highlights;
+        next[entryIndex] = entry;
+        return next;
+      });
+    },
+    [pushHistory],
+  );
+
+  const moveBullet = useCallback(
+    (fromEntryIndex: number, bulletIndex: number, toEntryIndex: number) => {
+      pushHistory();
+      setExperience((prev) => {
+        const next = [...prev];
+        const fromEntry = { ...next[fromEntryIndex] };
+        const toEntry = { ...next[toEntryIndex] };
+        const bullet = fromEntry.highlights[bulletIndex];
+        fromEntry.highlights = fromEntry.highlights.filter((_, i) => i !== bulletIndex);
+        toEntry.highlights = [...toEntry.highlights, bullet];
+        next[fromEntryIndex] = fromEntry;
+        next[toEntryIndex] = toEntry;
+        return next;
+      });
+    },
+    [pushHistory],
   );
 
   // -- Confidence ------------------------------------------------------------
@@ -370,22 +589,48 @@ export function useImportReviewState(parsedData: Partial<ResumeData>) {
 
         case 'education':
           if (education.length === 0) return 'empty';
+          if (education.some((e) => {
+            if (!e.institution || /^[,\s]/.test(e.institution)) return true;
+            // Detect garbled: institution starts with degree keyword
+            if (/^(?:Bachelor|Master|Doctor|Ph\.?D|B\.?S|B\.?A|M\.?S|M\.?A|M\.?B\.?A|Associate)/i.test(e.institution)) return true;
+            // Detect garbled: institution matches degree text
+            if (e.degree && e.institution === e.degree) return true;
+            return false;
+          })) return 'incomplete';
           return education.every((e) => e.institution)
             ? 'complete'
             : 'incomplete';
 
-        case 'skills':
-          return skills.length > 0 ? 'complete' : 'empty';
+        case 'skills': {
+          if (skills.length === 0) return 'empty';
+          // Check for fragmentation: any item < 5 chars or average length < 10
+          const allItems = skills.flatMap((s) => s.items);
+          if (allItems.length === 0) return 'empty';
+          const hasShortItems = allItems.some((item) => item.length < 5);
+          const avgLen = allItems.reduce((sum, item) => sum + item.length, 0) / allItems.length;
+          if (hasShortItems || avgLen < 10) return 'incomplete';
+          return 'complete';
+        }
 
         case 'projects':
           if (projects.length === 0) return 'empty';
           return projects.every((p) => p.name) ? 'complete' : 'incomplete';
 
-        case 'certifications':
+        case 'certifications': {
           if (certifications.length === 0) return 'empty';
+          // Check for placeholder credential IDs, URLs, and issuers
+          const PLACEHOLDER_ID_RE = /^(?:ABC123|XYZ789|123456|PLACEHOLDER|N\/A|TBD|NA)$/i;
+          const PLACEHOLDER_URL_RE = /^https?:\/\/(?:\.{3}|example\.com|placeholder)\/?$/i;
+          const PLACEHOLDER_ISSUER_RE = /^(?:issuing\s*organization|organization|issuer|n\/a|tbd)$/i;
+          if (certifications.some((c) =>
+            (c.credentialId && PLACEHOLDER_ID_RE.test(c.credentialId.trim())) ||
+            (c.url && PLACEHOLDER_URL_RE.test(c.url.trim())) ||
+            (c.issuer && PLACEHOLDER_ISSUER_RE.test(c.issuer.trim()))
+          )) return 'incomplete';
           return certifications.every((c) => c.name)
             ? 'complete'
             : 'incomplete';
+        }
 
         case 'languages':
           if (languages.length === 0) return 'empty';
@@ -462,6 +707,9 @@ export function useImportReviewState(parsedData: Partial<ResumeData>) {
     skipUnmatchedChunk,
     addUnmatchedAs,
 
+    // Setters
+    setHobbies,
+
     // Actions
     updateContact,
     updateSummary,
@@ -472,6 +720,19 @@ export function useImportReviewState(parsedData: Partial<ResumeData>) {
     splitEntry,
     mergeEntries,
     reorderEntries,
+
+    // Bullet actions
+    updateBullet,
+    removeBullet,
+    addBullet,
+    reorderBullet,
+    moveBullet,
+
+    // Undo/Redo
+    undo,
+    redo,
+    canUndo,
+    canRedo,
 
     // Confidence
     getSectionConfidence,
